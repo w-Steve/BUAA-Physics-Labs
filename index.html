@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 导航页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .semester-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 5px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            backdrop-filter: blur(10px);
+        }
+        
+        .tab {
+            padding: 12px 30px;
+            border: none;
+            background: transparent;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .semester-content {
+            display: none;
+        }
+        
+        .semester-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .lessons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .lesson-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .lesson-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .lesson-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .lesson-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .lesson-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .experiments-list {
+            list-style: none;
+        }
+        
+        .experiment-item {
+            margin-bottom: 12px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .experiment-item:hover {
+            background: #e9ecef;
+            border-left-color: #667eea;
+            transform: translateX(5px);
+        }
+        
+        .experiment-link {
+            text-decoration: none;
+            color: #495057;
+            font-weight: 500;
+            display: block;
+            padding: 5px 0;
+        }
+        
+        .experiment-link:hover {
+            color: #667eea;
+        }
+        
+        .experiment-id {
+            display: inline-block;
+            background: #dee2e6;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 10px;
+            color: #6c757d;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .about-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .about-link:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .lessons-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .tab {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 基物实验助手</h1>
+            <p>BUAA基础物理实验课程辅助工具</p>
+        </div>
+        
+        <div class="semester-tabs">
+            <button class="tab active" onclick="switchSemester('up')">基物实验上</button>
+            <button class="tab" onclick="switchSemester('down')">基物实验下</button>
+        </div>
+        
+        <!-- 上学期实验 -->
+        <div id="semester-up" class="semester-content active">
+            <div class="lessons-grid">
+                <!-- 实验数据会通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 下学期实验 -->
+        <div id="semester-down" class="semester-content">
+            <div class="lessons-grid">
+                <!-- 实验数据会通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 基物实验助手</p>
+            <a href="about.html" class="about-link">关于本项目</a>
+        </div>
+    </div>
+
+    <script>
+        // 实验数据配置
+        const experimentConfig = {
+            up: [
+                {
+                    id: 1,
+                    name: '稳态法测量不良导体热导率',
+                    experiments: [
+                        { id: '1-1', name: '稳态法测量不良导体热导率', url: 'experiments/1-1.html' }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: '钢丝弹性模量与刚体转动惯量',
+                    experiments: [
+                        { id: '2-1', name: '拉伸法测量钢丝弹性模量', url: 'experiments/2-1.html' },
+                        { id: '2-2', name: '扭摆法测量刚体转动惯量', url: 'experiments/2-2.html' },
+                        { id: '2-3', name: '验证平行轴定理', url: 'experiments/2-3.html' }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: '示波器及其应用',
+                    experiments: [
+                        { id: '3-1', name: '示波器的使用', url: 'experiments/3-1.html' },
+                        { id: '3-2', name: '振幅法测声速', url: 'experiments/3-2.html' },
+                        { id: '3-3', name: '相位法测声速', url: 'experiments/3-3.html' }
+                    ]
+                },
+                {
+                    id: 4,
+                    name: '电阻测量（电桥法）',
+                    experiments: [
+                        { id: '4-1', name: '双电桥法测量铜杆的电阻率', url: 'experiments/4-1.html' },
+                        { id: '4-2', name: '自组惠斯通电桥法测电阻', url: 'experiments/4-2.html' }
+                    ]
+                },
+                {
+                    id: 5,
+                    name: '分光仪的调整及应用',
+                    experiments: [
+                        { id: '5-1', name: '三棱镜顶角测量（反射法）', url: 'experiments/5-1.html' },
+                        { id: '5-2', name: '最小偏向角法测量棱镜折射率', url: 'experiments/5-2.html' },
+                        { id: '5-3', name: '掠入射法测量棱镜折射率', url: 'experiments/5-3.html' }
+                    ]
+                },
+                {
+                    id: 6,
+                    name: '透镜焦距',
+                    experiments: [
+                        { id: '6-1', name: '共轭法测量凸透镜焦距', url: 'experiments/6-1.html' },
+                        { id: '6-2', name: '自准直法测量凸透镜焦距', url: 'experiments/6-2.html' },
+                        { id: '6-3', name: '自准直法测量凹透镜焦距', url: 'experiments/6-3.html' },
+                        { id: '6-4', name: '自准直法测量凸面镜焦距', url: 'experiments/6-4.html' }
+                    ]
+                },
+                {
+                    id: 7,
+                    name: '电位差计',
+                    experiments: [
+                        { id: '7-1', name: '自组电位差计测量干电池电动势和灵敏度', url: 'experiments/7-1.html' },
+                        { id: '7-2', name: '箱式电位差计测量干电池电动势', url: 'experiments/7-2.html' },
+                        { id: '7-3', name: '箱式电位差计测量固定电阻', url: 'experiments/7-3.html' },
+                        { id: '7-4', name: '箱式电位差计测量电流表内阻', url: 'experiments/7-4.html' }
+                    ]
+                }
+            ],
+            down: [
+                {
+                    id: 9,
+                    name: '第九课时',
+                    experiments: [
+                        { id: '9-1', name: '光的干涉实验', url: 'experiments/9-1.html' },
+                        { id: '9-2', name: '光的衍射研究', url: 'experiments/9-2.html' }
+                    ]
+                },
+                {
+                    id: 10,
+                    name: '第十课时',
+                    experiments: [
+                        { id: '10-1', name: '偏振光实验', url: 'experiments/10-1.html' },
+                        { id: '10-2', name: '双折射现象研究', url: 'experiments/10-2.html' }
+                    ]
+                },
+                {
+                    id: 11,
+                    name: '第十一课时',
+                    experiments: [
+                        { id: '11-1', name: '光电效应实验', url: 'experiments/11-1.html' },
+                        { id: '11-2', name: '普朗克常数测量', url: 'experiments/11-2.html' }
+                    ]
+                },
+                {
+                    id: 12,
+                    name: '第十二课时',
+                    experiments: [
+                        { id: '12-1', name: '弗兰克-赫兹实验', url: 'experiments/12-1.html' },
+                        { id: '12-2', name: '电子电荷测量', url: 'experiments/12-2.html' }
+                    ]
+                },
+                {
+                    id: 13,
+                    name: '第十三课时',
+                    experiments: [
+                        { id: '13-1', name: '霍尔效应实验', url: 'experiments/13-1.html' },
+                        { id: '13-2', name: '半导体特性研究', url: 'experiments/13-2.html' }
+                    ]
+                },
+                {
+                    id: 14,
+                    name: '第十四课时',
+                    experiments: [
+                        { id: '14-1', name: '核磁共振实验', url: 'experiments/14-1.html' },
+                        { id: '14-2', name: '电子自旋共振', url: 'experiments/14-2.html' }
+                    ]
+                },
+                {
+                    id: 15,
+                    name: '第十五课时',
+                    experiments: [
+                        { id: '15-1', name: 'X射线衍射', url: 'experiments/15-1.html' },
+                        { id: '15-2', name: '晶体结构分析', url: 'experiments/15-2.html' }
+                    ]
+                },
+                {
+                    id: 16,
+                    name: '第十六课时',
+                    experiments: [
+                        { id: '16-1', name: '真空技术实验', url: 'experiments/16-1.html' },
+                        { id: '16-2', name: '低温物理实验', url: 'experiments/16-2.html' }
+                    ]
+                }
+            ]
+        };
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            renderExperiments('up');
+            renderExperiments('down');
+        });
+
+        // 渲染实验列表
+        function renderExperiments(semester) {
+            const container = document.querySelector(`#semester-${semester} .lessons-grid`);
+            const lessons = experimentConfig[semester];
+            
+            container.innerHTML = lessons.map(lesson => `
+                <div class="lesson-card">
+                    <div class="lesson-header">
+                        <div class="lesson-number">${lesson.id}</div>
+                        <div class="lesson-title">${lesson.name}</div>
+                    </div>
+                    <ul class="experiments-list">
+                        ${lesson.experiments.map(exp => `
+                            <li class="experiment-item">
+                                <a href="${exp.url}" class="experiment-link">
+                                    <span class="experiment-id">${exp.id}</span>
+                                    ${exp.name}
+                                </a>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        // 切换学期
+        function switchSemester(semester) {
+            // 更新标签
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新内容
+            document.querySelectorAll('.semester-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`semester-${semester}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
