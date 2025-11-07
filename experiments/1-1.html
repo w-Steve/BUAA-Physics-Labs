@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验 1-1: 稳态法测量不良导体热导率</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 12px;
+        }
+        
+        .section {
+            margin-bottom: 28px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fafafa;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-content {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .input-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .data-table {
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .table-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        
+        .table-header, .table-row {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .header-cell, .cell {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .header-cell {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .cell-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .btn-calculate {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-calculate:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-calculate:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn-save {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background-color: #27ae60;
+        }
+        
+        .results-group {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .result-item.highlight {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .result-label {
+            font-weight: 500;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .intermediate-results, .uncertainty-details {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        .uncertainty-group {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        .group-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .data-status {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .status-item {
+            display: block;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .input-item {
+                min-width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-title">稳态法测量不良导体热导率</div>
+        <div style="text-align:center; margin-bottom: 20px;">作者：🐲</div>
+        <div class="experiment-content">
+            <!-- 实验简介 -->
+            <div class="section">
+                <div class="section-title">📝 使用必读</div>
+                <div class="section-content">
+                    <p style="margin-top: 10px; color: #e74c3c;">θ₁和θ₂分别是稳态时加热盘和散热盘的温度。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">下方Δt和Δθ分别是画图法找切线时切线上选取的两个点的x、y坐标差。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">u(θ₁-θ₂)仪器误差是你作图的最小格子代表多少摄氏度。</p>
+                </div>
+            </div>
+
+            <!-- 原始数据输入 -->
+            <div class="section">
+                <div class="section-title">📊 原始数据记录</div>
+                
+                <!-- 游标卡尺零点 -->
+                <div class="input-group">
+                    <div class="input-item">
+                        <label class="input-label">游标卡尺零点 x₀ (mm):</label>
+                        <input 
+                            class="input-field" 
+                            type="number" 
+                            placeholder="0.00" 
+                            id="x0"
+                            step="0.01"
+                        />
+                    </div>
+                </div>
+
+                <!-- 散热盘P测量数据 -->
+                <div class="data-table">
+                    <div class="table-title">散热盘P测量数据 (5次测量)</div>
+                    <div class="table-header">
+                        <div class="header-cell">测量次数</div>
+                        <div class="header-cell">质量 m_p (g)</div>
+                        <div class="header-cell">高度 h_p (mm)</div>
+                        <div class="header-cell">直径 d_p (mm)</div>
+                    </div>
+                    <div id="pMeasurementsContainer">
+                        <!-- 动态生成测量行 -->
+                    </div>
+                </div>
+
+                <!-- 样品B测量数据 -->
+                <div class="data-table">
+                    <div class="table-title">样品B测量数据 (5次测量)</div>
+                    <div class="table-header">
+                        <div class="header-cell">测量次数</div>
+                        <div class="header-cell">高度 h_b (mm)</div>
+                        <div class="header-cell">直径 d_b (mm)</div>
+                    </div>
+                    <div id="bMeasurementsContainer">
+                        <!-- 动态生成测量行 -->
+                    </div>
+                </div>
+
+                <!-- 稳态数据 -->
+                <div class="input-group">
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">温度 θ₁ (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="theta1" step="0.01" />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">温度 θ₂ (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="theta2" step="0.01" />
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">温度变化 Δθ (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="deltaTheta" step="0.01" />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">时间变化 Δt (s):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="deltaT" step="0.01" />
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">u(θ₁-θ₂)仪器误差 (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.10" id="uThetaDiff" step="0.01" value="0.10" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
+                <button class="btn-save" id="saveBtn">💾 保存数据</button>
+            </div>
+            
+            <!-- 计算结果 -->
+            <div class="section" id="resultsSection" style="display: none;">
+                <div class="section-title">🧮 计算结果</div>
+                
+                <div class="results-group">
+                    <div class="result-item highlight">
+                        <div class="result-label">热导率 K:</div>
+                        <div class="result-value" id="kValue">0.000 W/(m·K)</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">不确定度 u(K):</div>
+                        <div class="result-value" id="uKValue">0.000 W/(m·K)</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">相对不确定度 u(K)/K:</div>
+                        <div class="result-value" id="relativeUncertainty">0.000</div>
+                    </div>
+                </div>
+
+                <!-- 中间计算结果 -->
+                <div class="intermediate-results">
+                    <div class="result-title">中间计算结果</div>
+                    <div class="result-item">
+                        <div class="result-label">平均质量 m̄_p:</div>
+                        <div class="result-value" id="avgMass">0.000 ± 0.000 g</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">平均高度 h̄_p:</div>
+                        <div class="result-value" id="avgHeightP">0.000 ± 0.000 mm</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">平均直径 d̄_p:</div>
+                        <div class="result-value" id="avgDiameterP">0.000 ± 0.000 mm</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">平均高度 h̄_b:</div>
+                        <div class="result-value" id="avgHeightB">0.000 ± 0.000 mm</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">平均直径 d̄_b:</div>
+                        <div class="result-value" id="avgDiameterB">0.000 ± 0.000 mm</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">降温速率 dθ/dt:</div>
+                        <div class="result-value" id="dthetaDtCalculated">0.000 °C/s</div>
+                    </div>
+                </div>
+
+                <!-- 不确定度分量详情 -->
+                <div class="uncertainty-details">
+                    <div class="result-title">不确定度分量分析</div>
+                    
+                    <!-- 质量不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">质量 m_p</div>
+                        <div class="result-item">
+                            <div class="result-label">A类不确定度:</div>
+                            <div class="result-value" id="uMassA">0.000 g</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">B类不确定度:</div>
+                            <div class="result-value" id="uMassB">0.000 g</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">合成不确定度:</div>
+                            <div class="result-value" id="uMassTotal">0.000 g</div>
+                        </div>
+                    </div>
+
+                    <!-- 散热盘几何参数不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">散热盘几何参数</div>
+                        <div class="result-item">
+                            <div class="result-label">h_p A类不确定度:</div>
+                            <div class="result-value" id="uHeightPA">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">h_p B类不确定度:</div>
+                            <div class="result-value" id="uHeightPB">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">h_p 合成不确定度:</div>
+                            <div class="result-value" id="uHeightPTotal">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_p A类不确定度:</div>
+                            <div class="result-value" id="uDiameterPA">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_p B类不确定度:</div>
+                            <div class="result-value" id="uDiameterPB">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_p 合成不确定度:</div>
+                            <div class="result-value" id="uDiameterPTotal">0.000 mm</div>
+                        </div>
+                    </div>
+
+                    <!-- 样品B几何参数不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">样品B几何参数</div>
+                        <div class="result-item">
+                            <div class="result-label">h_b A类不确定度:</div>
+                            <div class="result-value" id="uHeightBA">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">h_b B类不确定度:</div>
+                            <div class="result-value" id="uHeightBB">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">h_b 合成不确定度:</div>
+                            <div class="result-value" id="uHeightBTotal">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_b A类不确定度:</div>
+                            <div class="result-value" id="uDiameterBA">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_b B类不确定度:</div>
+                            <div class="result-value" id="uDiameterBB">0.000 mm</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">d_b 合成不确定度:</div>
+                            <div class="result-value" id="uDiameterBTotal">0.000 mm</div>
+                        </div>
+                    </div>
+
+                    <!-- 温度相关不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">温度相关参数</div>
+                        <div class="result-item">
+                            <div class="result-label">Δθ B类不确定度:</div>
+                            <div class="result-value" id="uDeltaThetaB">0.000 °C</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">Δt B类不确定度:</div>
+                            <div class="result-value" id="uDeltaTB">0.000 s</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">(θ₁-θ₂) B类不确定度:</div>
+                            <div class="result-value" id="uThetaDiffValue">0.000 °C</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据状态 -->
+            <div class="section">
+                <div class="section-title">💾 数据状态</div>
+                <div class="data-status">
+                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
+                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 实验数据模型
+        const experimentData = {
+            experimentId: '1-1',
+            // 基本参数
+            x0: '0.00',
+            theta1: '',
+            theta2: '',
+            deltaTheta: '',
+            deltaT: '',
+            dthetaDtCalculated: '0.000',
+            uThetaDiff: '0.10',
+            // 测量数据
+            pMeasurements: [],
+            bMeasurements: [],
+            // 计算结果
+            showResults: false,
+            kValue: '0.000',
+            uKValue: '0.000',
+            relativeUncertainty: '0.000',
+            // 中间结果
+            avgMass: '0.000',
+            avgHeightP: '0.000',
+            avgDiameterP: '0.000',
+            avgHeightB: '0.000',
+            avgDiameterB: '0.000',
+            // 不确定度分量
+            uMassA: '0.000',
+            uMassB: '0.000',
+            uMassTotal: '0.000',
+            uHeightPA: '0.000',
+            uHeightPB: '0.000',
+            uHeightPTotal: '0.000',
+            uDiameterPA: '0.000',
+            uDiameterPB: '0.000',
+            uDiameterPTotal: '0.000',
+            uHeightBA: '0.000',
+            uHeightBB: '0.000',
+            uHeightBTotal: '0.000',
+            uDiameterBA: '0.000',
+            uDiameterBB: '0.000',
+            uDiameterBTotal: '0.000',
+            uDeltaThetaB: '0.000',
+            uDeltaTB: '0.000',
+            uThetaDiffValue: '0.000',
+            // 状态
+            lastUpdate: ''
+        };
+
+        // DOM 元素
+        const elements = {
+            x0: document.getElementById('x0'),
+            theta1: document.getElementById('theta1'),
+            theta2: document.getElementById('theta2'),
+            deltaTheta: document.getElementById('deltaTheta'),
+            deltaT: document.getElementById('deltaT'),
+            uThetaDiff: document.getElementById('uThetaDiff'),
+            pMeasurementsContainer: document.getElementById('pMeasurementsContainer'),
+            bMeasurementsContainer: document.getElementById('bMeasurementsContainer'),
+            calculateBtn: document.getElementById('calculateBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            resultsSection: document.getElementById('resultsSection'),
+            kValue: document.getElementById('kValue'),
+            uKValue: document.getElementById('uKValue'),
+            relativeUncertainty: document.getElementById('relativeUncertainty'),
+            avgMass: document.getElementById('avgMass'),
+            avgHeightP: document.getElementById('avgHeightP'),
+            avgDiameterP: document.getElementById('avgDiameterP'),
+            avgHeightB: document.getElementById('avgHeightB'),
+            avgDiameterB: document.getElementById('avgDiameterB'),
+            dthetaDtCalculated: document.getElementById('dthetaDtCalculated'),
+            uMassA: document.getElementById('uMassA'),
+            uMassB: document.getElementById('uMassB'),
+            uMassTotal: document.getElementById('uMassTotal'),
+            uHeightPA: document.getElementById('uHeightPA'),
+            uHeightPB: document.getElementById('uHeightPB'),
+            uHeightPTotal: document.getElementById('uHeightPTotal'),
+            uDiameterPA: document.getElementById('uDiameterPA'),
+            uDiameterPB: document.getElementById('uDiameterPB'),
+            uDiameterPTotal: document.getElementById('uDiameterPTotal'),
+            uHeightBA: document.getElementById('uHeightBA'),
+            uHeightBB: document.getElementById('uHeightBB'),
+            uHeightBTotal: document.getElementById('uHeightBTotal'),
+            uDiameterBA: document.getElementById('uDiameterBA'),
+            uDiameterBB: document.getElementById('uDiameterBB'),
+            uDiameterBTotal: document.getElementById('uDiameterBTotal'),
+            uDeltaThetaB: document.getElementById('uDeltaThetaB'),
+            uDeltaTB: document.getElementById('uDeltaTB'),
+            uThetaDiffValue: document.getElementById('uThetaDiffValue'),
+            lastUpdate: document.getElementById('lastUpdate')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initMeasurementTables();
+            loadExperimentData();
+            setupEventListeners();
+        });
+
+        // 初始化测量表格
+        function initMeasurementTables() {
+            // 初始化散热盘P测量表格
+            for (let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div class="cell">${i + 1}</div>
+                    <input class="cell-input" type="number" placeholder="质量" data-index="${i}" data-type="mass" step="0.001" />
+                    <input class="cell-input" type="number" placeholder="高度" data-index="${i}" data-type="height" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="直径" data-index="${i}" data-type="diameter" step="0.01" />
+                `;
+                elements.pMeasurementsContainer.appendChild(row);
+            }
+
+            // 初始化样品B测量表格
+            for (let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div class="cell">${i + 1}</div>
+                    <input class="cell-input" type="number" placeholder="高度" data-index="${i}" data-type="height" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="直径" data-index="${i}" data-type="diameter" step="0.01" />
+                `;
+                elements.bMeasurementsContainer.appendChild(row);
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 基本参数输入
+            elements.x0.addEventListener('input', onX0Change);
+            elements.theta1.addEventListener('input', onTheta1Change);
+            elements.theta2.addEventListener('input', onTheta2Change);
+            elements.deltaTheta.addEventListener('input', onDeltaThetaChange);
+            elements.deltaT.addEventListener('input', onDeltaTChange);
+            elements.uThetaDiff.addEventListener('input', onUThetaDiffChange);
+
+            // 测量数据输入
+            elements.pMeasurementsContainer.addEventListener('input', onPMeasurementChange);
+            elements.bMeasurementsContainer.addEventListener('input', onBMeasurementChange);
+
+            // 按钮事件
+            elements.calculateBtn.addEventListener('click', calculateResults);
+            elements.saveBtn.addEventListener('click', saveData);
+        }
+
+        // 输入处理函数
+        function onX0Change(e) {
+            experimentData.x0 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onTheta1Change(e) {
+            experimentData.theta1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onTheta2Change(e) {
+            experimentData.theta2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onDeltaThetaChange(e) {
+            experimentData.deltaTheta = e.target.value;
+            calculateDthetaDt();
+            updateCalculateStatus();
+        }
+
+        function onDeltaTChange(e) {
+            experimentData.deltaT = e.target.value;
+            calculateDthetaDt();
+            updateCalculateStatus();
+        }
+
+        function onUThetaDiffChange(e) {
+            experimentData.uThetaDiff = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onPMeasurementChange(e) {
+            const index = parseInt(e.target.dataset.index);
+            const type = e.target.dataset.type;
+            const value = e.target.value;
+
+            if (!experimentData.pMeasurements[index]) {
+                experimentData.pMeasurements[index] = {};
+            }
+            experimentData.pMeasurements[index][type] = value;
+            experimentData.showResults = false;
+            updateCalculateStatus();
+        }
+
+        function onBMeasurementChange(e) {
+            const index = parseInt(e.target.dataset.index);
+            const type = e.target.dataset.type;
+            const value = e.target.value;
+
+            if (!experimentData.bMeasurements[index]) {
+                experimentData.bMeasurements[index] = {};
+            }
+            experimentData.bMeasurements[index][type] = value;
+            experimentData.showResults = false;
+            updateCalculateStatus();
+        }
+
+        // 计算降温速率 dθ/dt = Δθ / Δt
+        function calculateDthetaDt() {
+            const deltaTheta = parseFloat(experimentData.deltaTheta);
+            const deltaT = parseFloat(experimentData.deltaT);
+            
+            if (!isNaN(deltaTheta) && !isNaN(deltaT) && deltaT !== 0) {
+                const dthetaDt = deltaTheta / deltaT;
+                experimentData.dthetaDtCalculated = dthetaDt.toFixed(6);
+                elements.dthetaDtCalculated.textContent = `${experimentData.dthetaDtCalculated} °C/s`;
+            } else {
+                experimentData.dthetaDtCalculated = '0.000';
+                elements.dthetaDtCalculated.textContent = '0.000 °C/s';
+            }
+        }
+
+        // 更新计算按钮状态
+        function updateCalculateStatus() {
+            const hasSteadyData = experimentData.theta1 && experimentData.theta2 && 
+                                 experimentData.deltaTheta && experimentData.deltaT && 
+                                 experimentData.uThetaDiff;
+            
+            const hasPData = experimentData.pMeasurements.some(item => 
+                item && item.mass && item.height && item.diameter
+            );
+            const hasBData = experimentData.bMeasurements.some(item => 
+                item && item.height && item.diameter
+            );
+            
+            const canCalculate = hasSteadyData && hasPData && hasBData;
+            
+            elements.calculateBtn.disabled = !canCalculate;
+        }
+
+        // 计算功能
+        function calculateResults() {
+            try {
+                // 计算平均值（考虑零点修正）
+                const averages = calculateAverages();
+                
+                // 计算热导率K
+                const k = calculateThermalConductivity(averages);
+                
+                // 计算不确定度u(K)和所有分量
+                const uncertaintyResult = calculateUncertainty(averages, k);
+                
+                // 更新UI显示结果
+                experimentData.kValue = k.toFixed(6);
+                experimentData.uKValue = uncertaintyResult.uK.toFixed(6);
+                experimentData.relativeUncertainty = uncertaintyResult.relativeUncertainty.toFixed(6);
+                
+                // 平均值
+                experimentData.avgMass = averages.avgMass.toFixed(5);
+                experimentData.avgHeightP = averages.avgHeightP.toFixed(5);
+                experimentData.avgDiameterP = averages.avgDiameterP.toFixed(5);
+                experimentData.avgHeightB = averages.avgHeightB.toFixed(5);
+                experimentData.avgDiameterB = averages.avgDiameterB.toFixed(5);
+                
+                // 不确定度分量 - 这里确保正确赋值
+                experimentData.uMassA = uncertaintyResult.uMassA.toFixed(5);
+                experimentData.uMassB = uncertaintyResult.uMassB.toFixed(5);
+                experimentData.uMassTotal = uncertaintyResult.uMassTotal.toFixed(5);
+                experimentData.uHeightPA = uncertaintyResult.uHeightPA.toFixed(5);
+                experimentData.uHeightPB = uncertaintyResult.uHeightPB.toFixed(5);
+                experimentData.uHeightPTotal = uncertaintyResult.uHeightPTotal.toFixed(5);
+                experimentData.uDiameterPA = uncertaintyResult.uDiameterPA.toFixed(5);
+                experimentData.uDiameterPB = uncertaintyResult.uDiameterPB.toFixed(5);
+                experimentData.uDiameterPTotal = uncertaintyResult.uDiameterPTotal.toFixed(5);
+                experimentData.uHeightBA = uncertaintyResult.uHeightBA.toFixed(5);
+                experimentData.uHeightBB = uncertaintyResult.uHeightBB.toFixed(5);
+                experimentData.uHeightBTotal = uncertaintyResult.uHeightBTotal.toFixed(5);
+                experimentData.uDiameterBA = uncertaintyResult.uDiameterBA.toFixed(5);
+                experimentData.uDiameterBB = uncertaintyResult.uDiameterBB.toFixed(5);
+                experimentData.uDiameterBTotal = uncertaintyResult.uDiameterBTotal.toFixed(5);
+                
+                // 温度相关不确定度 - 确保正确赋值
+                experimentData.uDeltaThetaB = uncertaintyResult.uDeltaThetaB.toFixed(5);
+                experimentData.uDeltaTB = uncertaintyResult.uDeltaTB.toFixed(5);
+                experimentData.uThetaDiffValue = uncertaintyResult.uThetaDiffValue.toFixed(5);
+                
+                // 显示结果
+                displayResults();
+                
+                alert('计算完成！');
+            } catch (error) {
+                console.error('计算错误:', error);
+                alert('计算失败，请检查数据');
+            }
+        }
+
+        // 计算平均值（考虑零点修正）
+        function calculateAverages() {
+            const x0 = parseFloat(experimentData.x0) || 0;
+            
+            // 计算散热盘P的平均值（高度和直径考虑零点修正）
+            const validPMass = experimentData.pMeasurements
+                .filter(item => item && item.mass && !isNaN(parseFloat(item.mass)))
+                .map(item => parseFloat(item.mass));
+            
+            const validPHeight = experimentData.pMeasurements
+                .filter(item => item && item.height && !isNaN(parseFloat(item.height)))
+                .map(item => parseFloat(item.height) - x0); // 零点修正
+            
+            const validPDiameter = experimentData.pMeasurements
+                .filter(item => item && item.diameter && !isNaN(parseFloat(item.diameter)))
+                .map(item => parseFloat(item.diameter) - x0); // 零点修正
+
+            // 计算样品B的平均值（高度和直径考虑零点修正）
+            const validBHeight = experimentData.bMeasurements
+                .filter(item => item && item.height && !isNaN(parseFloat(item.height)))
+                .map(item => parseFloat(item.height) - x0); // 零点修正
+            
+            const validBDiameter = experimentData.bMeasurements
+                .filter(item => item && item.diameter && !isNaN(parseFloat(item.diameter)))
+                .map(item => parseFloat(item.diameter) - x0); // 零点修正
+
+            return {
+                avgMass: validPMass.length > 0 ? validPMass.reduce((a, b) => a + b) / validPMass.length : 0,
+                avgHeightP: validPHeight.length > 0 ? validPHeight.reduce((a, b) => a + b) / validPHeight.length : 0,
+                avgDiameterP: validPDiameter.length > 0 ? validPDiameter.reduce((a, b) => a + b) / validPDiameter.length : 0,
+                avgHeightB: validBHeight.length > 0 ? validBHeight.reduce((a, b) => a + b) / validBHeight.length : 0,
+                avgDiameterB: validBDiameter.length > 0 ? validBDiameter.reduce((a, b) => a + b) / validBDiameter.length : 0
+            };
+        }
+
+        // 计算热导率K
+        function calculateThermalConductivity(averages) {
+            const Cp = 389; // J/(kg·K)
+            const theta1 = parseFloat(experimentData.theta1);
+            const theta2 = parseFloat(experimentData.theta2);
+            const dthetaDt = parseFloat(experimentData.dthetaDtCalculated);
+            
+            const mp = averages.avgMass / 1000; // 转换为kg
+            const hp = averages.avgHeightP / 1000; // 转换为m
+            const dp = averages.avgDiameterP / 1000; // 转换为m
+            const hb = averages.avgHeightB / 1000; // 转换为m
+            const db = averages.avgDiameterB / 1000; // 转换为m
+            
+            // K = m_p * C_p * (dθ/dt) * (d_p + 4h_p)/(d_p + 2h_p) * h_b/(θ1-θ2) * 2/(π * d_b²)
+            const term1 = mp * Cp * dthetaDt;
+            const term2 = (dp + 4 * hp) / (dp + 2 * hp);
+            const term3 = hb / (theta1 - theta2);
+            const term4 = 2 / (Math.PI * db * db);
+            
+            return term1 * term2 * term3 * term4;
+        }
+
+        // 计算不确定度
+        function calculateUncertainty(averages, k) {
+            const x0 = parseFloat(experimentData.x0) || 0;
+            const theta1 = parseFloat(experimentData.theta1);
+            const theta2 = parseFloat(experimentData.theta2);
+            const deltaTheta = parseFloat(experimentData.deltaTheta);
+            const deltaT = parseFloat(experimentData.deltaT);
+            const uThetaDiff = parseFloat(experimentData.uThetaDiff);
+            
+            // 计算各量的A类不确定度（标准差）- 考虑零点修正
+            const correctedPMass = experimentData.pMeasurements
+                .map(item => item ? parseFloat(item.mass || 0) : 0);
+            const correctedPHeight = experimentData.pMeasurements
+                .map(item => item ? parseFloat(item.height || 0) - x0 : 0);
+            const correctedPDiameter = experimentData.pMeasurements
+                .map(item => item ? parseFloat(item.diameter || 0) - x0 : 0);
+            const correctedBHeight = experimentData.bMeasurements
+                .map(item => item ? parseFloat(item.height || 0) - x0 : 0);
+            const correctedBDiameter = experimentData.bMeasurements
+                .map(item => item ? parseFloat(item.diameter || 0) - x0 : 0);
+
+            const uMassA = calculateStandardDeviation(correctedPMass);
+            const uHeightPA = calculateStandardDeviation(correctedPHeight);
+            const uDiameterPA = calculateStandardDeviation(correctedPDiameter);
+            const uHeightBA = calculateStandardDeviation(correctedBHeight);
+            const uDiameterBA = calculateStandardDeviation(correctedBDiameter);
+
+            // B类不确定度（仪器误差）- 确保温度相关参数都除以根号三
+            const uMassB = 0.01 / Math.sqrt(3); // g
+            const uHeightPB = 0.02 / Math.sqrt(3); // mm
+            const uDiameterPB = 0.02 / Math.sqrt(3); // mm
+            const uHeightBB = 0.02 / Math.sqrt(3); // mm
+            const uDiameterBB = 0.02 / Math.sqrt(3); // mm
+            const uDeltaThetaB = 0.1 / Math.sqrt(3); // Δθ的仪器不确定度 0.1℃
+            const uDeltaTB = 1 / Math.sqrt(3); // Δt的仪器不确定度 1s
+            const uThetaDiffValue = uThetaDiff / Math.sqrt(3); // (θ₁-θ₂)的仪器不确定度
+
+            // 合成不确定度
+            const uMassTotal = Math.sqrt(uMassA * uMassA + uMassB * uMassB);
+            const uHeightPTotal = Math.sqrt(uHeightPA * uHeightPA + uHeightPB * uHeightPB);
+            const uDiameterPTotal = Math.sqrt(uDiameterPA * uDiameterPA + uDiameterPB * uDiameterPB);
+            const uHeightBTotal = Math.sqrt(uHeightBA * uHeightBA + uHeightBB * uHeightBB);
+            const uDiameterBTotal = Math.sqrt(uDiameterBA * uDiameterBA + uDiameterBB * uDiameterBB);
+
+            // 计算各分量的相对不确定度平方
+            
+            // 1. u(m_p)/m_p
+            const uMassRelative = uMassTotal / averages.avgMass;
+            const term1 = Math.pow(uMassRelative, 2);
+            
+            // 2. u(dθ/dt)/(dθ/dt) = √[(u(Δθ)/Δθ)² + (u(Δt)/Δt)²]
+            const uDeltaThetaRelative = uDeltaThetaB / deltaTheta;
+            const uDeltaTRelative = uDeltaTB / deltaT;
+            const uDthetaDtRelative = Math.sqrt(
+                Math.pow(uDeltaThetaRelative, 2) + 
+                Math.pow(uDeltaTRelative, 2)
+            );
+            const term2 = Math.pow(uDthetaDtRelative, 2);
+            
+            // 3. 几何因子项 [2h_p u(d_p)/((d_p+4h_p)(d_p+2h_p))]² + [2d_p u(h_p)/((d_p+4h_p)(d_p+2h_p))]²
+            const dp = averages.avgDiameterP;
+            const hp = averages.avgHeightP;
+            const geometricTerm1 = 2 * hp * uDiameterPTotal / ((dp + 4 * hp) * (dp + 2 * hp));
+            const geometricTerm2 = 2 * dp * uHeightPTotal / ((dp + 4 * hp) * (dp + 2 * hp));
+            const uGeometricFactor = Math.sqrt(Math.pow(geometricTerm1, 2) + Math.pow(geometricTerm2, 2));
+            const term3 = Math.pow(uGeometricFactor, 2);
+            
+            // 4. u(h_b)/h_b
+            const uHeightBRelative = uHeightBTotal / averages.avgHeightB;
+            const term4 = Math.pow(uHeightBRelative, 2);
+            
+            // 5. 2u(d_b)/d_b
+            const uDiameterBRelative = 2 * uDiameterBTotal / averages.avgDiameterB;
+            const term5 = Math.pow(uDiameterBRelative, 2);
+            
+            // 6. u(θ₁-θ₂)/(θ₁-θ₂)
+            const uThetaDiffRelative = uThetaDiffValue / (theta1 - theta2);
+            const term6 = Math.pow(uThetaDiffRelative, 2);
+
+            // 总相对不确定度
+            const relativeUncertainty = Math.sqrt(term1 + term2 + term3 + term4 + term5 + term6);
+            
+            // 绝对不确定度
+            const uK = k * relativeUncertainty;
+
+            return {
+                uK: uK,
+                relativeUncertainty: relativeUncertainty,
+                // 质量不确定度
+                uMassA: uMassA,
+                uMassB: uMassB,
+                uMassTotal: uMassTotal,
+                // 散热盘几何参数不确定度
+                uHeightPA: uHeightPA,
+                uHeightPB: uHeightPB,
+                uHeightPTotal: uHeightPTotal,
+                uDiameterPA: uDiameterPA,
+                uDiameterPB: uDiameterPB,
+                uDiameterPTotal: uDiameterPTotal,
+                // 样品B几何参数不确定度
+                uHeightBA: uHeightBA,
+                uHeightBB: uHeightBB,
+                uHeightBTotal: uHeightBTotal,
+                uDiameterBA: uDiameterBA,
+                uDiameterBB: uDiameterBB,
+                uDiameterBTotal: uDiameterBTotal,
+                // 温度相关不确定度
+                uDeltaThetaB: uDeltaThetaB,
+                uDeltaTB: uDeltaTB,
+                uThetaDiffValue: uThetaDiffValue
+            };
+        }
+
+        // 计算标准差
+        function calculateStandardDeviation(data) {
+            const validData = data.filter(val => !isNaN(val) && val !== 0);
+            if (validData.length < 2) return 0;
+            
+            const mean = validData.reduce((a, b) => a + b) / validData.length;
+            const variance = validData.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (validData.length - 1);
+            return Math.sqrt(variance) / Math.sqrt(validData.length);
+        }
+
+        // 显示计算结果
+        function displayResults() {
+            // 主要结果
+            elements.kValue.textContent = `${experimentData.kValue} W/(m·K)`;
+            elements.uKValue.textContent = `${experimentData.uKValue} W/(m·K)`;
+            elements.relativeUncertainty.textContent = experimentData.relativeUncertainty;
+            
+            // 平均值
+            elements.avgMass.textContent = `${experimentData.avgMass} ± ${experimentData.uMassTotal} g`;
+            elements.avgHeightP.textContent = `${experimentData.avgHeightP} ± ${experimentData.uHeightPTotal} mm`;
+            elements.avgDiameterP.textContent = `${experimentData.avgDiameterP} ± ${experimentData.uDiameterPTotal} mm`;
+            elements.avgHeightB.textContent = `${experimentData.avgHeightB} ± ${experimentData.uHeightBTotal} mm`;
+            elements.avgDiameterB.textContent = `${experimentData.avgDiameterB} ± ${experimentData.uDiameterBTotal} mm`;
+            
+            // 不确定度分量
+            elements.uMassA.textContent = `${experimentData.uMassA} g`;
+            elements.uMassB.textContent = `${experimentData.uMassB} g`;
+            elements.uMassTotal.textContent = `${experimentData.uMassTotal} g`;
+            elements.uHeightPA.textContent = `${experimentData.uHeightPA} mm`;
+            elements.uHeightPB.textContent = `${experimentData.uHeightPB} mm`;
+            elements.uHeightPTotal.textContent = `${experimentData.uHeightPTotal} mm`;
+            elements.uDiameterPA.textContent = `${experimentData.uDiameterPA} mm`;
+            elements.uDiameterPB.textContent = `${experimentData.uDiameterPB} mm`;
+            elements.uDiameterPTotal.textContent = `${experimentData.uDiameterPTotal} mm`;
+            elements.uHeightBA.textContent = `${experimentData.uHeightBA} mm`;
+            elements.uHeightBB.textContent = `${experimentData.uHeightBB} mm`;
+            elements.uHeightBTotal.textContent = `${experimentData.uHeightBTotal} mm`;
+            elements.uDiameterBA.textContent = `${experimentData.uDiameterBA} mm`;
+            elements.uDiameterBB.textContent = `${experimentData.uDiameterBB} mm`;
+            elements.uDiameterBTotal.textContent = `${experimentData.uDiameterBTotal} mm`;
+            
+            // 温度相关不确定度 - 确保正确显示
+            elements.uDeltaThetaB.textContent = `${experimentData.uDeltaThetaB} °C`;
+            elements.uDeltaTB.textContent = `${experimentData.uDeltaTB} s`;
+            elements.uThetaDiffValue.textContent = `${experimentData.uThetaDiffValue} °C`;
+            
+            // 显示结果区域
+            elements.resultsSection.style.display = 'block';
+            experimentData.showResults = true;
+        }
+
+        // 保存数据到localStorage
+        function saveData() {
+            try {
+                experimentData.lastUpdate = new Date().toLocaleString();
+                localStorage.setItem('experiment1-1', JSON.stringify(experimentData));
+                elements.lastUpdate.textContent = experimentData.lastUpdate;
+                alert('数据保存成功！');
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败，请重试');
+            }
+        }
+
+        // 从localStorage加载数据
+        function loadExperimentData() {
+            try {
+                const savedData = localStorage.getItem('experiment1-1');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    
+                    // 恢复基本参数
+                    elements.x0.value = data.x0 || '';
+                    elements.theta1.value = data.theta1 || '';
+                    elements.theta2.value = data.theta2 || '';
+                    elements.deltaTheta.value = data.deltaTheta || '';
+                    elements.deltaT.value = data.deltaT || '';
+                    elements.uThetaDiff.value = data.uThetaDiff || '0.10';
+                    
+                    // 恢复测量数据
+                    if (data.pMeasurements) {
+                        data.pMeasurements.forEach((measurement, index) => {
+                            if (measurement) {
+                                const inputs = elements.pMeasurementsContainer.querySelectorAll(`[data-index="${index}"]`);
+                                inputs.forEach(input => {
+                                    const type = input.dataset.type;
+                                    if (measurement[type]) {
+                                        input.value = measurement[type];
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    if (data.bMeasurements) {
+                        data.bMeasurements.forEach((measurement, index) => {
+                            if (measurement) {
+                                const inputs = elements.bMeasurementsContainer.querySelectorAll(`[data-index="${index}"]`);
+                                inputs.forEach(input => {
+                                    const type = input.dataset.type;
+                                    if (measurement[type]) {
+                                        input.value = measurement[type];
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // 恢复计算结果
+                    if (data.showResults) {
+                        Object.assign(experimentData, data);
+                        displayResults();
+                    }
+                    
+                    // 恢复最后更新时间
+                    if (data.lastUpdate) {
+                        elements.lastUpdate.textContent = data.lastUpdate;
+                    }
+                    
+                    // 更新计算状态
+                    updateCalculateStatus();
+                    calculateDthetaDt();
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>
