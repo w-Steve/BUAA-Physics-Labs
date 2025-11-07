@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于项目 - 基物实验助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 40px 20px;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            display: block;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .back-button:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: block;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .sponsor-section {
+            text-align: center;
+        }
+        
+        .sponsor-text {
+            color: #666;
+            margin-bottom: 25px;
+            display: block;
+            font-size: 1.1em;
+        }
+        
+        .qr-code-placeholder {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin: 0 auto;
+            max-width: 300px;
+            transition: all 0.3s ease;
+        }
+        
+        .qr-code-placeholder:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+        }
+        
+        .qr-text {
+            font-size: 1.2em;
+            color: #495057;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .qr-hint {
+            font-size: 0.9em;
+            color: #6c757d;
+            display: block;
+        }
+        
+        .content-text {
+            color: #555;
+        }
+        
+        .content-text text {
+            display: block;
+            margin-bottom: 12px;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .content-text text:before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+        
+        .footer-text {
+            font-size: 1.2em;
+            opacity: 0.9;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .title {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .back-button {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.3s; }
+        .card:nth-child(5) { animation-delay: 0.4s; }
+        .card:nth-child(6) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← 返回首页</a>
+        
+        <div class="header">
+            <span class="title">ℹ️ 关于项目</span>
+        </div>
+
+        <div class="card">
+            <span class="card-title">📱 项目信息</span>
+            <div class="info-item">
+                <span class="info-label">版本</span>
+                <span class="info-value">v0.0.1</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">更新时间</span>
+                <span class="info-value" id="updateTime">2025.11.7</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <span class="card-title">👨‍💻 作者信息</span>
+            <div class="info-item">
+                <span class="info-label">开发者</span>
+                <span class="info-value">🐲</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">联系方式</span>
+                <span class="info-value">wzl_remy2006@qq.com</span>
+            </div>
+        </div>
+ <!-- 
+        <div class="card">
+            <span class="card-title">💝 赞助作者</span>
+            <div class="sponsor-section">
+                <span class="sponsor-text">如果这个项目对你有帮助，请考虑赞助作者</span>
+                <div class="qr-code-placeholder">
+                    <span class="qr-text">📱 收款码位置</span>
+                    <span class="qr-hint">（在此处放置您的收款二维码）</span>
+                </div>
+            </div>
+        </div>
+    -->
+        <div class="card">
+            <span class="card-title">🎯 项目初衷</span>
+            <div class="content-text">
+                <span>本项目旨在帮助学生更高效地处理基础物理实验数据，提供智能化的计算和提醒功能，让同学们能够专注于实验本身而非繁琐的数据处理。</span>
+                <span>通过Web技术实现跨平台访问，无需安装即可使用，为同学们提供便捷的实验计算服务。</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <span class="card-title">📄 免责声明</span>
+            <div class="content-text">
+                <p>本软件仅作为学习辅助工具，不保证计算结果的绝对准确性</p>
+                <p>用户应自行核对重要数据的计算结果</p>
+                <p>开发者不对因使用本软件造成的任何损失负责</p>
+                <p>实验报告最终提交前请仔细检查所有数据</p>
+                <p>建议将计算结果与手动计算进行交叉验证</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span class="footer-text">感谢使用基物实验助手 🧪</span>
+        </div>
+    </div>
+
+    <script>
+        // 自动更新时间为当前年份
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const updateTime = document.getElementById('updateTime');
+            updateTime.textContent = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
+        });
+    </script>
+</body>
+</html>
