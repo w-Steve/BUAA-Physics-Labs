@@ -290,7 +290,8 @@
                 <div class="section-content">
                     <p style="margin-top: 10px; color: #e74c3c;">θ₁和θ₂分别是稳态时加热盘和散热盘的温度。</p>
                     <p style="margin-top: 10px; color: #e74c3c;">下方Δt和Δθ分别是画图法找切线时切线上选取的两个点的x、y坐标差。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">u(θ₁-θ₂)仪器误差是你作图的最小格子代表多少摄氏度。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">作图法纵轴一个小格子代表多少度：是温度的仪器误差限，除2再除根号三就是θ的B类误差。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">作图法横轴一个小格子代表多少秒：是时间的仪器误差限，除2再除根号三就是t的B类误差。</p>
                 </div>
             </div>
 
@@ -363,8 +364,12 @@
                     </div>
                     <div class="input-row">
                         <div class="input-item">
-                            <label class="input-label">u(θ₁-θ₂)仪器误差 (°C):</label>
-                            <input class="input-field" type="number" placeholder="0.10" id="uThetaDiff" step="0.01" value="0.10" />
+                            <label class="input-label">作图法纵轴一个小格子代表多少度 (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.10" id="uThetaPerDivision" step="0.01" value="0.10" />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">作图法横轴一个小格子代表多少秒 (s):</label>
+                            <input class="input-field" type="number" placeholder="1.00" id="uTimePerDivision" step="0.01" value="1.00" />
                         </div>
                     </div>
                 </div>
@@ -546,7 +551,8 @@
             deltaTheta: '',
             deltaT: '',
             dthetaDtCalculated: '0.000',
-            uThetaDiff: '0.10',
+            uThetaPerDivision: '0.10',
+            uTimePerDivision: '1.00',
             // 测量数据
             pMeasurements: [],
             bMeasurements: [],
@@ -591,7 +597,8 @@
             theta2: document.getElementById('theta2'),
             deltaTheta: document.getElementById('deltaTheta'),
             deltaT: document.getElementById('deltaT'),
-            uThetaDiff: document.getElementById('uThetaDiff'),
+            uThetaPerDivision: document.getElementById('uThetaPerDivision'),
+            uTimePerDivision: document.getElementById('uTimePerDivision'),
             pMeasurementsContainer: document.getElementById('pMeasurementsContainer'),
             bMeasurementsContainer: document.getElementById('bMeasurementsContainer'),
             calculateBtn: document.getElementById('calculateBtn'),
@@ -670,7 +677,8 @@
             elements.theta2.addEventListener('input', onTheta2Change);
             elements.deltaTheta.addEventListener('input', onDeltaThetaChange);
             elements.deltaT.addEventListener('input', onDeltaTChange);
-            elements.uThetaDiff.addEventListener('input', onUThetaDiffChange);
+            elements.uThetaPerDivision.addEventListener('input', onUThetaPerDivisionChange);
+            elements.uTimePerDivision.addEventListener('input', onUTimePerDivisionChange);
 
             // 测量数据输入
             elements.pMeasurementsContainer.addEventListener('input', onPMeasurementChange);
@@ -709,8 +717,13 @@
             updateCalculateStatus();
         }
 
-        function onUThetaDiffChange(e) {
-            experimentData.uThetaDiff = e.target.value;
+        function onUThetaPerDivisionChange(e) {
+            experimentData.uThetaPerDivision = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onUTimePerDivisionChange(e) {
+            experimentData.uTimePerDivision = e.target.value;
             updateCalculateStatus();
         }
 
@@ -759,7 +772,7 @@
         function updateCalculateStatus() {
             const hasSteadyData = experimentData.theta1 && experimentData.theta2 && 
                                  experimentData.deltaTheta && experimentData.deltaT && 
-                                 experimentData.uThetaDiff;
+                                 experimentData.uThetaPerDivision && experimentData.uTimePerDivision;
             
             const hasPData = experimentData.pMeasurements.some(item => 
                 item && item.mass && item.height && item.diameter
@@ -797,7 +810,7 @@
                 experimentData.avgHeightB = averages.avgHeightB.toFixed(5);
                 experimentData.avgDiameterB = averages.avgDiameterB.toFixed(5);
                 
-                // 不确定度分量 - 这里确保正确赋值
+                // 不确定度分量
                 experimentData.uMassA = uncertaintyResult.uMassA.toFixed(5);
                 experimentData.uMassB = uncertaintyResult.uMassB.toFixed(5);
                 experimentData.uMassTotal = uncertaintyResult.uMassTotal.toFixed(5);
@@ -814,7 +827,7 @@
                 experimentData.uDiameterBB = uncertaintyResult.uDiameterBB.toFixed(5);
                 experimentData.uDiameterBTotal = uncertaintyResult.uDiameterBTotal.toFixed(5);
                 
-                // 温度相关不确定度 - 确保正确赋值
+                // 温度相关不确定度
                 experimentData.uDeltaThetaB = uncertaintyResult.uDeltaThetaB.toFixed(5);
                 experimentData.uDeltaTB = uncertaintyResult.uDeltaTB.toFixed(5);
                 experimentData.uThetaDiffValue = uncertaintyResult.uThetaDiffValue.toFixed(5);
@@ -893,7 +906,8 @@
             const theta2 = parseFloat(experimentData.theta2);
             const deltaTheta = parseFloat(experimentData.deltaTheta);
             const deltaT = parseFloat(experimentData.deltaT);
-            const uThetaDiff = parseFloat(experimentData.uThetaDiff);
+            const uThetaPerDivision = parseFloat(experimentData.uThetaPerDivision);
+            const uTimePerDivision = parseFloat(experimentData.uTimePerDivision);
             
             // 计算各量的A类不确定度（标准差）- 考虑零点修正
             const correctedPMass = experimentData.pMeasurements
@@ -913,15 +927,21 @@
             const uHeightBA = calculateStandardDeviation(correctedBHeight);
             const uDiameterBA = calculateStandardDeviation(correctedBDiameter);
 
-            // B类不确定度（仪器误差）- 确保温度相关参数都除以根号三
+            // B类不确定度（仪器误差）- 按照新要求计算
             const uMassB = 0.01 / Math.sqrt(3); // g
             const uHeightPB = 0.02 / Math.sqrt(3); // mm
             const uDiameterPB = 0.02 / Math.sqrt(3); // mm
             const uHeightBB = 0.02 / Math.sqrt(3); // mm
             const uDiameterBB = 0.02 / Math.sqrt(3); // mm
-            const uDeltaThetaB = 0.1 / Math.sqrt(3); // Δθ的仪器不确定度 0.1℃
-            const uDeltaTB = 1 / Math.sqrt(3); // Δt的仪器不确定度 1s
-            const uThetaDiffValue = uThetaDiff / Math.sqrt(3); // (θ₁-θ₂)的仪器不确定度
+            
+            // 温度和时间的不确定度：仪器误差限除2再除根号三
+            const uDeltaThetaB = (uThetaPerDivision / 2) / Math.sqrt(3); // Δθ的仪器不确定度
+            const uDeltaTB = (uTimePerDivision / 2) / Math.sqrt(3); // Δt的仪器不确定度
+            
+            // (θ₁-θ₂)的不确定度：假设θ₁和θ₂独立，且误差相同
+            const uTheta1B = (uThetaPerDivision / 2) / Math.sqrt(3);
+            const uTheta2B = (uThetaPerDivision / 2) / Math.sqrt(3);
+            const uThetaDiffValue = Math.sqrt(uTheta1B * uTheta1B + uTheta2B * uTheta2B);
 
             // 合成不确定度
             const uMassTotal = Math.sqrt(uMassA * uMassA + uMassB * uMassB);
@@ -1040,7 +1060,7 @@
             elements.uDiameterBB.textContent = `${experimentData.uDiameterBB} mm`;
             elements.uDiameterBTotal.textContent = `${experimentData.uDiameterBTotal} mm`;
             
-            // 温度相关不确定度 - 确保正确显示
+            // 温度相关不确定度
             elements.uDeltaThetaB.textContent = `${experimentData.uDeltaThetaB} °C`;
             elements.uDeltaTB.textContent = `${experimentData.uDeltaTB} s`;
             elements.uThetaDiffValue.textContent = `${experimentData.uThetaDiffValue} °C`;
@@ -1076,7 +1096,8 @@
                     elements.theta2.value = data.theta2 || '';
                     elements.deltaTheta.value = data.deltaTheta || '';
                     elements.deltaT.value = data.deltaT || '';
-                    elements.uThetaDiff.value = data.uThetaDiff || '0.10';
+                    elements.uThetaPerDivision.value = data.uThetaPerDivision || '0.10';
+                    elements.uTimePerDivision.value = data.uTimePerDivision || '1.00';
                     
                     // 恢复测量数据
                     if (data.pMeasurements) {
