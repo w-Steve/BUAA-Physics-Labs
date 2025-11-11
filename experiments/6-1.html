@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>共轭法测量凸透镜焦距</title>
+    <title>实验: 凸透镜焦距测量</title>
     <style>
         * {
             margin: 0;
@@ -282,7 +282,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="page-title">共轭法测量凸透镜焦距</div>
+        <div class="page-title">凸透镜焦距测量实验</div>
         <div class="experiment-content">
             <!-- 实验简介 -->
             <div class="section">
@@ -351,6 +351,25 @@
                 <button class="btn-save" id="saveBtn">💾 保存数据</button>
             </div>
             
+            <!-- 计算出的中间数据 -->
+            <div class="section" id="intermediateDataSection" style="display: none;">
+                <div class="section-title">📈 中间计算结果</div>
+                
+                <div class="data-table">
+                    <div class="table-title">中间数据 (5次测量)</div>
+                    <div class="table-header">
+                        <div class="header-cell">测量次数</div>
+                        <div class="header-cell">x₁ = (x₁左+x₁右)/2</div>
+                        <div class="header-cell">x₂ = (x₂左+x₂右)/2</div>
+                        <div class="header-cell">a = |x₁-x₂|</div>
+                        <div class="header-cell">b = |x₃-x₀|-δ</div>
+                    </div>
+                    <div id="intermediateDataContainer">
+                        <!-- 动态生成中间数据行 -->
+                    </div>
+                </div>
+            </div>
+            
             <!-- 计算结果 -->
             <div class="section" id="resultsSection" style="display: none;">
                 <div class="section-title">🧮 计算结果</div>
@@ -372,7 +391,7 @@
 
                 <!-- 中间计算结果 -->
                 <div class="intermediate-results">
-                    <div class="result-title">中间计算结果</div>
+                    <div class="result-title">平均值计算结果</div>
                     <div class="result-item">
                         <div class="result-label">平均 x₁:</div>
                         <div class="result-value" id="avgX1">0.000 ± 0.000 cm</div>
@@ -458,6 +477,8 @@
             x3: '',
             // 测量数据
             measurements: [],
+            // 中间数据
+            intermediateData: [],
             // 计算结果
             showResults: false,
             fValue: '0.000',
@@ -484,6 +505,8 @@
             x0: document.getElementById('x0'),
             x3: document.getElementById('x3'),
             measurementsContainer: document.getElementById('measurementsContainer'),
+            intermediateDataSection: document.getElementById('intermediateDataSection'),
+            intermediateDataContainer: document.getElementById('intermediateDataContainer'),
             calculateBtn: document.getElementById('calculateBtn'),
             saveBtn: document.getElementById('saveBtn'),
             resultsSection: document.getElementById('resultsSection'),
@@ -524,6 +547,24 @@
                     <input class="cell-input" type="number" placeholder="x₂右" data-index="${i}" data-type="x2Right" step="0.01" />
                 `;
                 elements.measurementsContainer.appendChild(row);
+            }
+        }
+
+        // 初始化中间数据表格
+        function initIntermediateDataTable() {
+            elements.intermediateDataContainer.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div class="cell">${i + 1}</div>
+                    <div class="cell" id="x1Value${i}">0.000</div>
+                    <div class="cell" id="x2Value${i}">0.000</div>
+                    <div class="cell" id="aValue${i}">0.000</div>
+                    <div class="cell" id="bValue${i}">0.000</div>
+                `;
+                elements.intermediateDataContainer.appendChild(row);
             }
         }
 
@@ -581,7 +622,7 @@
         // 计算功能
         function calculateResults() {
             try {
-                // 计算中间值
+                // 计算中间值并显示中间数据表格
                 const intermediates = calculateIntermediates();
                 
                 // 计算焦距f
@@ -630,7 +671,10 @@
             const aValues = [];
             const bValues = [];
             
-            experimentData.measurements.forEach(item => {
+            // 初始化中间数据表格
+            initIntermediateDataTable();
+            
+            experimentData.measurements.forEach((item, index) => {
                 if (item && item.x1Left && item.x1Right && item.x2Left && item.x2Right) {
                     const x1 = (parseFloat(item.x1Left) + parseFloat(item.x1Right)) / 2;
                     const x2 = (parseFloat(item.x2Left) + parseFloat(item.x2Right)) / 2;
@@ -641,6 +685,12 @@
                     x2Values.push(x2);
                     aValues.push(a);
                     bValues.push(b);
+                    
+                    // 更新中间数据表格
+                    document.getElementById(`x1Value${index}`).textContent = x1.toFixed(3);
+                    document.getElementById(`x2Value${index}`).textContent = x2.toFixed(3);
+                    document.getElementById(`aValue${index}`).textContent = a.toFixed(3);
+                    document.getElementById(`bValue${index}`).textContent = b.toFixed(3);
                 }
             });
             
@@ -742,6 +792,7 @@
             elements.partialFB.textContent = experimentData.partialFB;
             
             // 显示结果区域
+            elements.intermediateDataSection.style.display = 'block';
             elements.resultsSection.style.display = 'block';
             experimentData.showResults = true;
         }
@@ -788,6 +839,8 @@
                     // 恢复计算结果
                     if (data.showResults) {
                         Object.assign(experimentData, data);
+                        // 重新计算中间数据并显示
+                        const intermediates = calculateIntermediates();
                         displayResults();
                     }
                     
