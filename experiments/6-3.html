@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>共轭法测量凸透镜焦距</title>
+    <title>自准直法测量凹透镜焦距</title>
     <style>
         * {
             margin: 0;
@@ -26,6 +26,8 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             padding: 24px;
             margin-bottom: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
         }
         
         .page-title {
@@ -177,6 +179,15 @@
             background-color: #27ae60;
         }
         
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+        
         .results-group {
             background-color: white;
             padding: 16px;
@@ -252,6 +263,14 @@
             border-radius: 4px;
         }
         
+        .formula-box {
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -282,18 +301,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="page-title">共轭法测量凸透镜焦距</div>
+        <div class="page-title">自准直法测量凹透镜焦距实验</div>
         <div class="experiment-content">
             <!-- 实验简介 -->
             <div class="section">
-                <div class="section-title">📝 使用必读</div>
+                <div class="section-title">📝 实验说明</div>
                 <div class="section-content">
-                    <p style="margin-top: 10px; color: #e74c3c;">δ = 0.85 cm</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">a = |x₁ - x₂|</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">b = |x₃ - x₀| - δ</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">焦距公式: f = (b² - a²) / (4b)</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">不确定度: u(f) = √[(∂f/∂a)²u²(a) + (∂f/∂b)²u²(b)]</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">其中 ∂f/∂a = -a/(2b), ∂f/∂b = a²/(4b²) + 1/4</p>
+                    <p style="margin-top: 10px;">焦距 f = -|xL2 - xA|</p>
                 </div>
             </div>
 
@@ -301,41 +315,15 @@
             <div class="section">
                 <div class="section-title">📊 原始数据记录</div>
                 
-                <!-- 基础参数 -->
-                <div class="input-group">
-                    <div class="input-row">
-                        <div class="input-item">
-                            <label class="input-label">x₀ (cm):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.00" 
-                                id="x0"
-                                step="0.01"
-                            />
-                        </div>
-                        <div class="input-item">
-                            <label class="input-label">x₃ (cm):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.00" 
-                                id="x3"
-                                step="0.01"
-                            />
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 测量数据 -->
                 <div class="data-table">
                     <div class="table-title">测量数据 (5次测量)</div>
                     <div class="table-header">
                         <div class="header-cell">测量次数</div>
-                        <div class="header-cell">x₁左 (cm)</div>
-                        <div class="header-cell">x₁右 (cm)</div>
-                        <div class="header-cell">x₂左 (cm)</div>
-                        <div class="header-cell">x₂右 (cm)</div>
+                        <div class="header-cell">xA左 (cm)</div>
+                        <div class="header-cell">xA右 (cm)</div>
+                        <div class="header-cell">xL2正 (cm)</div>
+                        <div class="header-cell">xL2反 (cm)</div>
                     </div>
                     <div id="measurementsContainer">
                         <!-- 动态生成测量行 -->
@@ -357,10 +345,9 @@
                     <div class="table-title">中间数据 (5次测量)</div>
                     <div class="table-header">
                         <div class="header-cell">测量次数</div>
-                        <div class="header-cell">x₁ = (x₁左+x₁右)/2</div>
-                        <div class="header-cell">x₂ = (x₂左+x₂右)/2</div>
-                        <div class="header-cell">a = |x₁-x₂|</div>
-                        <div class="header-cell">b = |x₃-x₀|-δ</div>
+                        <div class="header-cell">xA = (xA左+xA右)/2</div>
+                        <div class="header-cell">xL2 = (xL2正+xL2反)/2</div>
+                        <div class="header-cell">|xL2 - xA|</div>
                     </div>
                     <div id="intermediateDataContainer">
                         <!-- 动态生成中间数据行 -->
@@ -391,20 +378,16 @@
                 <div class="intermediate-results">
                     <div class="result-title">平均值计算结果</div>
                     <div class="result-item">
-                        <div class="result-label">平均 x₁:</div>
-                        <div class="result-value" id="avgX1">0.000 ± 0.000 cm</div>
+                        <div class="result-label">平均 xA:</div>
+                        <div class="result-value" id="avgXA">0.000 ± 0.000 cm</div>
                     </div>
                     <div class="result-item">
-                        <div class="result-label">平均 x₂:</div>
-                        <div class="result-value" id="avgX2">0.000 ± 0.000 cm</div>
+                        <div class="result-label">平均 xL2:</div>
+                        <div class="result-value" id="avgXL2">0.000 ± 0.000 cm</div>
                     </div>
                     <div class="result-item">
-                        <div class="result-label">平均 a:</div>
-                        <div class="result-value" id="avgA">0.000 ± 0.000 cm</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">平均 b:</div>
-                        <div class="result-value" id="avgB">0.000 ± 0.000 cm</div>
+                        <div class="result-label">平均 |xL2 - xA|:</div>
+                        <div class="result-value" id="avgDiff">0.000 cm</div>
                     </div>
                 </div>
 
@@ -412,42 +395,37 @@
                 <div class="uncertainty-details">
                     <div class="result-title">不确定度分量分析</div>
                     
-                    <!-- a的不确定度 -->
+                    <!-- xA的不确定度 -->
                     <div class="uncertainty-group">
-                        <div class="group-title">a的不确定度</div>
+                        <div class="group-title">xA的不确定度</div>
                         <div class="result-item">
                             <div class="result-label">A类不确定度:</div>
-                            <div class="result-value" id="uAA">0.000 cm</div>
+                            <div class="result-value" id="uAA_xA">0.000 cm</div>
                         </div>
                         <div class="result-item">
                             <div class="result-label">B类不确定度:</div>
-                            <div class="result-value" id="uAB">0.000 cm</div>
+                            <div class="result-value" id="uAB_xA">0.000 cm</div>
                         </div>
                         <div class="result-item">
                             <div class="result-label">合成不确定度:</div>
-                            <div class="result-value" id="uATotal">0.000 cm</div>
+                            <div class="result-value" id="uATotal_xA">0.000 cm</div>
                         </div>
                     </div>
 
-                    <!-- b的不确定度 -->
+                    <!-- xL2的不确定度 -->
                     <div class="uncertainty-group">
-                        <div class="group-title">b的不确定度</div>
+                        <div class="group-title">xL2的不确定度</div>
+                        <div class="result-item">
+                            <div class="result-label">A类不确定度:</div>
+                            <div class="result-value" id="uAA_xL2">0.000 cm</div>
+                        </div>
                         <div class="result-item">
                             <div class="result-label">B类不确定度:</div>
-                            <div class="result-value" id="uBB">0.000 cm</div>
-                        </div>
-                    </div>
-
-                    <!-- 偏导数 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">偏导数</div>
-                        <div class="result-item">
-                            <div class="result-label">∂f/∂a:</div>
-                            <div class="result-value" id="partialFA">0.000</div>
+                            <div class="result-value" id="uAB_xL2">0.000 cm</div>
                         </div>
                         <div class="result-item">
-                            <div class="result-label">∂f/∂b:</div>
-                            <div class="result-value" id="partialFB">0.000</div>
+                            <div class="result-label">合成不确定度:</div>
+                            <div class="result-value" id="uATotal_xL2">0.000 cm</div>
                         </div>
                     </div>
                 </div>
@@ -469,10 +447,7 @@
     <script>
         // 实验数据模型
         const experimentData = {
-            experimentId: 'lens-focal-length',
-            // 基本参数
-            x0: '',
-            x3: '',
+            experimentId: 'concave-lens-focal-length',
             // 测量数据
             measurements: [],
             // 中间数据
@@ -483,45 +458,43 @@
             ufValue: '0.000',
             relativeUncertainty: '0.000',
             // 中间结果
-            avgX1: '0.000',
-            avgX2: '0.000',
-            avgA: '0.000',
-            avgB: '0.000',
+            avgXA: '0.000',
+            avgXL2: '0.000',
+            avgDiff: '0.000',
             // 不确定度分量
-            uAA: '0.000',
-            uAB: '0.000',
-            uATotal: '0.000',
-            uBB: '0.000',
-            partialFA: '0.000',
-            partialFB: '0.000',
+            uAA_xA: '0.000',
+            uAB_xA: '0.000',
+            uATotal_xA: '0.000',
+            uAA_xL2: '0.000',
+            uAB_xL2: '0.000',
+            uATotal_xL2: '0.000',
             // 状态
             lastUpdate: ''
         };
 
         // DOM 元素
         const elements = {
-            x0: document.getElementById('x0'),
-            x3: document.getElementById('x3'),
             measurementsContainer: document.getElementById('measurementsContainer'),
             intermediateDataSection: document.getElementById('intermediateDataSection'),
             intermediateDataContainer: document.getElementById('intermediateDataContainer'),
             calculateBtn: document.getElementById('calculateBtn'),
             saveBtn: document.getElementById('saveBtn'),
+            resetBtn: document.getElementById('resetBtn'),
             resultsSection: document.getElementById('resultsSection'),
             fValue: document.getElementById('fValue'),
             ufValue: document.getElementById('ufValue'),
             relativeUncertainty: document.getElementById('relativeUncertainty'),
-            avgX1: document.getElementById('avgX1'),
-            avgX2: document.getElementById('avgX2'),
-            avgA: document.getElementById('avgA'),
-            avgB: document.getElementById('avgB'),
-            uAA: document.getElementById('uAA'),
-            uAB: document.getElementById('uAB'),
-            uATotal: document.getElementById('uATotal'),
-            uBB: document.getElementById('uBB'),
-            partialFA: document.getElementById('partialFA'),
-            partialFB: document.getElementById('partialFB'),
-            lastUpdate: document.getElementById('lastUpdate')
+            avgXA: document.getElementById('avgXA'),
+            avgXL2: document.getElementById('avgXL2'),
+            avgDiff: document.getElementById('avgDiff'),
+            uAA_xA: document.getElementById('uAA_xA'),
+            uAB_xA: document.getElementById('uAB_xA'),
+            uATotal_xA: document.getElementById('uATotal_xA'),
+            uAA_xL2: document.getElementById('uAA_xL2'),
+            uAB_xL2: document.getElementById('uAB_xL2'),
+            uATotal_xL2: document.getElementById('uATotal_xL2'),
+            lastUpdate: document.getElementById('lastUpdate'),
+            dataCompleteness: document.getElementById('dataCompleteness')
         };
 
         // 初始化
@@ -529,6 +502,7 @@
             initMeasurementTables();
             loadExperimentData();
             setupEventListeners();
+            updateDataCompleteness();
         });
 
         // 初始化测量表格
@@ -539,10 +513,10 @@
                 row.className = 'table-row';
                 row.innerHTML = `
                     <div class="cell">${i + 1}</div>
-                    <input class="cell-input" type="number" placeholder="x₁左" data-index="${i}" data-type="x1Left" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="x₁右" data-index="${i}" data-type="x1Right" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="x₂左" data-index="${i}" data-type="x2Left" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="x₂右" data-index="${i}" data-type="x2Right" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="xA左" data-index="${i}" data-type="xA左" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="xA右" data-index="${i}" data-type="xA右" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="xL2正" data-index="${i}" data-type="xL2正" step="0.01" />
+                    <input class="cell-input" type="number" placeholder="xL2反" data-index="${i}" data-type="xL2反" step="0.01" />
                 `;
                 elements.measurementsContainer.appendChild(row);
             }
@@ -557,10 +531,9 @@
                 row.className = 'table-row';
                 row.innerHTML = `
                     <div class="cell">${i + 1}</div>
-                    <div class="cell" id="x1Value${i}">0.000</div>
-                    <div class="cell" id="x2Value${i}">0.000</div>
-                    <div class="cell" id="aValue${i}">0.000</div>
-                    <div class="cell" id="bValue${i}">0.000</div>
+                    <div class="cell" id="xAValue${i}">0.000</div>
+                    <div class="cell" id="xL2Value${i}">0.000</div>
+                    <div class="cell" id="diffValue${i}">0.000</div>
                 `;
                 elements.intermediateDataContainer.appendChild(row);
             }
@@ -568,27 +541,13 @@
 
         // 设置事件监听器
         function setupEventListeners() {
-            // 基本参数输入
-            elements.x0.addEventListener('input', onX0Change);
-            elements.x3.addEventListener('input', onX3Change);
-
             // 测量数据输入
             elements.measurementsContainer.addEventListener('input', onMeasurementChange);
 
             // 按钮事件
             elements.calculateBtn.addEventListener('click', calculateResults);
             elements.saveBtn.addEventListener('click', saveData);
-        }
-
-        // 输入处理函数
-        function onX0Change(e) {
-            experimentData.x0 = e.target.value;
-            updateCalculateStatus();
-        }
-
-        function onX3Change(e) {
-            experimentData.x3 = e.target.value;
-            updateCalculateStatus();
+            elements.resetBtn.addEventListener('click', resetData);
         }
 
         function onMeasurementChange(e) {
@@ -602,19 +561,25 @@
             experimentData.measurements[index][type] = value;
             experimentData.showResults = false;
             updateCalculateStatus();
+            updateDataCompleteness();
         }
 
         // 更新计算按钮状态
         function updateCalculateStatus() {
-            const hasBasicData = experimentData.x0 && experimentData.x3;
-            
             const hasMeasurementData = experimentData.measurements.some(item => 
-                item && item.x1Left && item.x1Right && item.x2Left && item.x2Right
+                item && item['xA左'] && item['xA右'] && item['xL2正'] && item['xL2反']
             );
             
-            const canCalculate = hasBasicData && hasMeasurementData;
+            elements.calculateBtn.disabled = !hasMeasurementData;
+        }
+
+        // 更新数据完整性显示
+        function updateDataCompleteness() {
+            const completeCount = experimentData.measurements.filter(item => 
+                item && item['xA左'] && item['xA右'] && item['xL2正'] && item['xL2反']
+            ).length;
             
-            elements.calculateBtn.disabled = !canCalculate;
+            elements.dataCompleteness.textContent = `${completeCount}/5 组数据`;
         }
 
         // 计算功能
@@ -627,7 +592,7 @@
                 const f = calculateFocalLength(intermediates);
                 
                 // 计算不确定度u(f)和所有分量
-                const uncertaintyResult = calculateUncertainty(intermediates, f);
+                const uncertaintyResult = calculateUncertainty(intermediates);
                 
                 // 更新UI显示结果
                 experimentData.fValue = f.toFixed(6);
@@ -635,18 +600,17 @@
                 experimentData.relativeUncertainty = uncertaintyResult.relativeUncertainty.toFixed(6);
                 
                 // 中间值
-                experimentData.avgX1 = intermediates.avgX1.toFixed(5);
-                experimentData.avgX2 = intermediates.avgX2.toFixed(5);
-                experimentData.avgA = intermediates.avgA.toFixed(5);
-                experimentData.avgB = intermediates.avgB.toFixed(5);
+                experimentData.avgXA = intermediates.avgXA.toFixed(5);
+                experimentData.avgXL2 = intermediates.avgXL2.toFixed(5);
+                experimentData.avgDiff = intermediates.avgDiff.toFixed(5);
                 
                 // 不确定度分量
-                experimentData.uAA = uncertaintyResult.uAA.toFixed(5);
-                experimentData.uAB = uncertaintyResult.uAB.toFixed(5);
-                experimentData.uATotal = uncertaintyResult.uATotal.toFixed(5);
-                experimentData.uBB = uncertaintyResult.uBB.toFixed(5);
-                experimentData.partialFA = uncertaintyResult.partialFA.toFixed(5);
-                experimentData.partialFB = uncertaintyResult.partialFB.toFixed(5);
+                experimentData.uAA_xA = uncertaintyResult.uAA_xA.toFixed(5);
+                experimentData.uAB_xA = uncertaintyResult.uAB_xA.toFixed(5);
+                experimentData.uATotal_xA = uncertaintyResult.uATotal_xA.toFixed(5);
+                experimentData.uAA_xL2 = uncertaintyResult.uAA_xL2.toFixed(5);
+                experimentData.uAB_xL2 = uncertaintyResult.uAB_xL2.toFixed(5);
+                experimentData.uATotal_xL2 = uncertaintyResult.uATotal_xL2.toFixed(5);
                 
                 // 显示结果
                 displayResults();
@@ -660,101 +624,81 @@
 
         // 计算中间值
         function calculateIntermediates() {
-            const x0 = parseFloat(experimentData.x0);
-            const x3 = parseFloat(experimentData.x3);
-            
-            // 计算x1, x2, a, b
-            const x1Values = [];
-            const x2Values = [];
-            const aValues = [];
-            const bValues = [];
+            // 计算xA, xL2, |xL2 - xA|
+            const xAValues = [];
+            const xL2Values = [];
+            const diffValues = [];
             
             // 初始化中间数据表格
             initIntermediateDataTable();
             
             experimentData.measurements.forEach((item, index) => {
-                if (item && item.x1Left && item.x1Right && item.x2Left && item.x2Right) {
-                    const x1 = (parseFloat(item.x1Left) + parseFloat(item.x1Right)) / 2;
-                    const x2 = (parseFloat(item.x2Left) + parseFloat(item.x2Right)) / 2;
-                    const a = Math.abs(x1 - x2);
-                    const b = Math.abs(x3 - x0) - 0.85; // δ = 0.85 cm
+                if (item && item['xA左'] && item['xA右'] && item['xL2正'] && item['xL2反']) {
+                    const xA = (parseFloat(item['xA左']) + parseFloat(item['xA右'])) / 2;
+                    const xL2 = (parseFloat(item['xL2正']) + parseFloat(item['xL2反'])) / 2;
+                    const diff = Math.abs(xL2 - xA);
                     
-                    x1Values.push(x1);
-                    x2Values.push(x2);
-                    aValues.push(a);
-                    bValues.push(b);
+                    xAValues.push(xA);
+                    xL2Values.push(xL2);
+                    diffValues.push(diff);
                     
                     // 更新中间数据表格
-                    document.getElementById(`x1Value${index}`).textContent = x1.toFixed(3);
-                    document.getElementById(`x2Value${index}`).textContent = x2.toFixed(3);
-                    document.getElementById(`aValue${index}`).textContent = a.toFixed(3);
-                    document.getElementById(`bValue${index}`).textContent = b.toFixed(3);
+                    document.getElementById(`xAValue${index}`).textContent = xA.toFixed(3);
+                    document.getElementById(`xL2Value${index}`).textContent = xL2.toFixed(3);
+                    document.getElementById(`diffValue${index}`).textContent = diff.toFixed(3);
                 }
             });
             
             return {
-                avgX1: x1Values.length > 0 ? x1Values.reduce((a, b) => a + b) / x1Values.length : 0,
-                avgX2: x2Values.length > 0 ? x2Values.reduce((a, b) => a + b) / x2Values.length : 0,
-                avgA: aValues.length > 0 ? aValues.reduce((a, b) => a + b) / aValues.length : 0,
-                avgB: bValues.length > 0 ? bValues.reduce((a, b) => a + b) / bValues.length : 0
+                avgXA: xAValues.length > 0 ? xAValues.reduce((a, b) => a + b) / xAValues.length : 0,
+                avgXL2: xL2Values.length > 0 ? xL2Values.reduce((a, b) => a + b) / xL2Values.length : 0,
+                avgDiff: diffValues.length > 0 ? diffValues.reduce((a, b) => a + b) / diffValues.length : 0,
+                xAValues: xAValues,
+                xL2Values: xL2Values
             };
         }
 
-        // 计算焦距 f = (b² - a²) / (4b)
+        // 计算焦距 f = -|xL2 - xA|
         function calculateFocalLength(intermediates) {
-            const a = intermediates.avgA;
-            const b = intermediates.avgB;
-            
-            if (b === 0) return 0;
-            
-            return (b * b - a * a) / (4 * b);
+            const diff = intermediates.avgDiff;
+            return -diff;
         }
 
         // 计算不确定度
-        function calculateUncertainty(intermediates, f) {
-            const a = intermediates.avgA;
-            const b = intermediates.avgB;
+        function calculateUncertainty(intermediates) {
+            // 计算xA的A类不确定度
+            const uAA_xA = calculateStandardDeviation(intermediates.xAValues);
             
-            // 计算a的A类不确定度
-            const aValues = experimentData.measurements
-                .filter(item => item && item.x1Left && item.x1Right && item.x2Left && item.x2Right)
-                .map(item => {
-                    const x1 = (parseFloat(item.x1Left) + parseFloat(item.x1Right)) / 2;
-                    const x2 = (parseFloat(item.x2Left) + parseFloat(item.x2Right)) / 2;
-                    return Math.abs(x1 - x2);
-                });
-            
-            const uAA = calculateStandardDeviation(aValues);
+            // 计算xL2的A类不确定度
+            const uAA_xL2 = calculateStandardDeviation(intermediates.xL2Values);
             
             // B类不确定度
-            const uAB = 0.05 / Math.sqrt(3); // cm
-            const uBB = 0.05 / Math.sqrt(3); // cm
+            const uAB_xA = 0.05 / Math.sqrt(3); // cm
+            const uAB_xL2 = 0.05 / Math.sqrt(3); // cm
             
             // 合成不确定度
-            const uATotal = Math.sqrt(uAA * uAA + uAB * uAB);
-            
-            // 偏导数
-            const partialFA = -a / (2 * b);
-            const partialFB = (a * a) / (4 * b * b) + 0.25;
+            const uATotal_xA = Math.sqrt(uAA_xA * uAA_xA + uAB_xA * uAB_xA);
+            const uATotal_xL2 = Math.sqrt(uAA_xL2 * uAA_xL2 + uAB_xL2 * uAB_xL2);
             
             // 不确定度u(f)
             const uf = Math.sqrt(
-                Math.pow(partialFA, 2) * Math.pow(uATotal, 2) + 
-                Math.pow(partialFB, 2) * Math.pow(uBB, 2)
+                Math.pow(uATotal_xA, 2) + 
+                Math.pow(uATotal_xL2, 2)
             );
             
             // 相对不确定度
-            const relativeUncertainty = f !== 0 ? uf / f : 0;
+            const f = -intermediates.avgDiff;
+            const relativeUncertainty = f !== 0 ? Math.abs(uf / f) : 0;
             
             return {
                 uf: uf,
                 relativeUncertainty: relativeUncertainty,
-                uAA: uAA,
-                uAB: uAB,
-                uATotal: uATotal,
-                uBB: uBB,
-                partialFA: partialFA,
-                partialFB: partialFB
+                uAA_xA: uAA_xA,
+                uAB_xA: uAB_xA,
+                uATotal_xA: uATotal_xA,
+                uAA_xL2: uAA_xL2,
+                uAB_xL2: uAB_xL2,
+                uATotal_xL2: uATotal_xL2
             };
         }
 
@@ -776,18 +720,17 @@
             elements.relativeUncertainty.textContent = experimentData.relativeUncertainty;
             
             // 中间值
-            elements.avgX1.textContent = `${experimentData.avgX1} cm`;
-            elements.avgX2.textContent = `${experimentData.avgX2} cm`;
-            elements.avgA.textContent = `${experimentData.avgA} cm`;
-            elements.avgB.textContent = `${experimentData.avgB} cm`;
+            elements.avgXA.textContent = `${experimentData.avgXA} ± ${experimentData.uATotal_xA} cm`;
+            elements.avgXL2.textContent = `${experimentData.avgXL2} ± ${experimentData.uATotal_xL2} cm`;
+            elements.avgDiff.textContent = `${experimentData.avgDiff} cm`;
             
             // 不确定度分量
-            elements.uAA.textContent = `${experimentData.uAA} cm`;
-            elements.uAB.textContent = `${experimentData.uAB} cm`;
-            elements.uATotal.textContent = `${experimentData.uATotal} cm`;
-            elements.uBB.textContent = `${experimentData.uBB} cm`;
-            elements.partialFA.textContent = experimentData.partialFA;
-            elements.partialFB.textContent = experimentData.partialFB;
+            elements.uAA_xA.textContent = `${experimentData.uAA_xA} cm`;
+            elements.uAB_xA.textContent = `${experimentData.uAB_xA} cm`;
+            elements.uATotal_xA.textContent = `${experimentData.uATotal_xA} cm`;
+            elements.uAA_xL2.textContent = `${experimentData.uAA_xL2} cm`;
+            elements.uAB_xL2.textContent = `${experimentData.uAB_xL2} cm`;
+            elements.uATotal_xL2.textContent = `${experimentData.uATotal_xL2} cm`;
             
             // 显示结果区域
             elements.intermediateDataSection.style.display = 'block';
@@ -799,7 +742,7 @@
         function saveData() {
             try {
                 experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('lens-focal-length', JSON.stringify(experimentData));
+                localStorage.setItem('concave-lens-focal-length', JSON.stringify(experimentData));
                 elements.lastUpdate.textContent = experimentData.lastUpdate;
                 alert('数据保存成功！');
             } catch (error) {
@@ -808,16 +751,37 @@
             }
         }
 
+        // 重置数据
+        function resetData() {
+            if (confirm('确定要重置所有数据吗？此操作不可撤销。')) {
+                // 清空测量数据
+                experimentData.measurements = [];
+                
+                // 清空输入框
+                const inputs = elements.measurementsContainer.querySelectorAll('.cell-input');
+                inputs.forEach(input => {
+                    input.value = '';
+                });
+                
+                // 隐藏结果区域
+                elements.intermediateDataSection.style.display = 'none';
+                elements.resultsSection.style.display = 'none';
+                experimentData.showResults = false;
+                
+                // 更新状态
+                updateCalculateStatus();
+                updateDataCompleteness();
+                
+                alert('数据已重置');
+            }
+        }
+
         // 从localStorage加载数据
         function loadExperimentData() {
             try {
-                const savedData = localStorage.getItem('lens-focal-length');
+                const savedData = localStorage.getItem('concave-lens-focal-length');
                 if (savedData) {
                     const data = JSON.parse(savedData);
-                    
-                    // 恢复基本参数
-                    elements.x0.value = data.x0 || '';
-                    elements.x3.value = data.x3 || '';
                     
                     // 恢复测量数据
                     if (data.measurements) {
@@ -849,6 +813,7 @@
                     
                     // 更新计算状态
                     updateCalculateStatus();
+                    updateDataCompleteness();
                 }
             } catch (error) {
                 console.error('加载数据失败:', error);
