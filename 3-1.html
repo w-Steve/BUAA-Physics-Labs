@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>振幅法测声速</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 12px;
+        }
+        
+        .section {
+            margin-bottom: 28px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fafafa;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-content {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .input-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .data-table {
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .table-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        
+        .table-header, .table-row {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .header-cell, .cell {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .header-cell {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .cell-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .btn-calculate {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-calculate:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-calculate:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn-save {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background-color: #27ae60;
+        }
+        
+        .results-group {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .result-item.highlight {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .result-label {
+            font-weight: 500;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .intermediate-results, .uncertainty-details {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        .uncertainty-group {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        .group-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .data-status {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .status-item {
+            display: block;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .input-item {
+                min-width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-title">振幅法测声速量</div>
+        <div class="experiment-content">
+            <!-- 实验简介 -->
+            <div class="section">
+                <div class="section-title">📝 使用必读</div>
+                <div class="section-content">
+                    <p style="margin-top: 10px; color: #e74c3c;">f1和f2分别是开始测量和结束测量时的频率，单位为kHz。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">室温t的单位为℃。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">位置读数L1到L10是10次测量的位置读数，单位为mm。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">使用一元线性回归计算斜率b，λ=2b，f=(f1+f2)/2，v=λf。</p>
+                </div>
+            </div>
+
+            <!-- 原始数据输入 -->
+            <div class="section">
+                <div class="section-title">📊 原始数据记录</div>
+                
+                <!-- 频率和室温 -->
+                <div class="input-group">
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">开始测量时频率 f₁ (kHz):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="f1" step="0.01" />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">结束测量时频率 f₂ (kHz):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="f2" step="0.01" />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">室温 t (°C):</label>
+                            <input class="input-field" type="number" placeholder="0.00" id="temp" step="0.01" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 位置读数 -->
+                <div class="data-table">
+                    <div class="table-title">位置读数 (10次测量)</div>
+                    <div class="table-header">
+                        <div class="header-cell">位置</div>
+                        <div class="header-cell">L1</div>
+                        <div class="header-cell">L2</div>
+                        <div class="header-cell">L3</div>
+                        <div class="header-cell">L4</div>
+                        <div class="header-cell">L5</div>
+                        <div class="header-cell">L6</div>
+                        <div class="header-cell">L7</div>
+                        <div class="header-cell">L8</div>
+                        <div class="header-cell">L9</div>
+                        <div class="header-cell">L10</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="cell">读数(mm)</div>
+                        <input class="cell-input" type="number" placeholder="L1" id="l1" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L2" id="l2" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L3" id="l3" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L4" id="l4" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L5" id="l5" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L6" id="l6" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L7" id="l7" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L8" id="l8" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L9" id="l9" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="L10" id="l10" step="0.01" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
+                <button class="btn-save" id="saveBtn">💾 保存数据</button>
+            </div>
+            
+            <!-- 计算结果 -->
+            <div class="section" id="resultsSection" style="display: none;">
+                <div class="section-title">🧮 计算结果</div>
+                
+                <div class="results-group">
+                    <div class="result-item highlight">
+                        <div class="result-label">声速 v:</div>
+                        <div class="result-value" id="vValue">0.000 m/s</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">不确定度 u(v):</div>
+                        <div class="result-value" id="uvValue">0.000 m/s</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">理论声速:</div>
+                        <div class="result-value" id="theoreticalV">0.000 m/s</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">相对误差:</div>
+                        <div class="result-value" id="relativeError">0.000 %</div>
+                    </div>
+                </div>
+
+                <!-- 中间计算结果 -->
+                <div class="intermediate-results">
+                    <div class="result-title">一元线性回归中间结果</div>
+                    <div class="result-item">
+                        <div class="result-label">x均值:</div>
+                        <div class="result-value" id="xMean">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">y均值:</div>
+                        <div class="result-value" id="yMean">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Σxy:</div>
+                        <div class="result-value" id="sumXY">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Σx²:</div>
+                        <div class="result-value" id="sumX2">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Σy²:</div>
+                        <div class="result-value" id="sumY2">0.000</div>
+                    </div>
+                </div>
+
+                <div class="intermediate-results">
+                    <div class="result-title">一元线性回归结果</div>
+                    <div class="result-item">
+                        <div class="result-label">斜率 b:</div>
+                        <div class="result-value" id="slopeB">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">截距:</div>
+                        <div class="result-value" id="intercept">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">相关系数 r:</div>
+                        <div class="result-value" id="correlationR">0.000</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">波长 λ:</div>
+                        <div class="result-value" id="wavelength">0.000 mm</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">平均频率 f:</div>
+                        <div class="result-value" id="avgFrequency">0.000 kHz</div>
+                    </div>
+                </div>
+
+                <!-- 不确定度分量详情 -->
+                <div class="uncertainty-details">
+                    <div class="result-title">不确定度分量分析</div>
+                    
+                    <!-- 频率不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">频率 f</div>
+                        <div class="result-item">
+                            <div class="result-label">不确定度 u(f):</div>
+                            <div class="result-value" id="ufValue">0.000 kHz</div>
+                        </div>
+                    </div>
+
+                    <!-- 波长不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">波长 λ</div>
+                        <div class="result-item">
+                            <div class="result-label">不确定度 u(λ):</div>
+                            <div class="result-value" id="uwavelength">0.000 mm</div>
+                        </div>
+                    </div>
+
+                    <!-- 斜率b的不确定度 -->
+                    <div class="uncertainty-group">
+                        <div class="group-title">斜率 b</div>
+                        <div class="result-item">
+                            <div class="result-label">A类不确定度 uₐ(b):</div>
+                            <div class="result-value" id="ubA">0.000</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">B类不确定度 u_b1(b):</div>
+                            <div class="result-value" id="ubB1">0.000</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">B类不确定度 u_b2(b):</div>
+                            <div class="result-value" id="ubB2">0.000</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">B类合成不确定度 u_b(b):</div>
+                            <div class="result-value" id="ubB">0.000</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">总不确定度 u(b):</div>
+                            <div class="result-value" id="ubTotal">0.000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据状态 -->
+            <div class="section">
+                <div class="section-title">💾 数据状态</div>
+                <div class="data-status">
+                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
+                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 实验数据模型
+        const experimentData = {
+            experimentId: '3-1',
+            // 基本参数
+            f1: '',
+            f2: '',
+            temp: '',
+            l1: '', l2: '', l3: '', l4: '', l5: '',
+            l6: '', l7: '', l8: '', l9: '', l10: '',
+            // 计算结果
+            showResults: false,
+            vValue: '0.000',
+            uvValue: '0.000',
+            theoreticalV: '0.000',
+            relativeError: '0.000',
+            // 中间结果
+            xMean: '0.000',
+            yMean: '0.000',
+            sumXY: '0.000',
+            sumX2: '0.000',
+            sumY2: '0.000',
+            slopeB: '0.000',
+            intercept: '0.000',
+            correlationR: '0.000',
+            wavelength: '0.000',
+            avgFrequency: '0.000',
+            // 不确定度分量
+            ufValue: '0.000',
+            uwavelength: '0.000',
+            ubA: '0.000',
+            ubB1: '0.000',
+            ubB2: '0.000',
+            ubB: '0.000',
+            ubTotal: '0.000',
+            // 状态
+            lastUpdate: ''
+        };
+
+        // DOM 元素
+        const elements = {
+            f1: document.getElementById('f1'),
+            f2: document.getElementById('f2'),
+            temp: document.getElementById('temp'),
+            l1: document.getElementById('l1'),
+            l2: document.getElementById('l2'),
+            l3: document.getElementById('l3'),
+            l4: document.getElementById('l4'),
+            l5: document.getElementById('l5'),
+            l6: document.getElementById('l6'),
+            l7: document.getElementById('l7'),
+            l8: document.getElementById('l8'),
+            l9: document.getElementById('l9'),
+            l10: document.getElementById('l10'),
+            calculateBtn: document.getElementById('calculateBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            resultsSection: document.getElementById('resultsSection'),
+            vValue: document.getElementById('vValue'),
+            uvValue: document.getElementById('uvValue'),
+            theoreticalV: document.getElementById('theoreticalV'),
+            relativeError: document.getElementById('relativeError'),
+            xMean: document.getElementById('xMean'),
+            yMean: document.getElementById('yMean'),
+            sumXY: document.getElementById('sumXY'),
+            sumX2: document.getElementById('sumX2'),
+            sumY2: document.getElementById('sumY2'),
+            slopeB: document.getElementById('slopeB'),
+            intercept: document.getElementById('intercept'),
+            correlationR: document.getElementById('correlationR'),
+            wavelength: document.getElementById('wavelength'),
+            avgFrequency: document.getElementById('avgFrequency'),
+            ufValue: document.getElementById('ufValue'),
+            uwavelength: document.getElementById('uwavelength'),
+            ubA: document.getElementById('ubA'),
+            ubB1: document.getElementById('ubB1'),
+            ubB2: document.getElementById('ubB2'),
+            ubB: document.getElementById('ubB'),
+            ubTotal: document.getElementById('ubTotal'),
+            lastUpdate: document.getElementById('lastUpdate')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExperimentData();
+            setupEventListeners();
+            updateCalculateStatus();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 基本参数输入
+            elements.f1.addEventListener('input', onInputChange);
+            elements.f2.addEventListener('input', onInputChange);
+            elements.temp.addEventListener('input', onInputChange);
+            
+            // 位置读数输入
+            elements.l1.addEventListener('input', onInputChange);
+            elements.l2.addEventListener('input', onInputChange);
+            elements.l3.addEventListener('input', onInputChange);
+            elements.l4.addEventListener('input', onInputChange);
+            elements.l5.addEventListener('input', onInputChange);
+            elements.l6.addEventListener('input', onInputChange);
+            elements.l7.addEventListener('input', onInputChange);
+            elements.l8.addEventListener('input', onInputChange);
+            elements.l9.addEventListener('input', onInputChange);
+            elements.l10.addEventListener('input', onInputChange);
+
+            // 按钮事件
+            elements.calculateBtn.addEventListener('click', calculateResults);
+            elements.saveBtn.addEventListener('click', saveData);
+        }
+
+        // 输入处理函数
+        function onInputChange(e) {
+            const id = e.target.id;
+            experimentData[id] = e.target.value;
+            experimentData.showResults = false;
+            updateCalculateStatus();
+        }
+
+        // 更新计算按钮状态
+        function updateCalculateStatus() {
+            const hasFrequencyData = experimentData.f1 && experimentData.f2;
+            const hasTempData = experimentData.temp;
+            const hasPositionData = experimentData.l1 && experimentData.l2 && experimentData.l3 && 
+                                  experimentData.l4 && experimentData.l5 && experimentData.l6 && 
+                                  experimentData.l7 && experimentData.l8 && experimentData.l9 && 
+                                  experimentData.l10;
+            
+            const canCalculate = hasFrequencyData && hasTempData && hasPositionData;
+            
+            elements.calculateBtn.disabled = !canCalculate;
+        }
+
+        // 计算功能
+        function calculateResults() {
+            try {
+                // 获取位置数据
+                const positions = [
+                    parseFloat(experimentData.l1),
+                    parseFloat(experimentData.l2),
+                    parseFloat(experimentData.l3),
+                    parseFloat(experimentData.l4),
+                    parseFloat(experimentData.l5),
+                    parseFloat(experimentData.l6),
+                    parseFloat(experimentData.l7),
+                    parseFloat(experimentData.l8),
+                    parseFloat(experimentData.l9),
+                    parseFloat(experimentData.l10)
+                ];
+                
+                // 一元线性回归计算
+                const regressionResult = linearRegression(positions);
+                
+                // 计算声速相关参数
+                const f1 = parseFloat(experimentData.f1);
+                const f2 = parseFloat(experimentData.f2);
+                const temp = parseFloat(experimentData.temp);
+                
+                const avgF = (f1 + f2) / 2; // kHz
+                const wavelength = 2 * regressionResult.slope; // mm
+                
+                // 声速 v = λf (注意单位转换)
+                const v = (wavelength / 1000) * (avgF * 1000); // m/s
+                
+                // 理论声速
+                const theoreticalV = 331.45 * Math.sqrt(1 + temp / 273.15);
+                
+                // 计算不确定度
+                const uncertaintyResult = calculateUncertainty(f1, f2, regressionResult, v, avgF, wavelength);
+                
+                // 相对误差
+                const relativeError = Math.abs((v - theoreticalV) / theoreticalV) * 100;
+                
+                // 更新实验数据
+                experimentData.vValue = v.toFixed(3);
+                experimentData.uvValue = uncertaintyResult.uv.toFixed(3);
+                experimentData.theoreticalV = theoreticalV.toFixed(3);
+                experimentData.relativeError = relativeError.toFixed(3);
+                
+                // 中间结果
+                experimentData.xMean = regressionResult.xMean.toFixed(3);
+                experimentData.yMean = regressionResult.yMean.toFixed(3);
+                experimentData.sumXY = regressionResult.sumXY.toFixed(3);
+                experimentData.sumX2 = regressionResult.sumX2.toFixed(3);
+                experimentData.sumY2 = regressionResult.sumY2.toFixed(3);
+                experimentData.slopeB = regressionResult.slope.toFixed(6);
+                experimentData.intercept = regressionResult.intercept.toFixed(6);
+                experimentData.correlationR = regressionResult.r.toFixed(6);
+                experimentData.wavelength = wavelength.toFixed(3);
+                experimentData.avgFrequency = avgF.toFixed(3);
+                
+                // 不确定度分量
+                experimentData.ufValue = uncertaintyResult.uf.toFixed(6);
+                experimentData.uwavelength = uncertaintyResult.uwavelength.toFixed(6);
+                experimentData.ubA = uncertaintyResult.ubA.toFixed(6);
+                experimentData.ubB1 = uncertaintyResult.ubB1.toFixed(6);
+                experimentData.ubB2 = uncertaintyResult.ubB2.toFixed(6);
+                experimentData.ubB = uncertaintyResult.ubB.toFixed(6);
+                experimentData.ubTotal = uncertaintyResult.ubTotal.toFixed(6);
+                
+                // 显示结果
+                displayResults();
+                
+                alert('计算完成！');
+            } catch (error) {
+                console.error('计算错误:', error);
+                alert('计算失败，请检查数据');
+            }
+        }
+
+        // 一元线性回归
+        function linearRegression(yValues) {
+            const n = yValues.length;
+            const xValues = Array.from({length: n}, (_, i) => i + 1);
+            
+            // 计算均值
+            const xMean = xValues.reduce((a, b) => a + b) / n;
+            const yMean = yValues.reduce((a, b) => a + b) / n;
+            
+            // 计算Σxy, Σx², Σy²
+            let sumXY = 0;
+            let sumX2 = 0;
+            let sumY2 = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumXY += (xValues[i] - xMean) * (yValues[i] - yMean);
+                sumX2 += Math.pow(xValues[i] - xMean, 2);
+                sumY2 += Math.pow(yValues[i] - yMean, 2);
+            }
+            
+            // 计算斜率和截距
+            const slope = sumXY / sumX2;
+            const intercept = yMean - slope * xMean;
+            
+            // 计算相关系数
+            const r = sumXY / Math.sqrt(sumX2 * sumY2);
+            
+            return {
+                xMean,
+                yMean,
+                sumXY,
+                sumX2,
+                sumY2,
+                slope,
+                intercept,
+                r
+            };
+        }
+
+        // 计算不确定度
+        function calculateUncertainty(f1, f2, regressionResult, v, avgF, wavelength) {
+            // 频率不确定度 u(f) = |f1 - f2| / √3
+            const uf = Math.abs(f1 - f2) / Math.sqrt(3);
+            
+            // 斜率b的不确定度
+            // A类不确定度 uₐ(b) = b * √[(1/8) * (1/r² - 1)]
+            const ubA = regressionResult.slope * Math.sqrt((1/8) * (1/Math.pow(regressionResult.r, 2) - 1));
+            
+            // B类不确定度
+            const ubB1 = 0.005 / Math.sqrt(3); // mm
+            const ubB2 = 0.01 / Math.sqrt(3); // mm
+            const ubB = Math.sqrt(Math.pow(ubB1, 2) + Math.pow(ubB2, 2));
+            
+            // 总不确定度 u(b) = √[uₐ(b)² + u_b(b)²]
+            const ubTotal = Math.sqrt(Math.pow(ubA, 2) + Math.pow(ubB, 2));
+            
+            // 波长不确定度 u(λ) = 2 * u(b)
+            const uwavelength = 2 * ubTotal;
+            
+            // 声速不确定度 u(v) = v * √[(u(f)/f)² + (u(λ)/λ)²]
+            const uvRelative = Math.sqrt(
+                Math.pow(uf / avgF, 2) + 
+                Math.pow(uwavelength / wavelength, 2)
+            );
+            const uv = v * uvRelative;
+            
+            return {
+                uf,
+                ubA,
+                ubB1,
+                ubB2,
+                ubB,
+                ubTotal,
+                uwavelength,
+                uv
+            };
+        }
+
+        // 显示计算结果
+        function displayResults() {
+            // 主要结果
+            elements.vValue.textContent = `${experimentData.vValue} m/s`;
+            elements.uvValue.textContent = `${experimentData.uvValue} m/s`;
+            elements.theoreticalV.textContent = `${experimentData.theoreticalV} m/s`;
+            elements.relativeError.textContent = `${experimentData.relativeError} %`;
+            
+            // 中间结果
+            elements.xMean.textContent = experimentData.xMean;
+            elements.yMean.textContent = experimentData.yMean;
+            elements.sumXY.textContent = experimentData.sumXY;
+            elements.sumX2.textContent = experimentData.sumX2;
+            elements.sumY2.textContent = experimentData.sumY2;
+            elements.slopeB.textContent = experimentData.slopeB;
+            elements.intercept.textContent = experimentData.intercept;
+            elements.correlationR.textContent = experimentData.correlationR;
+            elements.wavelength.textContent = `${experimentData.wavelength} mm`;
+            elements.avgFrequency.textContent = `${experimentData.avgFrequency} kHz`;
+            
+            // 不确定度分量
+            elements.ufValue.textContent = `${experimentData.ufValue} kHz`;
+            elements.uwavelength.textContent = `${experimentData.uwavelength} mm`;
+            elements.ubA.textContent = experimentData.ubA;
+            elements.ubB1.textContent = experimentData.ubB1;
+            elements.ubB2.textContent = experimentData.ubB2;
+            elements.ubB.textContent = experimentData.ubB;
+            elements.ubTotal.textContent = experimentData.ubTotal;
+            
+            // 显示结果区域
+            elements.resultsSection.style.display = 'block';
+            experimentData.showResults = true;
+        }
+
+        // 保存数据到localStorage
+        function saveData() {
+            try {
+                experimentData.lastUpdate = new Date().toLocaleString();
+                localStorage.setItem('experiment3-1', JSON.stringify(experimentData));
+                elements.lastUpdate.textContent = experimentData.lastUpdate;
+                alert('数据保存成功！');
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败，请重试');
+            }
+        }
+
+        // 从localStorage加载数据
+        function loadExperimentData() {
+            try {
+                const savedData = localStorage.getItem('experiment3-1');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    
+                    // 恢复基本参数
+                    elements.f1.value = data.f1 || '';
+                    elements.f2.value = data.f2 || '';
+                    elements.temp.value = data.temp || '';
+                    
+                    // 恢复位置读数
+                    elements.l1.value = data.l1 || '';
+                    elements.l2.value = data.l2 || '';
+                    elements.l3.value = data.l3 || '';
+                    elements.l4.value = data.l4 || '';
+                    elements.l5.value = data.l5 || '';
+                    elements.l6.value = data.l6 || '';
+                    elements.l7.value = data.l7 || '';
+                    elements.l8.value = data.l8 || '';
+                    elements.l9.value = data.l9 || '';
+                    elements.l10.value = data.l10 || '';
+                    
+                    // 恢复计算结果
+                    if (data.showResults) {
+                        Object.assign(experimentData, data);
+                        displayResults();
+                    }
+                    
+                    // 恢复最后更新时间
+                    if (data.lastUpdate) {
+                        elements.lastUpdate.textContent = data.lastUpdate;
+                    }
+                    
+                    // 更新计算状态
+                    updateCalculateStatus();
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>
