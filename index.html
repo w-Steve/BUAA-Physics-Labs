@@ -183,17 +183,40 @@
         .about-link {
             color: white;
             text-decoration: none;
-            padding: 10px 20px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 25px;
+            padding: 14px 32px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 30px;
             transition: all 0.3s ease;
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%);
+            font-weight: 600;
+            font-size: 1.05em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .about-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
         }
         
         .about-link:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%);
+            border-color: rgba(255,255,255,0.7);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .about-link:hover::before {
+            left: 100%;
         }
         
         @media (max-width: 768px) {
@@ -208,6 +231,11 @@
             .tab {
                 padding: 10px 20px;
                 font-size: 0.9em;
+            }
+            
+            .about-link {
+                padding: 12px 26px;
+                font-size: 1em;
             }
         }
     </style>
@@ -268,9 +296,8 @@
                     id: 3,
                     name: '示波器及其应用',
                     experiments: [
-                        { id: '3-1', name: '示波器的使用', url: 'experiments/3-1.html' },
-                        { id: '3-2', name: '振幅法测声速', url: 'experiments/3-2.html' },
-                        { id: '3-3', name: '相位法测声速', url: 'experiments/3-3.html' }
+                        { id: '3-1', name: '振幅法测声速', url: 'experiments/3-2.html' },
+                        { id: '3-2', name: '相位法测声速', url: 'experiments/3-3.html' }
                     ]
                 },
                 {
