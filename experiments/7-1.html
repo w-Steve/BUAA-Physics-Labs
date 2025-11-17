@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验 7-1: 自组电位差计测量干电池电动势</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 12px;
+        }
+        
+        .section {
+            margin-bottom: 28px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fafafa;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-content {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .input-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-field:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .data-table {
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .table-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        
+        .table-header, .table-row {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .header-cell, .cell {
+            flex: 1;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .header-cell {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .cell-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .btn-calculate {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-calculate:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-calculate:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn-save {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background-color: #27ae60;
+        }
+        
+        .results-group {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .result-item.highlight {
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .result-label {
+            font-weight: 500;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .intermediate-results, .uncertainty-details {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #2c3e50;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        
+        .uncertainty-group {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        
+        .group-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .data-status {
+            background-color: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        
+        .status-item {
+            display: block;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 16px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .input-item {
+                min-width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-title">自组电位差计测量干电池电动势</div>
+        <div class="experiment-content">
+            <!-- 实验简介 -->
+            <div class="section">
+                <div class="section-title">📝 使用必读</div>
+                <div class="section-content">
+                    <p style="margin-top: 10px; color: #e74c3c;">E<sub>20</sub>为标准电池在20℃时的电动势，t为实验时的温度。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">E<sub>x0</sub>为干电池电动势的标称值或参考值。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">R1、R2、R1'、R2'为实验中的电阻值。</p>
+                    <p style="margin-top: 10px; color: #e74c3c;">电阻箱残余误差和各示值盘的准确度等级需要根据实际使用的电阻箱填写。</p>
+                </div>
+            </div>
+
+            <!-- 原始数据输入 -->
+            <div class="section">
+                <div class="section-title">📊 原始数据记录</div>
+                
+                <!-- 基本参数 -->
+                <div class="input-group">
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">E<sub>20</sub> (V):</label>
+                            <input 
+                                class="input-field" 
+                                type="number" 
+                                placeholder="1.01860" 
+                                id="e20"
+                                step="0.00001"
+                            />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">温度 t (°C):</label>
+                            <input 
+                                class="input-field" 
+                                type="number" 
+                                placeholder="20.0" 
+                                id="temperature"
+                                step="0.1"
+                            />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">E<sub>x0</sub> (V):</label>
+                            <input 
+                                class="input-field" 
+                                type="number" 
+                                placeholder="1.50000" 
+                                id="ex0"
+                                step="0.00001"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 电阻值 -->
+                <div class="data-table">
+                    <div class="table-title">电阻值记录</div>
+                    <div class="table-header">
+                        <div class="header-cell">R1 (Ω)</div>
+                        <div class="header-cell">R2 (Ω)</div>
+                        <div class="header-cell">R1' (Ω)</div>
+                        <div class="header-cell">R2' (Ω)</div>
+                    </div>
+                    <div class="table-row">
+                        <input class="cell-input" type="number" placeholder="R1" id="r1" step="0.1" />
+                        <input class="cell-input" type="number" placeholder="R2" id="r2" step="0.1" />
+                        <input class="cell-input" type="number" placeholder="R1'" id="r1p" step="0.1" />
+                        <input class="cell-input" type="number" placeholder="R2'" id="r2p" step="0.1" />
+                    </div>
+                </div>
+
+                <!-- 电阻箱残余误差 -->
+                <div class="input-group">
+                    <div class="input-row">
+                        <div class="input-item">
+                            <label class="input-label">R1电阻箱残余误差 R<sub>01</sub> (Ω):</label>
+                            <input 
+                                class="input-field" 
+                                type="number" 
+                                placeholder="0.000" 
+                                id="r01"
+                                step="0.001"
+                            />
+                        </div>
+                        <div class="input-item">
+                            <label class="input-label">R2电阻箱残余误差 R<sub>02</sub> (Ω):</label>
+                            <input 
+                                class="input-field" 
+                                type="number" 
+                                placeholder="0.000" 
+                                id="r02"
+                                step="0.001"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- R1电阻箱准确度等级 -->
+                <div class="data-table">
+                    <div class="table-title">R1电阻箱准确度等级</div>
+                    <div class="table-header">
+                        <div class="header-cell">示值盘 R<sub>i1</sub> (Ω)</div>
+                        <div class="header-cell">1000</div>
+                        <div class="header-cell">100</div>
+                        <div class="header-cell">10</div>
+                        <div class="header-cell">1</div>
+                        <div class="header-cell">0.1</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="cell">准确度等级 a<sub>i1</sub> (%)</div>
+                        <input class="cell-input" type="number" placeholder="0.1" id="a1000_1" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a100_1" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a10_1" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a1_1" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a01_1" step="0.01" />
+                    </div>
+                </div>
+
+                <!-- R2电阻箱准确度等级 -->
+                <div class="data-table">
+                    <div class="table-title">R2电阻箱准确度等级</div>
+                    <div class="table-header">
+                        <div class="header-cell">示值盘 R<sub>i2</sub> (Ω)</div>
+                        <div class="header-cell">1000</div>
+                        <div class="header-cell">100</div>
+                        <div class="header-cell">10</div>
+                        <div class="header-cell">1</div>
+                        <div class="header-cell">0.1</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="cell">准确度等级 a<sub>i2</sub> (%)</div>
+                        <input class="cell-input" type="number" placeholder="0.1" id="a1000_2" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a100_2" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a10_2" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a1_2" step="0.01" />
+                        <input class="cell-input" type="number" placeholder="0.1" id="a01_2" step="0.01" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
+                <button class="btn-save" id="saveBtn">💾 保存数据</button>
+            </div>
+            
+            <!-- 计算结果 -->
+            <div class="section" id="resultsSection" style="display: none;">
+                <div class="section-title">🧮 计算结果</div>
+                
+                <div class="results-group">
+                    <div class="result-item highlight">
+                        <div class="result-label">标准电池电动势 E<sub>N</sub>:</div>
+                        <div class="result-value" id="enValue">0.000 V</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">干电池电动势 E<sub>x</sub>:</div>
+                        <div class="result-value" id="exValue">0.000 V</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">E<sub>x</sub> 不确定度 u(E<sub>x</sub>):</div>
+                        <div class="result-value" id="uexValue">0.000 V</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">E<sub>x0</sub> 不确定度 u(E<sub>x0</sub>):</div>
+                        <div class="result-value" id="uex0Value">0.000 V</div>
+                    </div>
+                    <div class="result-item highlight">
+                        <div class="result-label">E<sub>x</sub> 相对 E<sub>x0</sub> 误差:</div>
+                        <div class="result-value" id="relativeError">0.000 %</div>
+                    </div>
+                </div>
+
+                <!-- 中间计算结果 -->
+                <div class="intermediate-results">
+                    <div class="result-title">中间计算结果</div>
+                    <div class="result-item">
+                        <div class="result-label">R1 误差 ΔR<sub>1</sub>:</div>
+                        <div class="result-value" id="deltaR1">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R1 不确定度 u(R<sub>1</sub>):</div>
+                        <div class="result-value" id="ur1">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R2 误差 ΔR<sub>2</sub>:</div>
+                        <div class="result-value" id="deltaR2">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R2 不确定度 u(R<sub>2</sub>):</div>
+                        <div class="result-value" id="ur2">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R1' 误差 ΔR<sub>1'</sub>:</div>
+                        <div class="result-value" id="deltaR1p">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R1' 不确定度 u(R<sub>1'</sub>):</div>
+                        <div class="result-value" id="ur1p">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R2' 误差 ΔR<sub>2'</sub>:</div>
+                        <div class="result-value" id="deltaR2p">0.000 Ω</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">R2' 不确定度 u(R<sub>2'</sub>):</div>
+                        <div class="result-value" id="ur2p">0.000 Ω</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据状态 -->
+            <div class="section">
+                <div class="section-title">💾 数据状态</div>
+                <div class="data-status">
+                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
+                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 实验数据模型
+        const experimentData = {
+            experimentId: '7-1',
+            // 基本参数
+            e20: '',
+            temperature: '',
+            ex0: '',
+            // 电阻值
+            r1: '',
+            r2: '',
+            r1p: '',
+            r2p: '',
+            // 电阻箱残余误差
+            r01: '',
+            r02: '',
+            // R1电阻箱准确度等级
+            a1000_1: '',
+            a100_1: '',
+            a10_1: '',
+            a1_1: '',
+            a01_1: '',
+            // R2电阻箱准确度等级
+            a1000_2: '',
+            a100_2: '',
+            a10_2: '',
+            a1_2: '',
+            a01_2: '',
+            // 计算结果
+            showResults: false,
+            enValue: '0.000',
+            exValue: '0.000',
+            uexValue: '0.000',
+            uex0Value: '0.000',
+            relativeError: '0.000',
+            // 中间结果
+            deltaR1: '0.000',
+            ur1: '0.000',
+            deltaR2: '0.000',
+            ur2: '0.000',
+            deltaR1p: '0.000',
+            ur1p: '0.000',
+            deltaR2p: '0.000',
+            ur2p: '0.000',
+            // 状态
+            lastUpdate: ''
+        };
+
+        // DOM 元素
+        const elements = {
+            // 基本参数
+            e20: document.getElementById('e20'),
+            temperature: document.getElementById('temperature'),
+            ex0: document.getElementById('ex0'),
+            // 电阻值
+            r1: document.getElementById('r1'),
+            r2: document.getElementById('r2'),
+            r1p: document.getElementById('r1p'),
+            r2p: document.getElementById('r2p'),
+            // 电阻箱残余误差
+            r01: document.getElementById('r01'),
+            r02: document.getElementById('r02'),
+            // R1电阻箱准确度等级
+            a1000_1: document.getElementById('a1000_1'),
+            a100_1: document.getElementById('a100_1'),
+            a10_1: document.getElementById('a10_1'),
+            a1_1: document.getElementById('a1_1'),
+            a01_1: document.getElementById('a01_1'),
+            // R2电阻箱准确度等级
+            a1000_2: document.getElementById('a1000_2'),
+            a100_2: document.getElementById('a100_2'),
+            a10_2: document.getElementById('a10_2'),
+            a1_2: document.getElementById('a1_2'),
+            a01_2: document.getElementById('a01_2'),
+            // 按钮
+            calculateBtn: document.getElementById('calculateBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            // 结果区域
+            resultsSection: document.getElementById('resultsSection'),
+            // 主要结果
+            enValue: document.getElementById('enValue'),
+            exValue: document.getElementById('exValue'),
+            uexValue: document.getElementById('uexValue'),
+            uex0Value: document.getElementById('uex0Value'),
+            relativeError: document.getElementById('relativeError'),
+            // 中间结果
+            deltaR1: document.getElementById('deltaR1'),
+            ur1: document.getElementById('ur1'),
+            deltaR2: document.getElementById('deltaR2'),
+            ur2: document.getElementById('ur2'),
+            deltaR1p: document.getElementById('deltaR1p'),
+            ur1p: document.getElementById('ur1p'),
+            deltaR2p: document.getElementById('deltaR2p'),
+            ur2p: document.getElementById('ur2p'),
+            // 状态
+            lastUpdate: document.getElementById('lastUpdate')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExperimentData();
+            setupEventListeners();
+            updateCalculateStatus();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 基本参数输入
+            elements.e20.addEventListener('input', onE20Change);
+            elements.temperature.addEventListener('input', onTemperatureChange);
+            elements.ex0.addEventListener('input', onEx0Change);
+            
+            // 电阻值输入
+            elements.r1.addEventListener('input', onR1Change);
+            elements.r2.addEventListener('input', onR2Change);
+            elements.r1p.addEventListener('input', onR1pChange);
+            elements.r2p.addEventListener('input', onR2pChange);
+            
+            // 电阻箱残余误差
+            elements.r01.addEventListener('input', onR01Change);
+            elements.r02.addEventListener('input', onR02Change);
+            
+            // R1电阻箱准确度等级
+            elements.a1000_1.addEventListener('input', onA1000_1Change);
+            elements.a100_1.addEventListener('input', onA100_1Change);
+            elements.a10_1.addEventListener('input', onA10_1Change);
+            elements.a1_1.addEventListener('input', onA1_1Change);
+            elements.a01_1.addEventListener('input', onA01_1Change);
+            
+            // R2电阻箱准确度等级
+            elements.a1000_2.addEventListener('input', onA1000_2Change);
+            elements.a100_2.addEventListener('input', onA100_2Change);
+            elements.a10_2.addEventListener('input', onA10_2Change);
+            elements.a1_2.addEventListener('input', onA1_2Change);
+            elements.a01_2.addEventListener('input', onA01_2Change);
+
+            // 按钮事件
+            elements.calculateBtn.addEventListener('click', calculateResults);
+            elements.saveBtn.addEventListener('click', saveData);
+        }
+
+        // 输入处理函数
+        function onE20Change(e) {
+            experimentData.e20 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onTemperatureChange(e) {
+            experimentData.temperature = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onEx0Change(e) {
+            experimentData.ex0 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR1Change(e) {
+            experimentData.r1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR2Change(e) {
+            experimentData.r2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR1pChange(e) {
+            experimentData.r1p = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR2pChange(e) {
+            experimentData.r2p = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR01Change(e) {
+            experimentData.r01 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onR02Change(e) {
+            experimentData.r02 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA1000_1Change(e) {
+            experimentData.a1000_1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA100_1Change(e) {
+            experimentData.a100_1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA10_1Change(e) {
+            experimentData.a10_1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA1_1Change(e) {
+            experimentData.a1_1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA01_1Change(e) {
+            experimentData.a01_1 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA1000_2Change(e) {
+            experimentData.a1000_2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA100_2Change(e) {
+            experimentData.a100_2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA10_2Change(e) {
+            experimentData.a10_2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA1_2Change(e) {
+            experimentData.a1_2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        function onA01_2Change(e) {
+            experimentData.a01_2 = e.target.value;
+            updateCalculateStatus();
+        }
+
+        // 更新计算按钮状态
+        function updateCalculateStatus() {
+            const hasBasicData = experimentData.e20 && experimentData.temperature && experimentData.ex0;
+            const hasResistanceData = experimentData.r1 && experimentData.r2 && experimentData.r1p && experimentData.r2p;
+            const hasAccuracyData = experimentData.a1000_1 && experimentData.a100_1 && experimentData.a10_1 && 
+                                   experimentData.a1_1 && experimentData.a01_1 && experimentData.a1000_2 && 
+                                   experimentData.a100_2 && experimentData.a10_2 && experimentData.a1_2 && experimentData.a01_2;
+            
+            const canCalculate = hasBasicData && hasResistanceData && hasAccuracyData;
+            
+            elements.calculateBtn.disabled = !canCalculate;
+        }
+
+        // 计算功能
+        function calculateResults() {
+            try {
+                // 计算标准电池电动势 EN
+                const en = calculateEN();
+                
+                // 计算干电池电动势 Ex
+                const ex = calculateEx(en);
+                
+                // 计算电阻箱误差和不确定度
+                const resistanceResults = calculateResistanceUncertainty();
+                
+                // 计算不确定度 u(Ex)
+                const uex = calculateUEx(ex, resistanceResults);
+                
+                // 计算不确定度 u(Ex0)
+                const uex0 = calculateUEx0();
+                
+                // 计算相对误差
+                const relativeError = calculateRelativeError(ex);
+                
+                // 更新UI显示结果
+                experimentData.enValue = en.toFixed(6);
+                experimentData.exValue = ex.toFixed(6);
+                experimentData.uexValue = uex.toFixed(6);
+                experimentData.uex0Value = uex0.toFixed(6);
+                experimentData.relativeError = relativeError.toFixed(6);
+                
+                // 中间结果
+                experimentData.deltaR1 = resistanceResults.deltaR1.toFixed(6);
+                experimentData.ur1 = resistanceResults.ur1.toFixed(6);
+                experimentData.deltaR2 = resistanceResults.deltaR2.toFixed(6);
+                experimentData.ur2 = resistanceResults.ur2.toFixed(6);
+                experimentData.deltaR1p = resistanceResults.deltaR1p.toFixed(6);
+                experimentData.ur1p = resistanceResults.ur1p.toFixed(6);
+                experimentData.deltaR2p = resistanceResults.deltaR2p.toFixed(6);
+                experimentData.ur2p = resistanceResults.ur2p.toFixed(6);
+                
+                // 显示结果
+                displayResults();
+                
+                alert('计算完成！');
+            } catch (error) {
+                console.error('计算错误:', error);
+                alert('计算失败，请检查数据');
+            }
+        }
+
+        // 计算标准电池电动势 EN
+        function calculateEN() {
+            const e20 = parseFloat(experimentData.e20);
+            const t = parseFloat(experimentData.temperature);
+            
+            // EN = E20 - 3.99×10^-5(t-20) - 0.94×10^-6(t-20)^2 + 9×10^-9(t-20)^3
+            const dt = t - 20;
+            const term1 = 3.99e-5 * dt;
+            const term2 = 0.94e-6 * dt * dt;
+            const term3 = 9e-9 * dt * dt * dt;
+            
+            return e20 - term1 - term2 + term3;
+        }
+
+        // 计算干电池电动势 Ex
+        function calculateEx(en) {
+            const r1 = parseFloat(experimentData.r1);
+            const r1p = parseFloat(experimentData.r1p);
+            
+            // Ex = (EN / R1) * R1'
+            return (en / r1) * r1p;
+        }
+
+        // 计算电阻箱误差和不确定度
+        function calculateResistanceUncertainty() {
+            const r1 = parseFloat(experimentData.r1);
+            const r2 = parseFloat(experimentData.r2);
+            const r1p = parseFloat(experimentData.r1p);
+            const r2p = parseFloat(experimentData.r2p);
+            
+            const r01 = parseFloat(experimentData.r01) || 0;
+            const r02 = parseFloat(experimentData.r02) || 0;
+            
+            // 计算R1的误差
+            const a1000_1 = parseFloat(experimentData.a1000_1) / 100;
+            const a100_1 = parseFloat(experimentData.a100_1) / 100;
+            const a10_1 = parseFloat(experimentData.a10_1) / 100;
+            const a1_1 = parseFloat(experimentData.a1_1) / 100;
+            const a01_1 = parseFloat(experimentData.a01_1) / 100;
+            
+            // 提取R1各示值盘的电阻值
+            const r1_1000 = Math.floor(r1 / 1000) * 1000;
+            const r1_100 = Math.floor((r1 % 1000) / 100) * 100;
+            const r1_10 = Math.floor((r1 % 100) / 10) * 10;
+            const r1_1 = Math.floor(r1 % 10);
+            const r1_01 = Math.round((r1 - Math.floor(r1)) * 10) * 0.1;
+            
+            const deltaR1 = r01 + 
+                           a1000_1 * r1_1000 + 
+                           a100_1 * r1_100 + 
+                           a10_1 * r1_10 + 
+                           a1_1 * r1_1 + 
+                           a01_1 * r1_01;
+            
+            const ur1 = deltaR1 / Math.sqrt(3);
+            
+            // 计算R2的误差
+            const a1000_2 = parseFloat(experimentData.a1000_2) / 100;
+            const a100_2 = parseFloat(experimentData.a100_2) / 100;
+            const a10_2 = parseFloat(experimentData.a10_2) / 100;
+            const a1_2 = parseFloat(experimentData.a1_2) / 100;
+            const a01_2 = parseFloat(experimentData.a01_2) / 100;
+            
+            // 提取R2各示值盘的电阻值
+            const r2_1000 = Math.floor(r2 / 1000) * 1000;
+            const r2_100 = Math.floor((r2 % 1000) / 100) * 100;
+            const r2_10 = Math.floor((r2 % 100) / 10) * 10;
+            const r2_1 = Math.floor(r2 % 10);
+            const r2_01 = Math.round((r2 - Math.floor(r2)) * 10) * 0.1;
+            
+            const deltaR2 = r02 + 
+                           a1000_2 * r2_1000 + 
+                           a100_2 * r2_100 + 
+                           a10_2 * r2_10 + 
+                           a1_2 * r2_1 + 
+                           a01_2 * r2_01;
+            
+            const ur2 = deltaR2 / Math.sqrt(3);
+            
+            // 假设R1'和R2'使用与R1和R2相同的电阻箱，因此误差计算方法相同
+            // 计算R1'的误差
+            const r1p_1000 = Math.floor(r1p / 1000) * 1000;
+            const r1p_100 = Math.floor((r1p % 1000) / 100) * 100;
+            const r1p_10 = Math.floor((r1p % 100) / 10) * 10;
+            const r1p_1 = Math.floor(r1p % 10);
+            const r1p_01 = Math.round((r1p - Math.floor(r1p)) * 10) * 0.1;
+            
+            const deltaR1p = r01 + 
+                            a1000_1 * r1p_1000 + 
+                            a100_1 * r1p_100 + 
+                            a10_1 * r1p_10 + 
+                            a1_1 * r1p_1 + 
+                            a01_1 * r1p_01;
+            
+            const ur1p = deltaR1p / Math.sqrt(3);
+            
+            // 计算R2'的误差
+            const r2p_1000 = Math.floor(r2p / 1000) * 1000;
+            const r2p_100 = Math.floor((r2p % 1000) / 100) * 100;
+            const r2p_10 = Math.floor((r2p % 100) / 10) * 10;
+            const r2p_1 = Math.floor(r2p % 10);
+            const r2p_01 = Math.round((r2p - Math.floor(r2p)) * 10) * 0.1;
+            
+            const deltaR2p = r02 + 
+                            a1000_2 * r2p_1000 + 
+                            a100_2 * r2p_100 + 
+                            a10_2 * r2p_10 + 
+                            a1_2 * r2p_1 + 
+                            a01_2 * r2p_01;
+            
+            const ur2p = deltaR2p / Math.sqrt(3);
+            
+            return {
+                deltaR1: deltaR1,
+                ur1: ur1,
+                deltaR2: deltaR2,
+                ur2: ur2,
+                deltaR1p: deltaR1p,
+                ur1p: ur1p,
+                deltaR2p: deltaR2p,
+                ur2p: ur2p
+            };
+        }
+
+        // 计算不确定度 u(Ex)
+        function calculateUEx(ex, resistanceResults) {
+            const r1 = parseFloat(experimentData.r1);
+            const r2 = parseFloat(experimentData.r2);
+            const r1p = parseFloat(experimentData.r1p);
+            const r2p = parseFloat(experimentData.r2p);
+            
+            const ur1 = resistanceResults.ur1;
+            const ur2 = resistanceResults.ur2;
+            const ur1p = resistanceResults.ur1p;
+            const ur2p = resistanceResults.ur2p;
+            
+            // u(Ex) = Ex * sqrt( (1/R1 - 1/(R1+R2))^2 * u^2(R1) + (u(R2)/(R1+R2))^2 + 
+            //                    (1/R1' - 1/(R1'+R2'))^2 * u^2(R1') + (u(R2')/(R1'+R2'))^2 )
+            
+            const term1 = Math.pow((1/r1 - 1/(r1 + r2)), 2) * Math.pow(ur1, 2);
+            const term2 = Math.pow(ur2 / (r1 + r2), 2);
+            const term3 = Math.pow((1/r1p - 1/(r1p + r2p)), 2) * Math.pow(ur1p, 2);
+            const term4 = Math.pow(ur2p / (r1p + r2p), 2);
+            
+            return ex * Math.sqrt(term1 + term2 + term3 + term4);
+        }
+
+        // 计算不确定度 u(Ex0)
+        function calculateUEx0() {
+            const ex0 = parseFloat(experimentData.ex0);
+            
+            // u(Ex0) = (Ex0/10000 + 10^-6) / sqrt(3)
+            return (ex0 / 10000 + 1e-6) / Math.sqrt(3);
+        }
+
+        // 计算相对误差
+        function calculateRelativeError(ex) {
+            const ex0 = parseFloat(experimentData.ex0);
+            
+            // 相对误差 = (Ex - Ex0) / Ex0 * 100%
+            return ((ex - ex0) / ex0) * 100;
+        }
+
+        // 显示计算结果
+        function displayResults() {
+            // 主要结果
+            elements.enValue.textContent = `${experimentData.enValue} V`;
+            elements.exValue.textContent = `${experimentData.exValue} V`;
+            elements.uexValue.textContent = `${experimentData.uexValue} V`;
+            elements.uex0Value.textContent = `${experimentData.uex0Value} V`;
+            elements.relativeError.textContent = `${experimentData.relativeError} %`;
+            
+            // 中间结果
+            elements.deltaR1.textContent = `${experimentData.deltaR1} Ω`;
+            elements.ur1.textContent = `${experimentData.ur1} Ω`;
+            elements.deltaR2.textContent = `${experimentData.deltaR2} Ω`;
+            elements.ur2.textContent = `${experimentData.ur2} Ω`;
+            elements.deltaR1p.textContent = `${experimentData.deltaR1p} Ω`;
+            elements.ur1p.textContent = `${experimentData.ur1p} Ω`;
+            elements.deltaR2p.textContent = `${experimentData.deltaR2p} Ω`;
+            elements.ur2p.textContent = `${experimentData.ur2p} Ω`;
+            
+            // 显示结果区域
+            elements.resultsSection.style.display = 'block';
+            experimentData.showResults = true;
+        }
+
+        // 保存数据到localStorage
+        function saveData() {
+            try {
+                experimentData.lastUpdate = new Date().toLocaleString();
+                localStorage.setItem('experiment7-1', JSON.stringify(experimentData));
+                elements.lastUpdate.textContent = experimentData.lastUpdate;
+                alert('数据保存成功！');
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败，请重试');
+            }
+        }
+
+        // 从localStorage加载数据
+        function loadExperimentData() {
+            try {
+                const savedData = localStorage.getItem('experiment7-1');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    
+                    // 恢复基本参数
+                    elements.e20.value = data.e20 || '';
+                    elements.temperature.value = data.temperature || '';
+                    elements.ex0.value = data.ex0 || '';
+                    
+                    // 恢复电阻值
+                    elements.r1.value = data.r1 || '';
+                    elements.r2.value = data.r2 || '';
+                    elements.r1p.value = data.r1p || '';
+                    elements.r2p.value = data.r2p || '';
+                    
+                    // 恢复电阻箱残余误差
+                    elements.r01.value = data.r01 || '';
+                    elements.r02.value = data.r02 || '';
+                    
+                    // 恢复R1电阻箱准确度等级
+                    elements.a1000_1.value = data.a1000_1 || '';
+                    elements.a100_1.value = data.a100_1 || '';
+                    elements.a10_1.value = data.a10_1 || '';
+                    elements.a1_1.value = data.a1_1 || '';
+                    elements.a01_1.value = data.a01_1 || '';
+                    
+                    // 恢复R2电阻箱准确度等级
+                    elements.a1000_2.value = data.a1000_2 || '';
+                    elements.a100_2.value = data.a100_2 || '';
+                    elements.a10_2.value = data.a10_2 || '';
+                    elements.a1_2.value = data.a1_2 || '';
+                    elements.a01_2.value = data.a01_2 || '';
+                    
+                    // 恢复计算结果
+                    if (data.showResults) {
+                        Object.assign(experimentData, data);
+                        displayResults();
+                    }
+                    
+                    // 恢复最后更新时间
+                    if (data.lastUpdate) {
+                        elements.lastUpdate.textContent = data.lastUpdate;
+                    }
+                    
+                    // 更新计算状态
+                    updateCalculateStatus();
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>
