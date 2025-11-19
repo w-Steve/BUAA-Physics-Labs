@@ -356,7 +356,7 @@
                 <div class="input-group">
                     <div class="input-row">
                         <div class="input-item">
-                            <label class="input-label">R1电阻箱残余误差 R<sub>01</sub> (Ω):</label>
+                            <label class="input-label">R1电阻箱残余误差 R<sub>01</sub> (mΩ):</label>
                             <input 
                                 class="input-field" 
                                 type="number" 
@@ -366,7 +366,7 @@
                             />
                         </div>
                         <div class="input-item">
-                            <label class="input-label">R2电阻箱残余误差 R<sub>02</sub> (Ω):</label>
+                            <label class="input-label">R2电阻箱残余误差 R<sub>02</sub> (mΩ):</label>
                             <input 
                                 class="input-field" 
                                 type="number" 
@@ -850,7 +850,7 @@
             const r1_1 = Math.floor(r1 % 10);
             const r1_01 = Math.round((r1 - Math.floor(r1)) * 10) * 0.1;
             
-            const deltaR1 = r01 + 
+            const deltaR1 = r01/1000 + 
                            a1000_1 * r1_1000 + 
                            a100_1 * r1_100 + 
                            a10_1 * r1_10 + 
@@ -873,7 +873,7 @@
             const r2_1 = Math.floor(r2 % 10);
             const r2_01 = Math.round((r2 - Math.floor(r2)) * 10) * 0.1;
             
-            const deltaR2 = r02 + 
+            const deltaR2 = r02/1000 + 
                            a1000_2 * r2_1000 + 
                            a100_2 * r2_100 + 
                            a10_2 * r2_10 + 
@@ -890,7 +890,7 @@
             const r1p_1 = Math.floor(r1p % 10);
             const r1p_01 = Math.round((r1p - Math.floor(r1p)) * 10) * 0.1;
             
-            const deltaR1p = r01 + 
+            const deltaR1p = r01/1000 + 
                             a1000_1 * r1p_1000 + 
                             a100_1 * r1p_100 + 
                             a10_1 * r1p_10 + 
@@ -906,7 +906,7 @@
             const r2p_1 = Math.floor(r2p % 10);
             const r2p_01 = Math.round((r2p - Math.floor(r2p)) * 10) * 0.1;
             
-            const deltaR2p = r02 + 
+            const deltaR2p = r02/1000 + 
                             a1000_2 * r2p_1000 + 
                             a100_2 * r2p_100 + 
                             a10_2 * r2p_10 + 
