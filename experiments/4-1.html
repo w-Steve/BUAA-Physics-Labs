@@ -3,1060 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实验 4-1: 双电桥法测量铜棒电阻率</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 24px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 12px;
-        }
-        
-        .section {
-            margin-bottom: 28px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background-color: #fafafa;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-content {
-            background-color: white;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        
-        .input-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .data-table {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        .table-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-        }
-        
-        .table-header, .table-row {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header-cell, .cell {
-            flex: 1;
-            padding: 10px 8px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .header-cell {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .cell-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .btn-calculate {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-calculate:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-calculate:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-save {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .btn-save:hover {
-            background-color: #27ae60;
-        }
-        
-        .results-group {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .result-item.highlight {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .result-label {
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .intermediate-results, .uncertainty-details {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 8px;
-        }
-        
-        .uncertainty-group {
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px dashed #e0e0e0;
-        }
-        
-        .group-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-            font-size: 16px;
-        }
-        
-        .data-status {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .status-item {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .input-row {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .input-item {
-                min-width: 100%;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
-        }
-    </style>
+    <title>基物实验助手 - 双电桥法测量铜棒电阻率</title>
+    <!-- 公共样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
-    <div class="container">
-        <div class="page-title">双电桥法测量铜棒电阻率</div>
-        <div class="experiment-content">
-            <!-- 实验简介 -->
-            <div class="section">
-                <div class="section-title">📝 使用必读</div>
-                <div class="section-content">
-                    <p style="margin-top: 10px; color: #e74c3c;">本实验采用双电桥法测量导体电阻率。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">每次测量需要记录：接入长度、电桥比例臂R₁和R₂（两者相等）、正向电阻R_正、反向电阻R_负。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">计算公式：R̄ = (R_正 + R_负)/2，R_x = (R_N/R₁)·R̄，其中R_N = 0.001Ω</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">通过线性回归得到电阻率ρ = π·D²/(4·b̂)，其中b̂为回归直线斜率。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">注意：所有长度单位在计算时会自动转换为米，确保电阻率单位为Ω·m。</p>
-                </div>
+<div class="container">
+    <div class="page-title">双电桥法测量铜棒电阻率</div>
+
+    <!-- 实验要点提示 -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • $R_N $为标准电阻<br>
+        • 计算公式：
+        $$\overline{R} = \frac{R_正 + R_负}{2},\quad 
+          R_x = \frac{R_N}{R_1}\overline{R},\quad 
+          l = \frac{\pi D^2}{4\rho}R_x$$<br>
+        • 令 $x = R_x$, $y = l$，作一元线性回归得斜率 $\hat{b}$，则
+        $$\rho = \frac{\pi \bar{D}^2}{4\hat{b}}$$
+    </div>
+
+    <!-- 原始数据录入区 -->
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+
+        <!-- 标准电阻 R_N -->
+        <div class="top-input-group" style="margin-bottom: 1rem;">
+            <div class="top-input">
+                <label>$R_N$ ($\Omega$):</label>
+                <input type="number" id="RN" class="save-input cell-input" step="0.000001" value="0.001">
             </div>
+        </div>
 
-            <!-- 原始数据输入 -->
-            <div class="section">
-                <div class="section-title">📊 原始数据记录</div>
-                
-                <!-- 基本参数 -->
-                <div class="input-group">
-                    <div class="input-row">
-                        <div class="input-item">
-                            <label class="input-label">标准电阻 R_N (Ω):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.001" 
-                                id="RN"
-                                step="0.000001"
-                                value="0.001"
-                            />
-                        </div>
-                    </div>
-                </div>
+        <!-- 电桥测量表格容器 (8行4列) -->
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">电桥测量数据</div>
+            <div id="bridge-table-container" class="data-table"></div>
+        </div>
 
-                <!-- 8次测量数据 -->
-                <div class="data-table">
-                    <div class="table-title">8次测量数据</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">接入长度 l (mm)</div>
-                        <div class="header-cell">R₁和R₂ (Ω)</div>
-                        <div class="header-cell">正向电阻 R_正 (Ω)</div>
-                        <div class="header-cell">反向电阻 R_负 (Ω)</div>
-                    </div>
-                    <div id="measurementsContainer">
-                        <!-- 动态生成测量行 -->
-                    </div>
-                </div>
-
-                <!-- 直径测量 -->
-                <div class="data-table">
-                    <div class="table-title">直径 D_i 测量数据 (8次)</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">直径 D_i (mm)</div>
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">直径 D_i (mm)</div>
-                    </div>
-                    <div id="diameterMeasurementsContainer">
-                        <!-- 动态生成直径测量行 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
-                <button class="btn-save" id="saveBtn">💾 保存数据</button>
-            </div>
-            
-            <!-- 计算结果 -->
-            <div class="section" id="resultsSection" style="display: none;">
-                <div class="section-title">🧮 计算结果</div>
-                
-                <div class="results-group">
-                    <div class="result-item highlight">
-                        <div class="result-label">电阻率 ρ:</div>
-                        <div class="result-value" id="rhoValue">0.000 Ω·m</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">不确定度 u(ρ):</div>
-                        <div class="result-value" id="uRhoValue">0.000 Ω·m</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">相对不确定度 u(ρ)/ρ:</div>
-                        <div class="result-value" id="relativeUncertainty">0.000</div>
-                    </div>
-                </div>
-
-                <!-- R_bar 和 R_x 表格 -->
-                <div class="intermediate-results">
-                    <div class="result-title">中间计算结果: R̄ 和 R_x</div>
-                    <div class="data-table">
-                        <div class="table-header">
-                            <div class="header-cell">测量次数</div>
-                            <div class="header-cell">接入长度 l (m)</div>
-                            <div class="header-cell">R̄ = (R_正+R_负)/2 (Ω)</div>
-                            <div class="header-cell">R_x = (R_N/R₁)·R̄ (Ω)</div>
-                            <div class="header-cell">直径 D_i (m)</div>
-                        </div>
-                        <div id="intermediateTable">
-                            <!-- 动态生成中间结果行 -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 一元线性回归结果 -->
-                <div class="intermediate-results">
-                    <div class="result-title">一元线性回归结果 (x=R_x, y=l)</div>
-                    <div class="result-item">
-                        <div class="result-label">x 均值 (Ω):</div>
-                        <div class="result-value" id="xMean">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">y 均值 (m):</div>
-                        <div class="result-value" id="yMean">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Σxy (Ω·m):</div>
-                        <div class="result-value" id="sumXY">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Σx² (Ω²):</div>
-                        <div class="result-value" id="sumX2">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Σy² (m²):</div>
-                        <div class="result-value" id="sumY2">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">斜率 b̂ (m/Ω):</div>
-                        <div class="result-value" id="slopeB">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">截距 â (m):</div>
-                        <div class="result-value" id="interceptA">0.000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">相关系数 r:</div>
-                        <div class="result-value" id="correlationR">0.000</div>
-                    </div>
-                </div>
-
-                <!-- 不确定度分量详情 -->
-                <div class="uncertainty-details">
-                    <div class="result-title">不确定度分量分析</div>
-                    
-                    <!-- 直径D不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">直径 D</div>
-                        <div class="result-item">
-                            <div class="result-label">A类不确定度 u_A(D):</div>
-                            <div class="result-value" id="uDA">0.000 mm</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u_B(D):</div>
-                            <div class="result-value" id="uDB">0.000 mm</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">合成不确定度 u(D):</div>
-                            <div class="result-value" id="uDTotal">0.000 mm</div>
-                        </div>
-                    </div>
-
-                    <!-- 斜率b̂不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">斜率 b̂</div>
-                        <div class="result-item">
-                            <div class="result-label">A类不确定度 u_A(b̂):</div>
-                            <div class="result-value" id="uBA">0.000</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u_B(b̂):</div>
-                            <div class="result-value" id="uBB">0.000</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">合成不确定度 u(b̂):</div>
-                            <div class="result-value" id="uBTotal">0.000</div>
-                        </div>
-                    </div>
-
-                    <!-- R_x不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">R_x</div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u_B(R_x):</div>
-                            <div class="result-value" id="uRxB">0.000 Ω</div>
-                        </div>
-                    </div>
-
-                    <!-- 长度l不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">接入长度 l</div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u_B(l):</div>
-                            <div class="result-value" id="ulB">0.000 mm</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 数据状态 -->
-            <div class="section">
-                <div class="section-title">💾 数据状态</div>
-                <div class="data-status">
-                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
-                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
-                </div>
-            </div>
+        <!-- 直径测量表格容器 (8行1列) -->
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">直径 $D_i$ 测量 (mm)</div>
+            <div id="diameter-table-container" class="data-table"></div>
         </div>
     </div>
 
-    <script>
-        // 实验数据模型
-        const experimentData = {
-            experimentId: '4-1',
-            // 基本参数
-            RN: '0.001',
-            // 测量数据
-            measurements: [],
-            diameters: [],
-            // 计算结果
-            showResults: false,
-            rhoValue: '0.000',
-            uRhoValue: '0.000',
-            relativeUncertainty: '0.000',
-            // 中间结果
-            intermediateResults: [],
-            xMean: '0.000',
-            yMean: '0.000',
-            sumXY: '0.000',
-            sumX2: '0.000',
-            sumY2: '0.000',
-            slopeB: '0.000',
-            interceptA: '0.000',
-            correlationR: '0.000',
-            // 不确定度分量
-            uDA: '0.000',
-            uDB: '0.000',
-            uDTotal: '0.000',
-            uBA: '0.000',
-            uBB: '0.000',
-            uBTotal: '0.000',
-            uRxB: '0.000',
-            ulB: '0.000',
-            // 状态
-            lastUpdate: ''
-        };
+    <!-- 操作按钮组 -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
 
-        // DOM 元素
-        const elements = {
-            RN: document.getElementById('RN'),
-            measurementsContainer: document.getElementById('measurementsContainer'),
-            diameterMeasurementsContainer: document.getElementById('diameterMeasurementsContainer'),
-            calculateBtn: document.getElementById('calculateBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            resultsSection: document.getElementById('resultsSection'),
-            rhoValue: document.getElementById('rhoValue'),
-            uRhoValue: document.getElementById('uRhoValue'),
-            relativeUncertainty: document.getElementById('relativeUncertainty'),
-            intermediateTable: document.getElementById('intermediateTable'),
-            xMean: document.getElementById('xMean'),
-            yMean: document.getElementById('yMean'),
-            sumXY: document.getElementById('sumXY'),
-            sumX2: document.getElementById('sumX2'),
-            sumY2: document.getElementById('sumY2'),
-            slopeB: document.getElementById('slopeB'),
-            interceptA: document.getElementById('interceptA'),
-            correlationR: document.getElementById('correlationR'),
-            uDA: document.getElementById('uDA'),
-            uDB: document.getElementById('uDB'),
-            uDTotal: document.getElementById('uDTotal'),
-            uBA: document.getElementById('uBA'),
-            uBB: document.getElementById('uBB'),
-            uBTotal: document.getElementById('uBTotal'),
-            uRxB: document.getElementById('uRxB'),
-            ulB: document.getElementById('ulB'),
-            lastUpdate: document.getElementById('lastUpdate')
-        };
+    <!-- 主要结果卡片 -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">电阻率 $\rho$ ($\Omega\cdot m$)</div><div class="result-value" id="rho_val">—</div></div>
+            <div class="result-card"><div class="result-label">合成不确定度 $u(\rho)$ ($\Omega\cdot m$)</div><div class="result-value" id="urho_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对不确定度 $u(\rho)/\rho$</div><div class="result-value" id="rel_urho_val">—</div></div>
+        </div>
+    </div>
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initMeasurementTables();
-            loadExperimentData();
-            setupEventListeners();
+    <!-- 详细计算过程 -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <!-- 免责声明 -->
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '4-1';
+
+    // ---------- 获取所有输入值 ----------
+    function getInputs() {
+        const RN = parseFloat(document.getElementById('RN').value) || 0.001;
+
+        // 读取电桥测量表格数据 (8行4列, 行优先编号)
+        const length_mm = [];      // l (mm)
+        const R1R2 = [];           // R₁和R₂ (Ω)
+        const Rpos = [];           // R_正 (Ω)
+        const Rneg = [];           // R_负 (Ω)
+        for (let i = 0; i < 8; i++) {
+            const base = i * 4 + 1;
+            const lVal = parseFloat(document.getElementById(`bridge_${base}`)?.value);
+            const r1Val = parseFloat(document.getElementById(`bridge_${base+1}`)?.value);
+            const rpVal = parseFloat(document.getElementById(`bridge_${base+2}`)?.value);
+            const rnVal = parseFloat(document.getElementById(`bridge_${base+3}`)?.value);
+            length_mm.push(isNaN(lVal) ? NaN : lVal);
+            R1R2.push(isNaN(r1Val) ? NaN : r1Val);
+            Rpos.push(isNaN(rpVal) ? NaN : rpVal);
+            Rneg.push(isNaN(rnVal) ? NaN : rnVal);
+        }
+
+        // 读取直径测量表格数据 (8行1列)
+        const D_mm = [];
+        for (let i = 0; i < 8; i++) {
+            const dVal = parseFloat(document.getElementById(`diam_${i+1}`)?.value);
+            D_mm.push(isNaN(dVal) ? NaN : dVal);
+        }
+
+        return { RN, length_mm, R1R2, Rpos, Rneg, D_mm };
+    }
+
+    // ---------- 数据有效性检查 ----------
+    function isValid(data) {
+        if (isNaN(data.RN) || data.RN <= 0) return false;
+        const arrays = [data.length_mm, data.R1R2, data.Rpos, data.Rneg, data.D_mm];
+        for (let arr of arrays) {
+            if (arr.length !== 8 || arr.some(v => isNaN(v))) return false;
+        }
+        return true;
+    }
+
+    // ---------- 核心计算 ----------
+    function compute(data) {
+        const { RN, length_mm, R1R2, Rpos, Rneg, D_mm } = data;
+        const n = 8;
+        const Data = window.ExperimentUtils.Data;
+
+        // 计算 R̄ 和 R_x
+        const Rbar = [];
+        const Rx = [];
+        for (let i = 0; i < n; i++) {
+            const rbar = (Rpos[i] + Rneg[i]) / 2;
+            const rx = (RN / R1R2[i]) * rbar;
+            Rbar.push(rbar);
+            Rx.push(rx);
+        }
+
+        // 转换单位：长度 mm → m, 直径 mm → m
+        const l_m = length_mm.map(v => v / 1000);
+        const D_m = D_mm.map(v => v / 1000);
+        const D_avg_m = Data.mean(D_m);
+        const D_avg_mm = D_avg_m * 1000;
+
+        // 线性回归：x = Rx (Ω), y = l (m)
+        const reg = Data.linearRegression(Rx, l_m);
+        const slope = reg.slope;        // b̂ (m/Ω)
+        const intercept = reg.intercept; // â (m)
+        const r = reg.r;
+
+        // 电阻率 ρ = (π * D_avg²) / (4 * slope)  单位 Ω·m
+        const rho = (Math.PI * D_avg_m * D_avg_m) / (4 * slope);
+
+        // ---------- 不确定度计算 ----------
+
+        // 1. 直径 D 的不确定度 (单位：m, 但显示用 mm)
+        const uDA_m = Data.stdErrorOfMean(D_m);                     // A类 (m)
+        const uDA_mm = uDA_m * 1000;
+        const uDB_mm = 0.02 / Math.sqrt(3);                         // B类 (mm)
+        const uDB_m = uDB_mm / 1000;
+        const uD_m = Math.hypot(uDA_m, uDB_m);                      // 合成 (m)
+        const uD_mm = uD_m * 1000;
+
+        // 2. 斜率 b̂ 的不确定度
+        // A类: uA(b̂) = b̂ * sqrt( (1/(n-2)) * (1/r² - 1) )
+        let uBA = 0;
+        if (r !== 0 && n > 2) {
+            uBA = slope * Math.sqrt((1 / (n - 2)) * ((1 / (r * r)) - 1));
+        }
+
+        // B类: uB(b̂) ≈ b̂ * sqrt( (2*uB(D)/D)² + (uB(Rx)/Rx̄)² + (uB(l)/l̄)² )
+        // uB(D) 已得 uDB_m
+        // uB(Rx) = (0.05% * Rx̄) / √3
+        const Rx_avg = Data.mean(Rx);
+        const uRxB = (0.0005 * Rx_avg) / Math.sqrt(3);               // Ω
+
+        // uB(l) = 0.05 mm / √3 = 0.00005 m / √3
+        const ulB_mm = 0.05 / Math.sqrt(3);
+        const ulB_m = ulB_mm / 1000;
+
+        const l_avg_m = Data.mean(l_m);
+        const l_avg_mm = l_avg_m * 1000;
+
+        const termD = (2 * uDB_m / D_avg_m) ** 2;
+        const termRx = (uRxB / Rx_avg) ** 2;
+        const termL = (ulB_m / l_avg_m) ** 2;
+        const uBB = slope * Math.sqrt(termD + termRx + termL);      // B类 (m/Ω)
+
+        const uB_m = Math.hypot(uBA, uBB);                           // 合成 u(b̂) (m/Ω)
+
+        // 3. 电阻率 ρ 的不确定度
+        const relTermD = (2 * uD_m / D_avg_m) ** 2;
+        const relTermB = (uB_m / slope) ** 2;
+        const relU = Math.sqrt(relTermD + relTermB);
+        const uRho = rho * relU;
+
+        // 收集所有需要显示的中间量
+        return {
+            n,
+            RN,
+            // 原始数组 (用于展示)
+            length_mm, R1R2, Rpos, Rneg, D_mm,
+            Rbar, Rx,
+            // 平均值 (单位统一: 长度和直径均保留 mm 用于显示, 但回归用的米单独存)
+            Rx_avg,
+            l_avg_mm,
+            D_avg: D_avg_mm,
+            // 线性回归结果 (包含 sumX, sumY, sumXX, sumYY, sumXY 等)
+            reg,
+            // 不确定度分量 (保留常用单位)
+            uDA_mm, uDB_mm, uD_mm,
+            uBA, uBB, uB_m,
+            uRxB,
+            ulB_mm,
+            // 最终结果
+            rho, uRho, relU,
+            // 额外需要用于详细过程的转换值 (注意加入 uDA_m)
+            uDA_m,
+            D_avg_m,
+            l_avg_m,
+            uDB_m,
+            ulB_m,
+            uD_m
+        };
+    }
+
+    // ---------- 辅助函数：科学计数法保留三位小数，安全处理非法输入 ----------
+    function toExp3(x) {
+        if (x === undefined || x === null || isNaN(x) || !isFinite(x)) return '—';
+        return x.toExponential(3);
+    }
+    // ---------- 辅助函数：将修约后的字符串转换为科学计数法，保留原有效数字位数 ----------
+    function toSciAfterRounding(roundedStr) {
+        if (roundedStr === '—' || roundedStr === '') return roundedStr;
+        // 处理可能的正负号
+        let str = roundedStr.trim();
+        let sign = '';
+        if (str.startsWith('-')) {
+            sign = '-';
+            str = str.substring(1);
+        } else if (str.startsWith('+')) {
+            str = str.substring(1);
+        }
+        // 统计有效数字位数（只考虑普通十进制，不含指数）
+        let significantDigits = 0;
+        let seenNonZero = false;
+        for (let i = 0; i < str.length; i++) {
+            const ch = str[i];
+            if (ch >= '1' && ch <= '9') {
+                seenNonZero = true;
+                significantDigits++;
+            } else if (ch === '0') {
+                if (seenNonZero) significantDigits++;
+            } else if (ch === '.') {
+                // 忽略小数点
+            } else {
+                // 出现其他字符（如 e），说明已经是科学计数法，直接返回原字符串
+                return roundedStr;
+            }
+        }
+        const num = parseFloat(roundedStr);
+        if (isNaN(num)) return roundedStr;
+        return sign + num.toExponential(significantDigits);
+    }
+
+
+    // ---------- 渲染详细计算过程 ----------
+    function renderProcess(res) {
+        // 重新计算修约后的科学计数法字符串
+        const fmt = window.ExperimentUtils.formatResultWithUncertainty(res.rho, res.uRho, true);
+        const rhoSci = toSciAfterRounding(fmt.value);
+        const uSci = toSciAfterRounding(fmt.uncertainty);
+        // 然后在 step7 中使用 rhoSci 和 uSci
+        const Data = window.ExperimentUtils.Data;
+        // 计算残差平方和的值 (用于显示)
+        const sumSqD = res.D_mm.reduce((acc, v) => acc + (v - res.D_avg) ** 2, 0);
+
+        // 生成直径残差平方展开式
+        const devSqDExpr = res.D_mm.map((v, i) => `(${v.toFixed(4)} - ${res.D_avg.toFixed(4)})^2`).join(' + ');
+
+        // 生成中间结果表格行 (使用.output-table，外层有滚动包装)
+        const tableRows = res.Rx.map((rx, i) => `
+            <tr>
+                <td>${i+1}</td>
+                <td>${res.length_mm[i].toFixed(2)}</td>
+                <td>${toExp3(res.R1R2[i])}</td>
+                <td>${toExp3(res.Rpos[i])}</td>
+                <td>${toExp3(res.Rneg[i])}</td>
+                <td>${toExp3(res.Rbar[i])}</td>
+                <td>${toExp3(res.Rx[i])}</td>
+                <td>${res.D_mm[i].toFixed(4)}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 原始数据与中间量 </div>
+            <div class="step-formula">标准电阻 $R_N = ${toExp3(res.RN)}\\,\\Omega$</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead>
+                        <tr>
+                            <th>$i$</th><th>$l$ (mm)</th><th>$R_1,R_2$ ($\\Omega$)</th><th>$R_正$ ($\\Omega$)</th><th>$R_负$ ($\\Omega$)</th><th>$\\overline{R}$ ($\\Omega$)</th><th>$R_x$ ($\\Omega$)</th><th>$D_i$ (mm)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 直径 $D$ 的平均值与不确定度</div>
+            <div class="step-formula">$$\\bar{D} = \\frac{1}{8}\\sum_{i=1}^8 D_i = \\frac{${res.D_mm.map(v => v.toFixed(4)).join('+')}}{8} = ${res.D_avg.toFixed(4)}\\ \\mathrm{mm}$$</div>
+            <div class="step-formula">A类不确定度：$u_A(D) = \\sqrt{\\frac{\\sum_{i=1}^8 (D_i - \\bar{D})^2}{8\\times7}}$</div>
+            <div class="step-formula">$$\\sum (D_i - \\bar{D})^2 = ${devSqDExpr} = ${sumSqD.toFixed(6)}\\ \\mathrm{mm}^2$$</div>
+            <div class="step-formula">$$u_A(D) = \\sqrt{\\frac{${sumSqD.toFixed(6)}}{56}} = ${res.uDA_mm.toFixed(6)}\\ \\mathrm{mm} = ${toExp3(res.uDA_m)}\\ \\mathrm{m}$$</div>
+            <div class="step-formula">B类不确定度：$u_B(D) = \\frac{0.02}{\\sqrt{3}} = ${res.uDB_mm.toFixed(6)}\\ \\mathrm{mm} = ${toExp3(res.uDB_m)}\\ \\mathrm{m}$</div>
+            <div class="step-formula">合成不确定度：$u(D) = \\sqrt{u_A^2 + u_B^2} = \\sqrt{(${res.uDA_mm.toFixed(6)})^2 + (${res.uDB_mm.toFixed(6)})^2} = ${res.uD_mm.toFixed(6)}\\ \\mathrm{mm} = ${toExp3(res.uD_m)}\\ \\mathrm{m}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 一元线性回归 ($x = R_x$, $y = l$)</div>
+            <div class="step-formula">数据对 ($x_i$ / $\\Omega$, $y_i$ / m)：<br>
+                ${res.Rx.map((x, idx) => `(${toExp3(x)}, ${toExp3(res.length_mm[idx]/1000)})`).join('<br>')}
+            </div>
+            <div class="step-formula">均值：$\\bar{x} = \\frac{1}{8}\\sum x_i = ${toExp3(res.reg.x_mean)}\\,\\Omega$， $\\bar{y} = \\frac{1}{8}\\sum y_i = ${toExp3(res.reg.y_mean)}\\,\\mathrm{m}$</div>
+            <div class="step-formula">$\\sum xy = \\sum (x_i - \\bar{x})(y_i - \\bar{y}) = ${toExp3(res.reg.sumXY)}\\,\\Omega\\cdot\\mathrm{m}$</div>
+            <div class="step-formula">$\\sum x^2 = \\sum (x_i - \\bar{x})^2 = ${toExp3(res.reg.sumXX)}\\,\\Omega^2$</div>
+            <div class="step-formula">$\\sum y^2 = \\sum (y_i - \\bar{y})^2 = ${toExp3(res.reg.sumYY)}\\,\\mathrm{m}^2$</div>
+            <div class="step-formula">斜率 $\\hat{b} = \\frac{\\sum xy}{\\sum x^2} = \\frac{${toExp3(res.reg.sumXY)}}{${toExp3(res.reg.sumXX)}} = ${toExp3(res.reg.slope)}\\,\\mathrm{m/\\Omega}$</div>
+            <div class="step-formula">截距 $\\hat{a} = \\bar{y} - \\hat{b}\\bar{x} = ${toExp3(res.reg.intercept)}\\,\\mathrm{m}$</div>
+            <div class="step-formula">相关系数 $r = \\frac{\\sum xy}{\\sqrt{\\sum x^2 \\sum y^2}} = \\frac{${toExp3(res.reg.sumXY)}}{\\sqrt{${toExp3(res.reg.sumXX)} \\times ${toExp3(res.reg.sumYY)}}} = ${res.reg.r.toFixed(6)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 斜率 $\\hat{b}$ 的不确定度</div>
+            <div class="step-formula">A类不确定度：</div>
+            <div class="step-formula">$$u_A(\\hat{b}) =  \\hat{b} \\sqrt{\\frac{1}{n-2}\\left(\\frac{1}{r^2} - 1\\right)} = ${toExp3(res.reg.slope)} \\times \\sqrt{\\frac{1}{6}\\left(\\frac{1}{${res.reg.r.toFixed(6)}^2} - 1\\right)} = ${toExp3(res.uBA)}\\,\\mathrm{m/\\Omega}$$</div>
+            <div class="step-formula">B类不确定度：</div>
+            <div class="step-formula">$u_B(R_x) = \\frac{0.05\\% \\times \\overline{R_x}}{\\sqrt{3}} = \\frac{0.0005 \\times ${toExp3(res.Rx_avg)}}{\\sqrt{3}} = ${toExp3(res.uRxB)}\\,\\Omega$</div>
+            <div class="step-formula">$u_B(l) = \\frac{0.05\\,\\mathrm{mm}}{\\sqrt{3}} = \\frac{0.05\\times10^{-3}}{\\sqrt{3}} = ${toExp3(res.ulB_m)}\\,\\mathrm{m}$</div>
+            <div class="step-formula">$u_B(D) = \\frac{0.02\\,\\mathrm{mm}}{\\sqrt{3}} = \\frac{0.02\\times10^{-3}}{\\sqrt{3}} = ${toExp3(res.uDB_m)}\\,\\mathrm{m}$</div>
+            <div class="step-formula">相对量：</div>
+            <div class="step-formula">$\\frac{2u_B(D)}{\\bar{D}} = \\frac{2 \\times ${toExp3(res.uDB_m)}}{${toExp3(res.D_avg_m)}} = ${(2*res.uDB_m/res.D_avg_m).toExponential(3)}$</div>
+            <div class="step-formula">$\\frac{u_B(R_x)}{\\overline{R_x}} = \\frac{${toExp3(res.uRxB)}}{${toExp3(res.Rx_avg)}} = ${(res.uRxB/res.Rx_avg).toExponential(3)}$</div>
+            <div class="step-formula">$\\frac{u_B(l)}{\\bar{l}} = \\frac{${toExp3(res.ulB_m)}}{${toExp3(res.l_avg_m)}} = ${(res.ulB_m/res.l_avg_m).toExponential(3)}$</div>
+            <div class="step-formula">合成：$u_B(\\hat{b}) = \\hat{b} \\sqrt{\\left(\\frac{2u_B(D)}{\\bar{D}}\\right)^2 + \\left(\\frac{u_B(R_x)}{\\overline{R_x}}\\right)^2 + \\left(\\frac{u_B(l)}{\\bar{l}}\\right)^2}$</div>
+            <div class="step-formula">$$= ${toExp3(res.reg.slope)} \\times \\sqrt{${(2*res.uDB_m/res.D_avg_m).toExponential(3)}^2 + ${(res.uRxB/res.Rx_avg).toExponential(3)}^2 + ${(res.ulB_m/res.l_avg_m).toExponential(3)}^2} = ${toExp3(res.uBB)}\\,\\mathrm{m/\\Omega}$$</div>
+            <div class="step-formula">合成不确定度：$u(\\hat{b}) = \\sqrt{u_A^2 + u_B^2} = \\sqrt{(${toExp3(res.uBA)})^2 + (${toExp3(res.uBB)})^2} = ${toExp3(res.uB_m)}\\,\\mathrm{m/\\Omega}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 电阻率 $\\rho$ 计算</div>
+            <div class="step-formula">$$\\rho = \\frac{\\pi \\bar{D}^2}{4\\hat{b}} = \\frac{\\pi \\times (${toExp3(res.D_avg_m)}\\,\\mathrm{m})^2}{4 \\times ${toExp3(res.reg.slope)}\\,\\mathrm{m/\\Omega}} = ${toExp3(res.rho)}\\,\\Omega\\cdot\\mathrm{m}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">6. 合成不确定度 $u(\\rho)$</div>
+            <div class="step-formula">$2\\frac{u(D)}{\\bar{D}} = 2 \\times \\frac{${toExp3(res.uD_m)}}{${toExp3(res.D_avg_m)}} = ${(2*res.uD_m/res.D_avg_m).toExponential(3)}$</div>
+            <div class="step-formula">$\\frac{u(\\hat{b})}{\\hat{b}} = \\frac{${toExp3(res.uB_m)}}{${toExp3(res.reg.slope)}} = ${(res.uB_m/res.reg.slope).toExponential(3)}$</div>
+            <div class="step-formula">$$\\frac{u(\\rho)}{\\rho} = \\sqrt{ \\left(2\\frac{u(D)}{\\bar{D}}\\right)^2 + \\left(\\frac{u(\\hat{b})}{\\hat{b}}\\right)^2 } = \\sqrt{ (${(2*res.uD_m/res.D_avg_m).toExponential(3)})^2 + (${(res.uB_m/res.reg.slope).toExponential(3)})^2 } = ${res.relU.toExponential(3)}$$</div>
+            <div class="step-formula">$$u(\\rho) = \\rho \\times \\frac{u(\\rho)}{\\rho} = ${toExp3(res.rho)} \\times ${res.relU.toExponential(3)} = ${toExp3(res.uRho)}\\,\\Omega\\cdot\\mathrm{m}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">7. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">$\\rho = (${rhoSci} \\pm ${uSci})\\,\\Omega\\cdot\\mathrm{m}$</div>
+            <div class="step-result">相对不确定度 = $\\frac{u(\\rho)}{\\rho} = ${(res.relU*100).toFixed(2)}\\%$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // ---------- 显示主要结果 ----------
+// ---------- 修改后的 displayResults ----------
+function displayResults(res) {
+    // 使用 formatResultWithUncertainty 获得修约后的字符串
+    const fmt = window.ExperimentUtils.formatResultWithUncertainty(res.rho, res.uRho, true);
+    const rhoSci = toSciAfterRounding(fmt.value);
+    const uSci = toSciAfterRounding(fmt.uncertainty);
+    
+    document.getElementById('rho_val').innerText = rhoSci + ' Ω·m';
+    document.getElementById('urho_val').innerText = uSci + ' Ω·m';
+    document.getElementById('rel_urho_val').innerText = (res.relU * 100).toFixed(2) + '%';
+    
+    renderProcess(res); // 此函数内部最后一步也需同步修改，见下方说明
+    document.getElementById('resultMain').style.display = 'block';
+    document.getElementById('processSection').style.display = 'block';
+}
+
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或格式错误，请确保所有测量值已填满且 R_N > 0');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查数据');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+        // 生成电桥测量表格 (8行4列)
+        TableGenerator.generateInputTable('bridge-table-container', {
+            rows: 8,
+            cols: 4,
+            colHeaders: ['次数','接入长度 l (mm)', 'R₁和R₂ (Ω)', '正向电阻 $R_正$ (Ω)', '反向电阻 $R_负$ (Ω)'],
+            rowHeaders: ['1','2','3','4','5','6','7','8'],
+            prefix: 'bridge_',
+            // 示例默认值
+            defaultValues: [
+                100.0, 0.1000, 0.00125, 0.00123,
+                200.0, 0.1000, 0.00251, 0.00249,
+                300.0, 0.1000, 0.00378, 0.00376,
+                400.0, 0.1000, 0.00502, 0.00500,
+                500.0, 0.1000, 0.00630, 0.00628,
+                600.0, 0.1000, 0.00755, 0.00753,
+                700.0, 0.1000, 0.00880, 0.00878,
+                800.0, 0.1000, 0.01005, 0.01003
+            ]
         });
 
-        // 初始化测量表格
-        function initMeasurementTables() {
-            // 初始化8次电桥测量表格
-            for (let i = 0; i < 8; i++) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${i + 1}</div>
-                    <input class="cell-input" type="number" placeholder="长度" data-index="${i}" data-type="length" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="R₁和R₂" data-index="${i}" data-type="R1R2" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="R_正" data-index="${i}" data-type="Rpos" step="0.001" />
-                    <input class="cell-input" type="number" placeholder="R_负" data-index="${i}" data-type="Rneg" step="0.001" />
-                `;
-                elements.measurementsContainer.appendChild(row);
-            }
-            
-            // 初始化8次直径测量表格
-            for (let i = 0; i < 8; i += 2) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                if (i + 1 < 8) {
-                    // 两列并排显示
-                    row.innerHTML = `
-                        <div class="cell">${i + 1}</div>
-                        <input class="cell-input" type="number" placeholder="直径" data-index="${i}" data-type="diameter" step="0.001" />
-                        <div class="cell">${i + 2}</div>
-                        <input class="cell-input" type="number" placeholder="直径" data-index="${i + 1}" data-type="diameter" step="0.001" />
-                    `;
-                } else {
-                    // 最后一行只有一个
-                    row.innerHTML = `
-                        <div class="cell">${i + 1}</div>
-                        <input class="cell-input" type="number" placeholder="直径" data-index="${i}" data-type="diameter" step="0.001" />
-                        <div class="cell"></div>
-                        <div class="cell"></div>
-                    `;
-                }
-                elements.diameterMeasurementsContainer.appendChild(row);
-            }
-        }
+        // 生成直径测量表格 (8行1列)
+        TableGenerator.generateInputTable('diameter-table-container', {
+            rows: 8,
+            cols: 1,
+            colHeaders: ['次数','直径 $D_i$ (mm)'],
+            rowHeaders: ['1','2','3','4','5','6','7','8'],
+            prefix: 'diam_',
+            defaultValues: [5.00, 5.01, 4.99, 5.00, 5.02, 4.98, 5.00, 5.00]
+        });
 
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 基本参数输入
-            elements.RN.addEventListener('input', onRNChange);
+        // 加载保存数据（会覆盖默认值）
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
 
-            // 测量数据输入
-            elements.measurementsContainer.addEventListener('input', onMeasurementChange);
-            elements.diameterMeasurementsContainer.addEventListener('input', onDiameterChange);
+        // 键盘导航
+        window.ExperimentUtils.KeyboardNav.init('#bridge-table-container', 4);
+        window.ExperimentUtils.KeyboardNav.init('#diameter-table-container', 1);
 
-            // 按钮事件
-            elements.calculateBtn.addEventListener('click', calculateResults);
-            elements.saveBtn.addEventListener('click', saveData);
-        }
+        // 深色模式
+        window.ExperimentUtils.ThemeManager.init();
 
-        // 输入处理函数
-        function onRNChange(e) {
-            experimentData.RN = e.target.value;
-            updateCalculateStatus();
-        }
-
-        function onMeasurementChange(e) {
-            const index = parseInt(e.target.dataset.index);
-            const type = e.target.dataset.type;
-            const value = e.target.value;
-
-            if (!experimentData.measurements[index]) {
-                experimentData.measurements[index] = {};
-            }
-            experimentData.measurements[index][type] = value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-        }
-
-        function onDiameterChange(e) {
-            const index = parseInt(e.target.dataset.index);
-            const type = e.target.dataset.type;
-            const value = e.target.value;
-
-            if (!experimentData.diameters[index]) {
-                experimentData.diameters[index] = {};
-            }
-            experimentData.diameters[index][type] = value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-        }
-
-        // 更新计算按钮状态
-        function updateCalculateStatus() {
-            const hasBasicData = experimentData.RN;
-            
-            const hasMeasurements = experimentData.measurements.some(item => 
-                item && item.length && item.R1R2 && item.Rpos && item.Rneg
-            );
-            
-            const hasDiameters = experimentData.diameters.some(item => 
-                item && item.diameter
-            );
-            
-            const canCalculate = hasBasicData && hasMeasurements && hasDiameters;
-            
-            elements.calculateBtn.disabled = !canCalculate;
-        }
-
-        // 计算功能
-        function calculateResults() {
-            try {
-                // 计算中间结果 R_bar 和 R_x
-                const intermediateResults = calculateIntermediateResults();
-                
-                // 计算一元线性回归
-                const regression = calculateLinearRegression(intermediateResults);
-                
-                // 计算电阻率 ρ
-                const rho = calculateResistivity(intermediateResults, regression);
-                
-                // 计算不确定度
-                const uncertainty = calculateUncertainty(intermediateResults, regression, rho);
-                
-                // 更新UI显示结果
-                experimentData.rhoValue = formatScientific(rho, 6);
-                experimentData.uRhoValue = formatScientific(uncertainty.uRho, 6);
-                experimentData.relativeUncertainty = uncertainty.relativeUncertainty.toFixed(6);
-                
-                // 更新中间结果
-                experimentData.intermediateResults = intermediateResults;
-                experimentData.xMean = regression.xMean.toExponential(6);
-                experimentData.yMean = regression.yMean.toExponential(6);
-                experimentData.sumXY = regression.sumXY.toExponential(6);
-                experimentData.sumX2 = regression.sumX2.toExponential(6);
-                experimentData.sumY2 = regression.sumY2.toExponential(6);
-                experimentData.slopeB = regression.slope.toExponential(6);
-                experimentData.interceptA = regression.intercept.toExponential(6);
-                experimentData.correlationR = regression.correlation.toFixed(6);
-                
-                // 不确定度分量
-                experimentData.uDA = uncertainty.uDA.toExponential(6);
-                experimentData.uDB = uncertainty.uDB.toExponential(6);
-                experimentData.uDTotal = uncertainty.uDTotal.toExponential(6);
-                experimentData.uBA = uncertainty.uBA.toExponential(6);
-                experimentData.uBB = uncertainty.uBB.toExponential(6);
-                experimentData.uBTotal = uncertainty.uBTotal.toExponential(6);
-                experimentData.uRxB = uncertainty.uRxB.toExponential(6);
-                experimentData.ulB = uncertainty.ulB.toExponential(6);
-                
-                // 显示结果
-                displayResults();
-                
-                alert('计算完成！');
-            } catch (error) {
-                console.error('计算错误:', error);
-                alert('计算失败，请检查数据');
-            }
-        }
-
-        // 格式化科学计数法显示
-        function formatScientific(value, decimals) {
-            if (value === 0) return '0.000000e+0';
-            const exp = Math.floor(Math.log10(Math.abs(value)));
-            const mantissa = value / Math.pow(10, exp);
-            return mantissa.toFixed(decimals) + 'e' + (exp >= 0 ? '+' : '') + exp;
-        }
-
-        // 计算中间结果 R_bar 和 R_x
-        function calculateIntermediateResults() {
-            const RN = parseFloat(experimentData.RN);
-            
-            const results = [];
-            
-            for (let i = 0; i < 8; i++) {
-                const measurement = experimentData.measurements[i];
-                const diameterData = experimentData.diameters[i];
-                
-                if (!measurement || !diameterData) continue;
-                
-                const length = parseFloat(measurement.length);
-                const R1R2 = parseFloat(measurement.R1R2); // R₁和R₂相等
-                const Rpos = parseFloat(measurement.Rpos);
-                const Rneg = parseFloat(measurement.Rneg);
-                const D = parseFloat(diameterData.diameter);
-                
-                if (!isNaN(length) && !isNaN(R1R2) && !isNaN(Rpos) && !isNaN(Rneg) && !isNaN(D)) {
-                    const Rbar = (Rpos + Rneg) / 2;
-                    const Rx = (RN / R1R2) * Rbar;
-                    
-                    results.push({
-                        index: i + 1,
-                        length: length,  // mm
-                        R1R2: R1R2,
-                        Rpos: Rpos,
-                        Rneg: Rneg,
-                        D: D,  // mm
-                        Rbar: Rbar,
-                        Rx: Rx  // Ω
-                    });
-                }
-            }
-            
-            return results;
-        }
-
-        // 计算一元线性回归（关键修正部分）
-        function calculateLinearRegression(intermediateResults) {
-            if (intermediateResults.length === 0) {
-                return {
-                    xMean: 0,
-                    yMean: 0,
-                    sumXY: 0,
-                    sumX2: 0,
-                    sumY2: 0,
-                    slope: 0,
-                    intercept: 0,
-                    correlation: 0
-                };
-            }
-            
-            // x = R_x (Ω), y = l (m) - 长度从mm转换为m
-            const xValues = intermediateResults.map(r => r.Rx);  // Ω
-            const yValues = intermediateResults.map(r => r.length / 1000);  // m
-            
-            const n = intermediateResults.length;
-            const xMean = xValues.reduce((a, b) => a + b, 0) / n;
-            const yMean = yValues.reduce((a, b) => a + b, 0) / n;
-            
-            let sumXY = 0;
-            let sumX2 = 0;
-            let sumY2 = 0;
-            
-            for (let i = 0; i < n; i++) {
-                const xDiff = xValues[i] - xMean;
-                const yDiff = yValues[i] - yMean;
-                sumXY += xDiff * yDiff;  // Ω·m
-                sumX2 += xDiff * xDiff;  // Ω²
-                sumY2 += yDiff * yDiff;  // m²
-            }
-            
-            // 斜率 b̂ = Σxy / Σx² (单位：m/Ω)
-            const slope = sumXY / sumX2;
-            
-            // 截距 â = ȳ - b̂·x̄ (单位：m)
-            const intercept = yMean - slope * xMean;
-            
-            // 相关系数 r = Σxy / √(Σx²·Σy²)
-            const correlation = sumXY / Math.sqrt(sumX2 * sumY2);
-            
-            return {
-                xMean,
-                yMean,
-                sumXY,
-                sumX2,
-                sumY2,
-                slope,      // m/Ω
-                intercept,  // m
-                correlation
-            };
-        }
-
-        // 计算电阻率 ρ（关键修正部分）
-        function calculateResistivity(intermediateResults, regression) {
-            // 计算平均直径 D (转换为米)
-            const DValues = intermediateResults.map(r => r.D);
-            const DMean = DValues.reduce((a, b) => a + b, 0) / DValues.length;
-            const D_m = DMean / 1000; // mm转换为m
-            
-            // ρ = (π * D²) / (4 * b̂)
-            // 其中：D 单位是 m，b̂ 是回归斜率，单位是 m/Ω
-            // 所以 ρ 的单位是 Ω·m
-            const rho = (Math.PI * D_m * D_m) / (4 * regression.slope);
-            
-            return rho;
-        }
-
-        // 计算不确定度（已修正单位）
-        function calculateUncertainty(intermediateResults, regression, rho) {
-            const n = intermediateResults.length;
-            if (n < 2) {
-                return {
-                    uDA: 0,
-                    uDB: 0,
-                    uDTotal: 0,
-                    uBA: 0,
-                    uBB: 0,
-                    uBTotal: 0,
-                    uRxB: 0,
-                    ulB: 0,
-                    relativeUncertainty: 0,
-                    uRho: 0
-                };
-            }
-            
-            // 1. 直径D的不确定度（单位：mm）
-            const DValues = intermediateResults.map(r => r.D);  // mm
-            const DMean_mm = DValues.reduce((a, b) => a + b, 0) / n;
-            const DMean_m = DMean_mm / 1000;  // 转换为m
-            
-            // A类不确定度（mm）
-            const DStdDev = Math.sqrt(DValues.reduce((sum, val) => sum + Math.pow(val - DMean_mm, 2), 0) / (n - 1));
-            const uDA_mm = DStdDev / Math.sqrt(n);
-            const uDA_m = uDA_mm / 1000;  // 转换为m
-            
-            // B类不确定度: u_B(D) = 0.02mm / √3
-            const uDB_mm = 0.02 / Math.sqrt(3);
-            const uDB_m = uDB_mm / 1000;  // 转换为m
-            
-            // 合成不确定度（m）
-            const uDTotal_m = Math.sqrt(uDA_m * uDA_m + uDB_m * uDB_m);
-            const uDTotal_mm = uDTotal_m * 1000;  // 转换为mm用于显示
-            
-            // 2. 斜率b̂的不确定度
-            // A类不确定度: u_A(b̂) = b̂ * √[1/(n-2) * (1/r² - 1)]
-            let uBA = 0;
-            if (regression.correlation !== 0) {
-                uBA = regression.slope * Math.sqrt((1 / (n - 2)) * ((1 / (regression.correlation * regression.correlation)) - 1));
-            }
-            
-            // B类不确定度
-            // u_B(b̂) ≈ b̂ × √[(2·u_B(D)/D)² + (u_B(R_x)/R_x)² + (u_B(l)/l)²]
-            
-            // R_x的均值
-            const RxValues = intermediateResults.map(r => r.Rx);
-            const RxMean = RxValues.reduce((a, b) => a + b, 0) / n;
-            
-            // u_B(R_x) = (0.05% × R_x̄) / √3
-            const uRxB = (0.0005 * RxMean) / Math.sqrt(3);
-            
-            // u_B(l) = 0.05mm / √3 = 0.00005m / √3
-            const ulB_mm = 0.05 / Math.sqrt(3);
-            const ulB_m = ulB_mm / 1000;  // 转换为m
-            
-            // 长度均值（m）
-            const lValues_m = intermediateResults.map(r => r.length / 1000);
-            const lMean_m = lValues_m.reduce((a, b) => a + b, 0) / n;
-            
-            // 计算u_B(b̂)的各项
-            const term1 = Math.pow(2 * uDB_m / DMean_m, 2);  // (2·u_B(D)/D)²
-            const term2 = Math.pow(uRxB / RxMean, 2);       // (u_B(R_x)/R_x)²
-            const term3 = Math.pow(ulB_m / lMean_m, 2);     // (u_B(l)/l)²
-            
-            const uBB = regression.slope * Math.sqrt(term1 + term2 + term3);
-            
-            // 合成不确定度
-            const uBTotal = Math.sqrt(uBA * uBA + uBB * uBB);
-            
-            // 3. 电阻率ρ的不确定度
-            // u(ρ) = ρ × √[(2·u(D)/D)² + (u(b̂)/b̂)²]
-            const rhoTerm1 = Math.pow(2 * uDTotal_m / DMean_m, 2);
-            const rhoTerm2 = Math.pow(uBTotal / regression.slope, 2);
-            
-            const relativeUncertainty = Math.sqrt(rhoTerm1 + rhoTerm2);
-            const uRho = rho * relativeUncertainty;
-            
-            return {
-                uDA: uDA_mm,        // mm
-                uDB: uDB_mm,        // mm
-                uDTotal: uDTotal_mm, // mm
-                uBA: uBA,           // 无量纲，但实际上是m/Ω
-                uBB: uBB,           // 无量纲，但实际上是m/Ω
-                uBTotal: uBTotal,   // 无量纲，但实际上是m/Ω
-                uRxB: uRxB,         // Ω
-                ulB: ulB_mm,        // mm
-                relativeUncertainty,
-                uRho
-            };
-        }
-
-        // 显示计算结果
-        function displayResults() {
-            // 主要结果
-            elements.rhoValue.textContent = `${experimentData.rhoValue} Ω·m`;
-            elements.uRhoValue.textContent = `${experimentData.uRhoValue} Ω·m`;
-            elements.relativeUncertainty.textContent = experimentData.relativeUncertainty;
-            
-            // 清空中介表格
-            elements.intermediateTable.innerHTML = '';
-            
-            // 填充中间结果表格（显示为米）
-            experimentData.intermediateResults.forEach(result => {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${result.index}</div>
-                    <div class="cell">${(result.length / 1000).toExponential(6)}</div>
-                    <div class="cell">${result.Rbar.toExponential(6)}</div>
-                    <div class="cell">${result.Rx.toExponential(6)}</div>
-                    <div class="cell">${(result.D / 1000).toExponential(6)}</div>
-                `;
-                elements.intermediateTable.appendChild(row);
-            });
-            
-            // 一元线性回归结果
-            elements.xMean.textContent = experimentData.xMean;
-            elements.yMean.textContent = experimentData.yMean;
-            elements.sumXY.textContent = experimentData.sumXY;
-            elements.sumX2.textContent = experimentData.sumX2;
-            elements.sumY2.textContent = experimentData.sumY2;
-            elements.slopeB.textContent = experimentData.slopeB;
-            elements.interceptA.textContent = experimentData.interceptA;
-            elements.correlationR.textContent = experimentData.correlationR;
-            
-            // 不确定度分量
-            elements.uDA.textContent = `${experimentData.uDA} mm`;
-            elements.uDB.textContent = `${experimentData.uDB} mm`;
-            elements.uDTotal.textContent = `${experimentData.uDTotal} mm`;
-            elements.uBA.textContent = experimentData.uBA;
-            elements.uBB.textContent = experimentData.uBB;
-            elements.uBTotal.textContent = experimentData.uBTotal;
-            elements.uRxB.textContent = `${experimentData.uRxB} Ω`;
-            elements.ulB.textContent = `${experimentData.ulB} mm`;
-            
-            // 显示结果区域
-            elements.resultsSection.style.display = 'block';
-            experimentData.showResults = true;
-        }
-
-        // 保存数据到localStorage
-        function saveData() {
-            try {
-                experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('experiment4-1', JSON.stringify(experimentData));
-                elements.lastUpdate.textContent = experimentData.lastUpdate;
-                alert('数据保存成功！');
-            } catch (error) {
-                console.error('保存失败:', error);
-                alert('保存失败，请重试');
-            }
-        }
-
-        // 从localStorage加载数据
-        function loadExperimentData() {
-            try {
-                const savedData = localStorage.getItem('experiment4-1');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 恢复基本参数
-                    elements.RN.value = data.RN || '0.001';
-                    
-                    // 恢复测量数据
-                    if (data.measurements) {
-                        data.measurements.forEach((measurement, index) => {
-                            if (measurement) {
-                                const inputs = elements.measurementsContainer.querySelectorAll(`[data-index="${index}"]`);
-                                inputs.forEach(input => {
-                                    const type = input.dataset.type;
-                                    if (measurement[type]) {
-                                        input.value = measurement[type];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // 恢复直径测量数据
-                    if (data.diameters) {
-                        data.diameters.forEach((diameter, index) => {
-                            if (diameter) {
-                                const inputs = elements.diameterMeasurementsContainer.querySelectorAll(`[data-index="${index}"]`);
-                                inputs.forEach(input => {
-                                    const type = input.dataset.type;
-                                    if (diameter[type]) {
-                                        input.value = diameter[type];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // 恢复计算结果
-                    if (data.showResults) {
-                        Object.assign(experimentData, data);
-                        displayResults();
-                    }
-                    
-                    // 恢复最后更新时间
-                    if (data.lastUpdate) {
-                        elements.lastUpdate.textContent = data.lastUpdate;
-                    }
-                    
-                    // 更新计算状态
-                    updateCalculateStatus();
-                }
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
-        }
-    </script>
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
 </body>
 </html>

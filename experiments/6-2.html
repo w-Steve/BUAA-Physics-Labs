@@ -3,728 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自准直法测量凸透镜焦距</title>
+    <title>基物实验助手 - 自准直法测量凸透镜焦距</title>
+    <!-- 公共样式 (来自 1-1.html 的 style.css) -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 (来自 1-1.html 的 common.js) -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 (保持与 1-1 一致) -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        /* 针对6-2实验微调表格最小宽度，保证显示美观 */
+        #measurement-table-container .table-header,
+        #measurement-table-container .table-row {
+            min-width: 500px;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 24px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 12px;
-        }
-        
-        .section {
-            margin-bottom: 28px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background-color: #fafafa;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-content {
-            background-color: white;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        
-        .input-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .data-table {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        .table-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-        }
-        
-        .table-header, .table-row {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header-cell, .cell {
-            flex: 1;
-            padding: 10px 8px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .header-cell {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .cell-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .btn-calculate {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-calculate:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-calculate:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-save {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .btn-save:hover {
-            background-color: #27ae60;
-        }
-        
-        .btn-reset {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
-        .btn-reset:hover {
-            background-color: #c0392b;
-        }
-        
-        .results-group {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .result-item.highlight {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .result-label {
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .intermediate-results, .uncertainty-details {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 8px;
-        }
-        
-        .uncertainty-group {
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px dashed #e0e0e0;
-        }
-        
-        .group-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-            font-size: 16px;
-        }
-        
-        .data-status {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .status-item {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .formula-box {
-            background-color: #f8f9fa;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 10px 0;
-            border-left: 4px solid #3498db;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .input-row {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .input-item {
-                min-width: 100%;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
+        /* 结果卡片高度自适应微调 */
+        .result-card {
+            min-height: 120px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="page-title">自准直法测量凸透镜焦距实验</div>
-        <div class="experiment-content">
-            <!-- 实验简介 -->
-            <div class="section">
-                <div class="section-title">📝 实验说明</div>
-                <div class="section-content">
-                    <p style="margin-top: 10px;">根据公式计算凸透镜焦距：</p>
-                    <div class="formula-box">
-                        <p>$f_{\text{总}} = \frac{\sum_{i = 1}^{5}f_{i}}{5} = \frac{\sum_{i = 1}^{5}{|X_{Li} - X_{Ai}|}}{5} - \delta$</p>
-                        <p>其中 $\delta = 0.85\ \text{cm}$</p>
-                    </div>
-                    <div class="formula-box">
-                        <p>不确定度：$u(f_{\text{总}}) = \frac{0.05\sqrt{2}}{\sqrt{15}}$ cm</p>
-                    </div>
-                </div>
-            </div>
+<div class="container">
+    <div class="page-title">自准直法测量凸透镜焦距</div>
 
-            <!-- 原始数据输入 -->
-            <div class="section">
-                <div class="section-title">📊 原始数据记录</div>
-                
-                <!-- 测量数据 -->
-                <div class="data-table">
-                    <div class="table-title">测量数据 (5次测量)</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">xA (cm)</div>
-                        <div class="header-cell">xL正 (cm)</div>
-                        <div class="header-cell">xL反 (cm)</div>
-                    </div>
-                    <div id="measurementsContainer">
-                        <!-- 动态生成测量行 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
-                <button class="btn-save" id="saveBtn">💾 保存数据</button>
-            </div>
-            
-            <!-- 计算出的中间数据 -->
-            <div class="section" id="intermediateDataSection" style="display: none;">
-                <div class="section-title">📈 中间计算结果</div>
-                
-                <div class="data-table">
-                    <div class="table-title">中间数据 (5次测量)</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">xL = (xL正+xL反)/2 (cm)</div>
-                        <div class="header-cell">|xL - xA| (cm)</div>
-                        <div class="header-cell">f_i = |xL - xA| - δ (cm)</div>
-                    </div>
-                    <div id="intermediateDataContainer">
-                        <!-- 动态生成中间数据行 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 计算结果 -->
-            <div class="section" id="resultsSection" style="display: none;">
-                <div class="section-title">🧮 计算结果</div>
-                
-                <div class="results-group">
-                    <div class="result-item highlight">
-                        <div class="result-label">焦距 f:</div>
-                        <div class="result-value" id="fValue">0.000 cm</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">不确定度 u(f):</div>
-                        <div class="result-value" id="ufValue">0.000 cm</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">相对不确定度 u(f)/f:</div>
-                        <div class="result-value" id="relativeUncertainty">0.000</div>
-                    </div>
-                </div>
+    <!-- 实验要点提示 (包含公式及常量) -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 仪器误差 $\Delta_{\text{仪}}$ 默认 $0.05\,\text{cm}$<br>
+        • 透镜组位移 $\delta = 0.85\,\text{cm}$<br>
+        • 测量5次：物位置 $x_A$，像位置 $x_L$ 正、$x_L$ 反<br>
+        • 计算公式：
+        $$x_L = \frac{x_{L正}+x_{L反}}{2},\quad f_i = |x_L - x_A| - \delta$$
+        $$f = \frac{1}{5}\sum_{i=1}^{5} f_i$$
+        $$u(f) = \frac{\Delta_{\text{仪}}\sqrt{2}}{\sqrt{15}},\quad \text{相对不确定度} = \frac{u(f)}{f}$$
+    </div>
 
-                <!-- 中间计算结果 -->
-                <div class="intermediate-results">
-                    <div class="result-title">平均值计算结果</div>
-                    <div class="result-item">
-                        <div class="result-label">平均 xA:</div>
-                        <div class="result-value" id="avgXA">0.000 cm</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">平均 xL:</div>
-                        <div class="result-value" id="avgXL">0.000 cm</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">平均 |xL - xA|:</div>
-                        <div class="result-value" id="avgDiff">0.000 cm</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">δ:</div>
-                        <div class="result-value" id="deltaValue">0.850 cm</div>
-                    </div>
-                </div>
-            </div>
+    <!-- 原始数据录入区 (无零点修正, 只有测量表格和两个参数) -->
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
 
-            <!-- 数据状态 -->
-            <div class="section">
-                <div class="section-title">💾 数据状态</div>
-                <div class="data-status">
-                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
-                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
-                </div>
+        <!-- 顶部参数输入: δ 和 仪器误差 (模仿 1-1 的 top-input-group) -->
+        <div class="top-input-group" style="margin-bottom: 1.5rem; gap: 2.5rem;">
+            <div class="top-input">
+                <label>$\delta$ (cm):</label>
+                <input type="number" id="delta" class="save-input cell-input" step="0.01" value="0.85">
             </div>
+            <div class="top-input">
+                <label>$\Delta_{\text{仪}}$ (cm):</label>
+                <input type="number" id="instrumentErr" class="save-input cell-input" step="0.01" value="0.05">
+            </div>
+        </div>
+
+        <!-- 测量表格容器 (5行3列: xA, xL正, xL反) -->
+        <div style="margin-bottom: 1rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">测量数据 (5次)</div>
+            <div id="measurement-table-container" class="data-table"></div>
         </div>
     </div>
 
-    <script>
-        // 实验数据模型
-        const experimentData = {
-            experimentId: 'convex-lens-focal-length',
-            // 测量数据
-            measurements: [],
-            // 中间数据
-            intermediateData: [],
-            // 计算结果
-            showResults: false,
-            fValue: '0.000',
-            ufValue: '0.000',
-            relativeUncertainty: '0.000',
-            // 中间结果
-            avgXA: '0.000',
-            avgXL: '0.000',
-            avgDiff: '0.000',
-            deltaValue: '0.850',
-            // 状态
-            lastUpdate: ''
-        };
+    <!-- 操作按钮组 (与 1-1 完全一致) -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
 
-        // DOM 元素
-        const elements = {
-            measurementsContainer: document.getElementById('measurementsContainer'),
-            intermediateDataSection: document.getElementById('intermediateDataSection'),
-            intermediateDataContainer: document.getElementById('intermediateDataContainer'),
-            calculateBtn: document.getElementById('calculateBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            resetBtn: document.getElementById('resetBtn'),
-            resultsSection: document.getElementById('resultsSection'),
-            fValue: document.getElementById('fValue'),
-            ufValue: document.getElementById('ufValue'),
-            relativeUncertainty: document.getElementById('relativeUncertainty'),
-            avgXA: document.getElementById('avgXA'),
-            avgXL: document.getElementById('avgXL'),
-            avgDiff: document.getElementById('avgDiff'),
-            deltaValue: document.getElementById('deltaValue'),
-            lastUpdate: document.getElementById('lastUpdate'),
-            dataCompleteness: document.getElementById('dataCompleteness')
-        };
+    <!-- 主要结果卡片 (焦距, 不确定度, 相对不确定度) -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">焦距 $f$ (cm)</div><div class="result-value" id="f_val">—</div></div>
+            <div class="result-card"><div class="result-label">合成不确定度 $u(f)$ (cm)</div><div class="result-value" id="uf_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对不确定度 $u(f)/f$</div><div class="result-value" id="rel_uf_val">—</div></div>
+        </div>
+    </div>
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initMeasurementTables();
-            loadExperimentData();
-            setupEventListeners();
-            updateDataCompleteness();
+    <!-- 详细计算过程 (仿 1-1 逐步推导) -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <!-- 免责声明 (与 1-1 相同) -->
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '6-2';   // 独立存储键值
+
+    // ---------- 获取所有输入值 (无零点修正) ----------
+    function getInputs() {
+        const delta = parseFloat(document.getElementById('delta').value) || 0.85;
+        const instrErr = parseFloat(document.getElementById('instrumentErr').value) || 0.05;
+
+        // 读取测量表格数据 (id: m_1 ~ m_15, 按行优先: xA, xL正, xL反)
+        const xA = [], xLz = [], xLf = [];
+        for (let i = 0; i < 5; i++) {
+            const baseIdx = i * 3;  // 每行3个数据
+            const a = parseFloat(document.getElementById(`m_${baseIdx + 1}`)?.value);
+            const z = parseFloat(document.getElementById(`m_${baseIdx + 2}`)?.value);
+            const f = parseFloat(document.getElementById(`m_${baseIdx + 3}`)?.value);
+            xA.push(isNaN(a) ? NaN : a);
+            xLz.push(isNaN(z) ? NaN : z);
+            xLf.push(isNaN(f) ? NaN : f);
+        }
+
+        return { delta, instrErr, xA, xLz, xLf };
+    }
+
+    // ---------- 数据有效性检查 (5组必须完整, δ和仪器误差为正) ----------
+    function isValid(data) {
+        if (data.delta <= 0 || data.instrErr <= 0) return false;
+        const { xA, xLz, xLf } = data;
+        for (let i = 0; i < 5; i++) {
+            if (isNaN(xA[i]) || isNaN(xLz[i]) || isNaN(xLf[i])) return false;
+        }
+        return true;
+    }
+
+    // ---------- 核心计算 ----------
+    function compute(data) {
+        const { delta, instrErr, xA, xLz, xLf } = data;
+        const Data = window.ExperimentUtils.Data;
+
+        // 计算每组的 xL = (xL正 + xL反)/2, |xA - xL|, fi = |xA - xL| - delta
+        const xL = [];
+        const absDiff = [];
+        const fi = [];
+        for (let i = 0; i < 5; i++) {
+            const xL_i = (xLz[i] + xLf[i]) / 2;
+            const diff_i = Math.abs(xL_i - xA[i]);
+            const fi_i = diff_i - delta;
+            xL.push(xL_i);
+            absDiff.push(diff_i);
+            fi.push(fi_i);
+        }
+
+        // 焦距 f = 平均值(fi)
+        const f = Data.mean(fi);
+
+        // 不确定度 u(f) = (instrErr * sqrt(2)) / sqrt(15)
+        const uf = (instrErr * Math.sqrt(2)) / Math.sqrt(15);
+        const relU = f !== 0 ? uf / Math.abs(f) : 0;
+
+        return {
+            // 原始数组
+            xA, xLz, xLf,
+            xL, absDiff, fi,
+            delta, instrErr,
+            f, uf, relU
+        };
+    }
+
+    // ---------- 渲染详细计算过程 (仿 1-1 风格) ----------
+    function renderProcess(res) {
+        const { xA, xLz, xLf, xL, absDiff, fi, delta, instrErr, f, uf, relU } = res;
+
+        // 辅助生成残差平方和字符串 (这里仅用于展示, 实际A类不确定度未使用, 但保留格式一致)
+        const Data = window.ExperimentUtils.Data;
+        const avgFi = f;
+
+        // 为了与1-1风格统一，列出每次的fi及残差平方 (可选)
+        const residualsFi = fi.map(v => (v - avgFi).toFixed(4)).join(', ');
+
+        // 使用 common.js 的有效数字格式化
+        const [fDisp, ufDisp] = window.ExperimentUtils.formatResultWithUncertainty(f, uf);
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 计算每组的 $x_L = (x_{L正}+x_{L反})/2$ 及 $|x_L - x_A|$</div>
+            ${[0,1,2,3,4].map(i => `
+                <div class="step-formula">$x_{L${i+1}} = \\frac{${xLz[i].toFixed(4)}+${xLf[i].toFixed(4)}}{2} = ${xL[i].toFixed(4)}$,  $|x_L - x_A| = |${xL[i].toFixed(4)}-${xA[i].toFixed(4)}| = ${absDiff[i].toFixed(4)}$</div>
+            `).join('')}
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 计算每组的 $f_i = |x_L - x_A| - \\delta$</div>
+            ${[0,1,2,3,4].map(i => `
+                <div class="step-formula">$f_{${i+1}} = ${absDiff[i].toFixed(4)} - ${delta.toFixed(4)} = ${fi[i].toFixed(4)}$</div>
+            `).join('')}
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 焦距 $f$ 计算</div>
+            <div class="step-formula">$$\\bar{f} = \\frac{1}{5}\\left(${fi.map(v => v.toFixed(4)).join('+')}\\right) = ${f.toFixed(6)}\\,\\mathrm{cm}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 不确定度 $u(f)$ 计算</div>
+            <div class="step-formula">单个 $f_i$ 的不确定度: $u(f_i) = \\sqrt{u(x_L)^2 + u(x_A)^2} = \\sqrt{\\left(\\frac{\\Delta_{\\text{仪}}}{\\sqrt{3}}\\right)^2 + \\left(\\frac{\\Delta_{\\text{仪}}}{\\sqrt{3}}\\right)^2} = \\frac{\\Delta_{\\text{仪}}\\sqrt{2}}{\\sqrt{3}}$</div>
+            <div class="step-formula">$$u(f_i) = \\frac{${instrErr.toFixed(4)} \\times \\sqrt{2}}{\\sqrt{3}} = ${(instrErr*Math.sqrt(2/3)).toFixed(6)}\\,\\mathrm{cm}$$</div>
+            <div class="step-formula">焦距 $f$ 为5次测量的平均值, 故 $u(f) = \\frac{u(f_i)}{\\sqrt{5}} = \\frac{${instrErr.toFixed(4)}\\sqrt{2}}{\\sqrt{15}} = ${uf.toFixed(6)}\\,\\mathrm{cm}$</div>
+            <div class="step-result">$u(f) = ${uf.toFixed(6)}\,\\mathrm{cm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">$f = (${fDisp} \\pm ${ufDisp})\\,\\mathrm{cm}$</div>
+            <div class="step-result">相对不确定度 = $\\frac{u(f)}{f} = ${(relU*100).toFixed(2)}\\,\\%$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // ---------- 显示主要结果 (卡片) ----------
+    function displayResults(res) {
+        const [fRounded, ufRounded] = window.ExperimentUtils.formatResultWithUncertainty(res.f, res.uf);
+        document.getElementById('f_val').innerText = fRounded;
+        document.getElementById('uf_val').innerText = ufRounded;
+        document.getElementById('rel_uf_val').innerText = res.relU.toFixed(6);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或格式错误，请确保5次测量的 xA, xL正, xL反 均已填满，且δ和仪器误差为正数');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            // 保存当前输入到 localStorage
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查数据');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 (生成表格, 加载数据, 绑定事件) ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+        // 生成测量表格: 5行, 3列 (xA, xL正, xL反), 列标题包含次数
+        TableGenerator.generateInputTable('measurement-table-container', {
+            rows: 5,
+            cols: 3,
+            colHeaders: ['次数', 'xA (cm)', 'xL正 (cm)', 'xL反 (cm)'],
+            rowHeaders: ['1', '2', '3', '4', '5'],
+            prefix: 'm_',
+            // 默认示例数据 (合理焦距范围: 约14 cm)
+            defaultValues: [
+                45.20, 62.30, 62.50,   // 1: xA, xL正, xL反
+                45.30, 62.40, 62.60,   // 2
+                45.10, 62.20, 62.40,   // 3
+                45.25, 62.35, 62.55,   // 4
+                45.15, 62.25, 62.45    // 5
+            ]
         });
 
-        // 初始化测量表格
-        function initMeasurementTables() {
-            // 初始化测量表格
-            for (let i = 0; i < 5; i++) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${i + 1}</div>
-                    <input class="cell-input" type="number" placeholder="xA" data-index="${i}" data-type="xA" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="xL正" data-index="${i}" data-type="xL正" step="0.01" />
-                    <input class="cell-input" type="number" placeholder="xL反" data-index="${i}" data-type="xL反" step="0.01" />
-                `;
-                elements.measurementsContainer.appendChild(row);
-            }
+        // 若本地无数据，使用默认值 (已通过 defaultValues 设置)
+        if (!localStorage.getItem(APP_KEY)) {
+            // 可设置δ和仪器误差默认 (已写在HTML中)
         }
 
-        // 初始化中间数据表格
-        function initIntermediateDataTable() {
-            elements.intermediateDataContainer.innerHTML = '';
-            
-            for (let i = 0; i < 5; i++) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${i + 1}</div>
-                    <div class="cell" id="xLValue${i}">0.000</div>
-                    <div class="cell" id="diffValue${i}">0.000</div>
-                    <div class="cell" id="fValue${i}">0.000</div>
-                `;
-                elements.intermediateDataContainer.appendChild(row);
-            }
-        }
+        // 加载本地保存的数据 (会覆盖默认值)
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
 
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 测量数据输入
-            elements.measurementsContainer.addEventListener('input', onMeasurementChange);
+        // 键盘导航 (列数为3)
+        window.ExperimentUtils.KeyboardNav.init('#measurement-table-container', 3);
 
-            // 按钮事件
-            elements.calculateBtn.addEventListener('click', calculateResults);
-            elements.saveBtn.addEventListener('click', saveData);
-            elements.resetBtn.addEventListener('click', resetData);
-        }
+        // 深色模式 (与1-1相同)
+        window.ExperimentUtils.ThemeManager.init();
 
-        function onMeasurementChange(e) {
-            const index = parseInt(e.target.dataset.index);
-            const type = e.target.dataset.type;
-            const value = e.target.value;
-
-            if (!experimentData.measurements[index]) {
-                experimentData.measurements[index] = {};
-            }
-            experimentData.measurements[index][type] = value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-            updateDataCompleteness();
-        }
-
-        // 更新计算按钮状态
-        function updateCalculateStatus() {
-            const hasMeasurementData = experimentData.measurements.some(item => 
-                item && item['xA'] && item['xL正'] && item['xL反']
-            );
-            
-            elements.calculateBtn.disabled = !hasMeasurementData;
-        }
-
-        // 更新数据完整性显示
-        function updateDataCompleteness() {
-            const completeCount = experimentData.measurements.filter(item => 
-                item && item['xA'] && item['xL正'] && item['xL反']
-            ).length;
-            
-            elements.dataCompleteness.textContent = `${completeCount}/5 组数据`;
-        }
-
-        // 计算功能
-        function calculateResults() {
-            try {
-                // 计算中间值并显示中间数据表格
-                const intermediates = calculateIntermediates();
-                
-                // 计算焦距f
-                const f = calculateFocalLength(intermediates);
-                
-                // 计算不确定度u(f)
-                const uf = calculateUncertainty();
-                
-                // 计算相对不确定度
-                const relativeUncertainty = f !== 0 ? Math.abs(uf / f) : 0;
-                
-                // 更新UI显示结果
-                experimentData.fValue = f.toFixed(6);
-                experimentData.ufValue = uf.toFixed(6);
-                experimentData.relativeUncertainty = relativeUncertainty.toFixed(6);
-                
-                // 中间值
-                experimentData.avgXA = intermediates.avgXA.toFixed(5);
-                experimentData.avgXL = intermediates.avgXL.toFixed(5);
-                experimentData.avgDiff = intermediates.avgDiff.toFixed(5);
-                
-                // 显示结果
-                displayResults();
-                
-                alert('计算完成！');
-            } catch (error) {
-                console.error('计算错误:', error);
-                alert('计算失败，请检查数据');
-            }
-        }
-
-        // 计算中间值
-        function calculateIntermediates() {
-            // 计算xL = (xL正 + xL反)/2, |xL - xA|, f_i = |xL - xA| - δ
-            const xAValues = [];
-            const xLValues = [];
-            const diffValues = [];
-            const fValues = [];
-            
-            // 初始化中间数据表格
-            initIntermediateDataTable();
-            
-            experimentData.measurements.forEach((item, index) => {
-                if (item && item['xA'] && item['xL正'] && item['xL反']) {
-                    const xA = parseFloat(item['xA']);
-                    const xL = (parseFloat(item['xL正']) + parseFloat(item['xL反'])) / 2;
-                    const diff = Math.abs(xL - xA);
-                    const f_i = diff - 0.85; // δ = 0.85 cm
-                    
-                    xAValues.push(xA);
-                    xLValues.push(xL);
-                    diffValues.push(diff);
-                    fValues.push(f_i);
-                    
-                    // 更新中间数据表格
-                    document.getElementById(`xLValue${index}`).textContent = xL.toFixed(3);
-                    document.getElementById(`diffValue${index}`).textContent = diff.toFixed(3);
-                    document.getElementById(`fValue${index}`).textContent = f_i.toFixed(3);
-                }
-            });
-            
-            return {
-                avgXA: xAValues.length > 0 ? xAValues.reduce((a, b) => a + b) / xAValues.length : 0,
-                avgXL: xLValues.length > 0 ? xLValues.reduce((a, b) => a + b) / xLValues.length : 0,
-                avgDiff: diffValues.length > 0 ? diffValues.reduce((a, b) => a + b) / diffValues.length : 0,
-                fValues: fValues
-            };
-        }
-
-        // 计算焦距 f = 平均(f_i)
-        function calculateFocalLength(intermediates) {
-            if (intermediates.fValues.length === 0) return 0;
-            return intermediates.fValues.reduce((a, b) => a + b) / intermediates.fValues.length;
-        }
-
-        // 计算不确定度 u(f) = (0.05 * √2) / √15
-        function calculateUncertainty() {
-            return (0.05 * Math.sqrt(2)) / Math.sqrt(15);
-        }
-
-        // 显示计算结果
-        function displayResults() {
-            // 主要结果
-            elements.fValue.textContent = `${experimentData.fValue} cm`;
-            elements.ufValue.textContent = `${experimentData.ufValue} cm`;
-            elements.relativeUncertainty.textContent = experimentData.relativeUncertainty;
-            
-            // 中间值
-            elements.avgXA.textContent = `${experimentData.avgXA} cm`;
-            elements.avgXL.textContent = `${experimentData.avgXL} cm`;
-            elements.avgDiff.textContent = `${experimentData.avgDiff} cm`;
-            elements.deltaValue.textContent = `${experimentData.deltaValue} cm`;
-            
-            // 显示结果区域
-            elements.intermediateDataSection.style.display = 'block';
-            elements.resultsSection.style.display = 'block';
-            experimentData.showResults = true;
-        }
-
-        // 保存数据到localStorage
-        function saveData() {
-            try {
-                experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('convex-lens-focal-length', JSON.stringify(experimentData));
-                elements.lastUpdate.textContent = experimentData.lastUpdate;
-                alert('数据保存成功！');
-            } catch (error) {
-                console.error('保存失败:', error);
-                alert('保存失败，请重试');
-            }
-        }
-
-        // 重置数据
-        function resetData() {
-            if (confirm('确定要重置所有数据吗？此操作不可撤销。')) {
-                // 清空测量数据
-                experimentData.measurements = [];
-                
-                // 清空输入框
-                const inputs = elements.measurementsContainer.querySelectorAll('.cell-input');
-                inputs.forEach(input => {
-                    input.value = '';
-                });
-                
-                // 隐藏结果区域
-                elements.intermediateDataSection.style.display = 'none';
-                elements.resultsSection.style.display = 'none';
-                experimentData.showResults = false;
-                
-                // 更新状态
-                updateCalculateStatus();
-                updateDataCompleteness();
-                
-                alert('数据已重置');
-            }
-        }
-
-        // 从localStorage加载数据
-        function loadExperimentData() {
-            try {
-                const savedData = localStorage.getItem('convex-lens-focal-length');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 恢复测量数据
-                    if (data.measurements) {
-                        data.measurements.forEach((measurement, index) => {
-                            if (measurement) {
-                                const inputs = elements.measurementsContainer.querySelectorAll(`[data-index="${index}"]`);
-                                inputs.forEach(input => {
-                                    const type = input.dataset.type;
-                                    if (measurement[type]) {
-                                        input.value = measurement[type];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // 恢复计算结果
-                    if (data.showResults) {
-                        Object.assign(experimentData, data);
-                        // 重新计算中间数据并显示
-                        const intermediates = calculateIntermediates();
-                        displayResults();
-                    }
-                    
-                    // 恢复最后更新时间
-                    if (data.lastUpdate) {
-                        elements.lastUpdate.textContent = data.lastUpdate;
-                    }
-                    
-                    // 更新计算状态
-                    updateCalculateStatus();
-                    updateDataCompleteness();
-                }
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
-        }
-    </script>
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
 </body>
 </html>

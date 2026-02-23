@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 扭摆法测量转动惯量</title>
+    <!-- 公共样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 (含TableGenerator,存储,键盘导航等) -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 (保留双斜杠) -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">扭摆法测量转动惯量</div>
+
+    <!-- 实验要点 (与2-2.docx一致) -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 塑料圆柱: 质量 $m_1$ (g), 直径 $D_1$ (mm) —— 理论 $I_1 = \frac{1}{8}m_1 D_1^2$<br>
+        • 金属圆筒: 质量 $m_2$ (g), 内径 $d_{内}$ (mm), 外径 $D_{外}$ (mm) —— 理论 $J_{筒}= \frac{1}{8}m_2(D_{外}^2+d_{内}^2)$<br>
+        • 圆球: 质量 $m_3$ (g), 直径 $D_3$ (mm) —— 理论 $J_{球}= \frac{1}{10}m_3 D_3^2$<br>
+        • 细长杆: 质量 $m_4$ (g), 长度 $L$ (mm) —— 理论 $J_{杆}= \frac{1}{12}m_4 L^2$<br>
+    </div>
+
+    <!-- 原始数据录入区 (单次输入 + 部分表格) -->
+    <div class="section">
+        <div class="section-title">原始数据</div>
+
+        <!-- 塑料圆柱 (单次) -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div class="top-input"><label>$圆柱：m_1$ (g):</label><input type="number" id="m1" class="save-input cell-input" step="0.01" value="856.2"></div>
+            <div class="top-input"><label>$D_1$ (mm):</label><input type="number" id="d1" class="save-input cell-input" step="0.01" value="50.00"></div>
+        </div>
+
+        <!-- 金属圆筒 (单次) -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div class="top-input"><label>$圆筒：m_2$ (g):</label><input type="number" id="m2" class="save-input cell-input" step="0.01" value="632.3"></div>
+            <div class="top-input"><label>$d_{内}$ (mm):</label><input type="number" id="din" class="save-input cell-input" step="0.01" value="40.00"></div>
+            <div class="top-input"><label>$D_{外}$ (mm):</label><input type="number" id="dout" class="save-input cell-input" step="0.01" value="50.00"></div>
+        </div>
+
+        <!-- 圆球 (单次) -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div class="top-input"><label>$圆球：m_3$ (g):</label><input type="number" id="m3" class="save-input cell-input" step="0.01" value="1023.1"></div>
+            <div class="top-input"><label>$D_3$ (mm):</label><input type="number" id="d3" class="save-input cell-input" step="0.01" value="60.00"></div>
+        </div>
+
+        <!-- 细长杆 (单次) -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <div class="top-input"><label>$细长杆：m_4$ (g):</label><input type="number" id="m4" class="save-input cell-input" step="0.01" value="234.2"></div>
+            <div class="top-input"><label>$L$ (mm):</label><input type="number" id="L4" class="save-input cell-input" step="0.01" value="300.0"></div>
+        </div>
+
+        <!-- 周期测量：圆盘和圆柱 5次表格 -->
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">圆盘10T₀ 与 圆柱10T₁ (s)</div>
+            <div id="period-table-container" class="data-table"></div>
+        </div>
+
+        <!-- 圆筒、圆球、细长杆 单次10T -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
+            <div class="top-input"><label>$圆筒 10T_2$ (s):</label><input type="number" id="T2_10" class="save-input cell-input" step="0.001" value="28.34"></div>
+            <div class="top-input"><label>$圆球 10T_3$ (s):</label><input type="number" id="T3_10" class="save-input cell-input" step="0.001" value="26.88"></div>
+            <div class="top-input"><label>$细长杆 10T_4$ (s):</label><input type="number" id="T4_10" class="save-input cell-input" step="0.001" value="34.10"></div>
+        </div>
+    </div>
+
+    <!-- 操作按钮组 -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <!-- 主要结果卡片 (圆筒、圆球、细长杆的转动惯量及相对误差) -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid" style="grid-template-columns: repeat(3,1fr);">
+            <div class="result-card"><div class="result-label">圆筒 $I_2$ (kg·m²)</div><div class="result-value" id="i2_val">—</div></div>
+            <div class="result-card"><div class="result-label">圆筒相对误差</div><div class="result-value" id="i2_err">—</div></div>
+            <div class="result-card"><div class="result-label">圆球 $I_3$ (kg·m²)</div><div class="result-value" id="i3_val">—</div></div>
+            <div class="result-card"><div class="result-label">圆球相对误差</div><div class="result-value" id="i3_err">—</div></div>
+            <div class="result-card"><div class="result-label">细长杆 $I_4$ (kg·m²)</div><div class="result-value" id="i4_val">—</div></div>
+            <div class="result-card"><div class="result-label">细长杆相对误差</div><div class="result-value" id="i4_err">—</div></div>
+        </div>
+        
+    </div>
+
+    <!-- 详细计算过程 -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程 (单位已转换: kg, m, s)</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '2-2';
+
+    // 科学计数法 (四位小数)
+    function toScientific(value, digits = 4) {
+        if (typeof value !== 'number' || !isFinite(value)) return '—';
+        return value.toExponential(digits);
+    }
+
+    // 获取输入值 (单次)
+    function getInputs() {
+        const m1 = parseFloat(document.getElementById('m1').value);
+        const d1 = parseFloat(document.getElementById('d1').value);
+        const m2 = parseFloat(document.getElementById('m2').value);
+        const din = parseFloat(document.getElementById('din').value);
+        const dout = parseFloat(document.getElementById('dout').value);
+        const m3 = parseFloat(document.getElementById('m3').value);
+        const d3 = parseFloat(document.getElementById('d3').value);
+        const m4 = parseFloat(document.getElementById('m4').value);
+        const L4 = parseFloat(document.getElementById('L4').value);
+        const T2_10 = parseFloat(document.getElementById('T2_10').value);
+        const T3_10 = parseFloat(document.getElementById('T3_10').value);
+        const T4_10 = parseFloat(document.getElementById('T4_10').value);
+
+        // 读取周期表格 (per_1~per_10: 5行, 每行2列: T0, T1)
+        const T0_10_arr = [], T1_10_arr = [];
+        for (let i = 0; i < 5; i++) {
+            let t0 = parseFloat(document.getElementById(`per_${i*2+1}`)?.value);
+            let t1 = parseFloat(document.getElementById(`per_${i*2+2}`)?.value);
+            T0_10_arr.push(isNaN(t0) ? NaN : t0);
+            T1_10_arr.push(isNaN(t1) ? NaN : t1);
+        }
+
+        return {
+            m1, d1, m2, din, dout, m3, d3, m4, L4,
+            T0_10_arr, T1_10_arr,
+            T2_10, T3_10, T4_10
+        };
+    }
+
+    // 有效性检查 (所有输入必须为有效数字)
+    function isValid(data) {
+        // 单次量
+        const singles = [data.m1, data.d1, data.m2, data.din, data.dout, data.m3, data.d3, data.m4, data.L4,
+                         data.T2_10, data.T3_10, data.T4_10];
+        for (let v of singles) {
+            if (isNaN(v)) return false;
+        }
+        // 周期数组各5个
+        if (data.T0_10_arr.length !== 5 || data.T1_10_arr.length !== 5) return false;
+        for (let i=0; i<5; i++) {
+            if (isNaN(data.T0_10_arr[i]) || isNaN(data.T1_10_arr[i])) return false;
+        }
+        return true;
+    }
+
+    // 核心计算
+    function compute(data) {
+        const Data = window.ExperimentUtils.Data;
+
+        // 单次值直接使用
+        const m1 = data.m1 / 1000;          // kg
+        const D1 = data.d1 / 1000;           // m
+        const m2 = data.m2 / 1000;
+        const din = data.din / 1000;
+        const dout = data.dout / 1000;
+        const m3 = data.m3 / 1000;
+        const D3 = data.d3 / 1000;
+        const m4 = data.m4 / 1000;
+        const L4 = data.L4 / 1000;
+
+        // 周期: 先平均10T, 再除以10
+        const T0_10_avg = Data.mean(data.T0_10_arr);
+        const T1_10_avg = Data.mean(data.T1_10_arr);
+        const T0 = T0_10_avg / 10;
+        const T1 = T1_10_avg / 10;
+        const T2 = data.T2_10 / 10;
+        const T3 = data.T3_10 / 10;
+        const T4 = data.T4_10 / 10;
+
+        // 圆柱理论转动惯量 I1
+        const I1 = (1/8) * m1 * D1 * D1;
+
+        // 扭转常数 K
+        const K = (4 * Math.PI * Math.PI * I1) / (T1*T1 - T0*T0);
+
+        // 比较法测量值
+        const denom = T1*T1 - T0*T0;
+        const I2 = ((T2*T2 - T0*T0) / denom) * I1;
+        const I3 = (T3*T3 / denom) * I1;          // 注意圆球公式没有减T0² (依据文档)
+        const I4 = (T4*T4 / denom) * I1;
+
+        // 理论值
+        const J_tube = (1/8) * m2 * (dout*dout + din*din);
+        const J_sphere = (1/10) * m3 * D3 * D3;
+        const J_rod = (1/12) * m4 * L4 * L4;
+
+        // 相对误差 (小数)
+        const err_tube = (I2 - J_tube) / J_tube;
+        const err_sphere = (I3 - J_sphere) / J_sphere;
+        const err_rod = (I4 - J_rod) / J_rod;
+
+        return {
+        // 原始数组（用于显示详细计算）
+        T0_raw: data.T0_10_arr,
+        T1_raw: data.T1_10_arr,
+        T2_raw: data.T2_10,
+        T3_raw: data.T3_10,
+        T4_raw: data.T4_10,
+
+        // 平均值及周期
+        T0_10_avg, T1_10_avg,
+        T0, T1, T2, T3, T4,
+
+        // 质量/长度国际单位
+        m1, D1, m2, din, dout, m3, D3, m4, L4,
+
+        // 计算结果
+        I1, K, I2, I3, I4,
+        J_tube, J_sphere, J_rod,
+        err_tube, err_sphere, err_rod
+    };
+    }
+
+    // 渲染详细过程
+    function renderProcess(res) {
+        const html = `
+<div class="calculation-step">
+    <div class="step-title">1. 原始数据</div>
+    <div class="step-formula">
+        圆盘10T₀平均值: $\\overline{10T_0} = \\frac{${res.T0_raw.map(v => v.toFixed(2)).join('+')}}{5} = ${res.T0_10_avg.toFixed(4)}\\ \\mathrm{s}$<br>
+        周期: $T_0 = \\frac{\\overline{10T_0}}{10} = \\frac{${res.T0_10_avg.toFixed(4)}}{10} = ${res.T0.toFixed(6)}\\ \\mathrm{s}$
+    </div>
+    <div class="step-formula">
+        圆柱10T₁平均值: $\\overline{10T_1} = \\frac{${res.T1_raw.map(v => v.toFixed(2)).join('+')}}{5} = ${res.T1_10_avg.toFixed(4)}\\ \\mathrm{s}$<br>
+        周期: $T_1 = \\frac{\\overline{10T_1}}{10} = \\frac{${res.T1_10_avg.toFixed(4)}}{10} = ${res.T1.toFixed(6)}\\ \\mathrm{s}$
+    </div>
+    <div class="step-formula">
+        圆筒: $10T_2 = ${res.T2_raw.toFixed(2)}\\ \\mathrm{s}$, $T_2 = ${res.T2.toFixed(6)}\\ \\mathrm{s}$<br>
+        圆球: $10T_3 = ${res.T3_raw.toFixed(2)}\\ \\mathrm{s}$, $T_3 = ${res.T3.toFixed(6)}\\ \\mathrm{s}$<br>
+        细长杆: $10T_4 = ${res.T4_raw.toFixed(2)}\\ \\mathrm{s}$, $T_4 = ${res.T4.toFixed(6)}\\ \\mathrm{s}$
+    </div>
+</div>
+        <div class="calculation-step">
+            <div class="step-title">2. 圆柱理论转动惯量 $I_1$ 及扭转常数 $K$</div>
+            <div class="step-formula">$$I_1 = \\frac{1}{8} m_1 D_1^2 = \\frac{1}{8} \\times ${res.m1.toFixed(6)} \\times (${res.D1.toFixed(6)})^2 = ${toScientific(res.I1)}\\ \\mathrm{kg\\cdot m^2}$$</div>
+            <div class="step-formula">$$K = \\frac{4\\pi^2 I_1}{T_1^2 - T_0^2} = \\frac{4\\pi^2 \\times ${res.I1.toExponential(4)}}{${res.T1.toFixed(6)}^2 - ${res.T0.toFixed(6)}^2} = ${toScientific(res.K)}\\ \\mathrm{N\\cdot m}$$</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">3. 比较法测量转动惯量</div>
+            <div class="step-formula">$$I_2 = \\frac{T_2^2 - T_0^2}{T_1^2 - T_0^2}I_1 = \\frac{${res.T2.toFixed(6)}^2 - ${res.T0.toFixed(6)}^2}{${res.T1.toFixed(6)}^2 - ${res.T0.toFixed(6)}^2} \\times ${toScientific(res.I1)} = ${toScientific(res.I2)}$$</div>
+            <div class="step-formula">$$I_3 = \\frac{T_3^2}{T_1^2 - T_0^2}I_1 = \\frac{${res.T3.toFixed(6)}^2}{${res.T1.toFixed(6)}^2 - ${res.T0.toFixed(6)}^2} \\times ${toScientific(res.I1)} = ${toScientific(res.I3)}$$</div>
+            <div class="step-formula">$$I_4 = \\frac{T_4^2}{T_1^2 - T_0^2}I_1 = \\frac{${res.T4.toFixed(6)}^2}{${res.T1.toFixed(6)}^2 - ${res.T0.toFixed(6)}^2} \\times ${toScientific(res.I1)} = ${toScientific(res.I4)}$$</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">4. 理论值计算</div>
+            <div class="step-formula">圆筒: $J_\\text{筒} = \\frac{1}{8}m_2(D_外^2 + d_内^2) = \\frac{1}{8} \\times ${res.m2.toFixed(6)} \\times (${res.dout.toFixed(6)}^2 + ${res.din.toFixed(6)}^2) = ${toScientific(res.J_tube)}$</div>
+            <div class="step-formula">圆球: $J_\\text{球} = \\frac{1}{10}m_3 D_3^2 = \\frac{1}{10} \\times ${res.m3.toFixed(6)} \\times (${res.D3.toFixed(6)})^2 = ${toScientific(res.J_sphere)}$</div>
+            <div class="step-formula">细长杆: $J_\\text{杆} = \\frac{1}{12}m_4 L^2 = \\frac{1}{12} \\times ${res.m4.toFixed(6)} \\times (${res.L4.toFixed(6)})^2 = ${toScientific(res.J_rod)}$</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">5. 相对误差</div>
+            <div class="step-formula">圆筒: $\\frac{I_2 - J_\\text{筒}}{J_\\text{筒}} = \\frac{${toScientific(res.I2)} - ${toScientific(res.J_tube)}}{${toScientific(res.J_tube)}} = ${(res.err_tube*100).toFixed(4)}\\%$</div>
+            <div class="step-formula">圆球: $\\frac{I_3 - J_\\text{球}}{J_\\text{球}} = ${(res.err_sphere*100).toFixed(4)}\\%$</div>
+            <div class="step-formula">细长杆: $\\frac{I_4 - J_\\text{杆}}{J_\\text{杆}} = ${(res.err_rod*100).toFixed(4)}\\%$</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">6. 最终结果</div>
+            <div class="step-result">圆筒: $I_2 = ${toScientific(res.I2,4)}$, 相对误差 = ${(res.err_tube*100).toFixed(4)}\%</div>
+            <div class="step-result">圆球: $I_3 = ${toScientific(res.I3,4)}$, 相对误差 = ${(res.err_sphere*100).toFixed(4)}\%</div>
+            <div class="step-result">细长杆: $I_4 = ${toScientific(res.I4,4)}$, 相对误差 = ${(res.err_rod*100).toFixed(4)}\%</div>
+        </div>
+        `;
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // 显示主要结果
+    function displayResults(res) {
+        document.getElementById('i2_val').innerText = toScientific(res.I2,4);
+        document.getElementById('i2_err').innerText = (res.err_tube*100).toFixed(4) + '%';
+        document.getElementById('i3_val').innerText = toScientific(res.I3,4);
+        document.getElementById('i3_err').innerText = (res.err_sphere*100).toFixed(4) + '%';
+        document.getElementById('i4_val').innerText = toScientific(res.I4,4);
+        document.getElementById('i4_err').innerText = (res.err_rod*100).toFixed(4) + '%';
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    // 计算入口
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或有误，请确保所有输入框均已填写有效数字');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            renderProcess(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查数据');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // 初始化页面：生成周期表格 (5行2列)
+    window.addEventListener('DOMContentLoaded', function() {
+        const T = window.ExperimentUtils.TableGenerator;
+        T.generateInputTable('period-table-container', {
+            rows: 5,
+            cols: 2,
+            colHeaders: ['次数', '圆盘10T₀ (s)', '圆柱10T₁ (s)'],
+            rowHeaders: ['1', '2', '3', '4', '5'],
+            prefix: 'per_',
+            defaultValues: [
+                18.52, 23.45,
+                18.50, 23.48,
+                18.54, 23.42,
+                18.49, 23.47,
+                18.53, 23.44
+            ]
+        });
+
+        // 尝试加载存储的数据
+        if (!localStorage.getItem(APP_KEY)) {
+            // 已通过 defaultValues 和单次输入默认值设置好，无需额外操作
+        }
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        // 键盘导航 (周期表格)
+        window.ExperimentUtils.KeyboardNav.init('#period-table-container', 2);
+
+        // 深色模式
+        window.ExperimentUtils.ThemeManager.init();
+
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
+</body>
+</html>

@@ -503,18 +503,21 @@ mjx-container {
 }
 
 /* GitHub 按钮组优化 */
+/* 修改前：GitHub 按钮组优化 */
 .theme-switch {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: rgba(255, 255, 255, 0.5);
+    background: transparent; /* 改为透明 */
     padding: 0.5rem;
     border-radius: 2rem;
-    backdrop-filter: blur(4px); /* 毛玻璃效果 */
+    /* backdrop-filter: blur(4px); 如果不需要毛玻璃效果可以注释掉 */
 }
 
+/* 移除深色模式下的背景 */
 .dark-mode .theme-switch {
-    background: rgba(0, 0, 0, 0.2);
+    background: transparent; 
+    box-shadow: none; /* 确保没有阴影带来的轮廓感 */
 }
 
 .star-wrapper {

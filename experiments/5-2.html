@@ -3,734 +3,406 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实验 5-2: 最小偏向角法计算棱镜折射率</title>
+    <title>基物实验助手 - 最小偏向角法测量棱镜折射率</title>
+    <!-- 公共样式 (与1-1相同) -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 (存储、表格生成、键盘导航、深色模式) -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 (与1-1一致) -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
+        /* 针对角度输入框微调：使用等宽字体方便读数 */
+        .cell-input[type="text"] {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             text-align: center;
-            margin-bottom: 24px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 12px;
         }
-        
-        .section {
-            margin-bottom: 28px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background-color: #fafafa;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-content {
-            background-color: white;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        
-        .input-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .data-table {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        .table-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-        }
-        
-        .table-header, .table-row {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header-cell, .cell {
-            flex: 1;
-            padding: 10px 8px;
+        .angle-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
             text-align: center;
-            font-weight: 500;
         }
-        
-        .header-cell {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .cell-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .btn-calculate {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-calculate:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-calculate:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-save {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .btn-save:hover {
-            background-color: #27ae60;
-        }
-        
-        .results-group {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .result-item.highlight {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .result-label {
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .intermediate-results {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 8px;
-        }
-        
-        .data-status {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .status-item {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .help-text {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .deg-min-input {
-            position: relative;
-        }
-        
-        .deg-min-input .input-field {
-            padding-right: 40px;
-        }
-        
-        .deg-min-input::after {
-            content: "°";
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #7f8c8d;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .input-row {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .input-item {
-                min-width: 100%;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
-            
-            .table-header, .table-row {
-                flex-wrap: wrap;
-            }
-            
-            .header-cell, .cell {
-                flex: 1 0 100px;
-                min-width: 80px;
-            }
+        .dark-mode .angle-hint {
+            color: #9ca3af;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="page-title">最小偏向角法计算棱镜折射率</div>
-        <div class="experiment-content">
-            <!-- 使用必读 -->
-            <div class="section">
-                <div class="section-title">📝 使用必读</div>
-                <div class="section-content">
-                    <p style="margin-top: 10px; color: #e74c3c;">输入说明：</p>
-                    <p style="margin-top: 5px;">1. 角度输入格式：整数部分表示度，小数部分表示分（60进制）</p>
-                    <p style="margin-top: 5px;">2. 例如：12.25 表示 12度25分（12°25′）</p>
-                    <p style="margin-top: 5px;">3. 12.4 表示 12度24分（12°24′），因为 0.4×60 = 24′</p>
-                    <p style="margin-top: 5px;">4. 12.40 表示 12度40分（12°40′），因为 0.40×60 = 40′</p>
-                    <p style="margin-top: 5px;">5. 请注意区分 12.4（12°24′）和 12.40（12°40′）的不同</p>
-                </div>
-            </div>
+<div class="container">
+    <div class="page-title">最小偏向角法测量棱镜折射率</div>
 
-            <!-- 原始数据输入 -->
-            <div class="section">
-                <div class="section-title">📊 原始数据记录</div>
-                
-                <!-- 棱镜角A -->
-                <div class="input-group">
-                    <div class="input-row">
-                        <div class="input-item deg-min-input">
-                            <label class="input-label">棱镜角 A (度.分):</label>
-                            <input 
-                                class="input-field" 
-                                type="text" 
-                                placeholder="60.00" 
-                                id="angleA"
-                            />
-                        </div>
-                    </div>
-                    <div class="help-text">例如：60.00 表示 60度0分，60.30 表示 60度30分</div>
-                </div>
+    <!-- 实验要点提示 (已修改为度分说明) -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 棱镜角 $A$ (°) —— 直接输入十进制度，如 $60.0$° 表示 $60°00'$<br>
+        • 角度测量数据采用 <strong>度.分</strong> 格式输入：例如 $120.15$ 表示 $120°15'$，$45.4$ 表示 $45°04'$，$300.40$ 表示 $300°40'$<br>
+        • 三次测量：$\alpha_1,\beta_1$ (望远镜位置Ⅰ) ;  $\alpha_2,\beta_2$ (望远镜位置Ⅱ)<br>
+        • 本实验不要求不确定度
+    </div>
 
-                <!-- 测量数据表格 -->
-                <div class="data-table">
-                    <div class="table-title">角度测量数据 (3次测量，单位：度.分)</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">α1</div>
-                        <div class="header-cell">β1</div>
-                        <div class="header-cell">α2</div>
-                        <div class="header-cell">β2</div>
-                    </div>
-                    <div id="measurementsContainer">
-                        <!-- 动态生成测量行 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
-                <button class="btn-save" id="saveBtn">💾 保存数据</button>
-            </div>
-            
-            <!-- 计算结果 -->
-            <div class="section" id="resultsSection" style="display: none;">
-                <div class="section-title">🧮 计算结果</div>
-                
-                <div class="results-group">
-                    <div class="result-item highlight">
-                        <div class="result-label">平均最小偏向角 δ̄_min:</div>
-                        <div class="result-value" id="deltaMinAvg">0.000°</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">棱镜折射率 n:</div>
-                        <div class="result-value" id="refractiveIndex">0.000</div>
-                    </div>
-                </div>
+    <!-- 原始数据录入区 -->
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
 
-                <!-- 中间计算结果 -->
-                <div class="intermediate-results">
-                    <div class="result-title">中间计算结果</div>
-                    
-                    <div class="data-table">
-                        <div class="table-title">计算过程 (单位：°′)</div>
-                        <div class="table-header">
-                            <div class="header-cell">测量次数</div>
-                            <div class="header-cell">θ1 = α1 - α2</div>
-                            <div class="header-cell">θ2 = β1 - β2</div>
-                            <div class="header-cell">δ_min = (θ1+θ2)/2</div>
-                        </div>
-                        <div id="intermediateResultsContainer">
-                            <!-- 动态生成中间结果行 -->
-                        </div>
-                    </div>
-                    
-                    <div class="result-item">
-                        <div class="result-label">棱镜角 A:</div>
-                        <div class="result-value" id="angleAValue">0.000°</div>
-                    </div>
-                </div>
+        <!-- 棱镜角 A (十进制度) -->
+        <div class="top-input-group" style="margin-bottom: 1.5rem;">
+            <div class="top-input">
+                <label>$A$ (°):</label>
+                <input type="number" id="angleA" class="save-input cell-input" step="any" value="60.00" placeholder="60.0">
             </div>
+            <span style="color: #64748b; font-size:0.9rem;">直接输入十进制度，例如 60.5 表示 60.5°</span>
+        </div>
 
-            <!-- 数据状态 -->
-            <div class="section">
-                <div class="section-title">💾 数据状态</div>
-                <div class="data-status">
-                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
-                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
-                </div>
-            </div>
+        <!-- 测量数据表格 (α1,β1,α2,β2 三次) 容器 -->
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">角度测量数据 (3次，单位: 度.分)</div>
+            <div id="measure-table-container" class="data-table"></div>
+            <div class="angle-hint">例如: 120.15 = 120°15′ &nbsp; 300.4 = 300°04′ &nbsp; 60.40 = 60°40′</div>
         </div>
     </div>
 
-    <script>
-        // 实验数据模型
-        const experimentData = {
-            experimentId: '5-2',
-            // 基本参数
-            angleA: '',
-            // 测量数据
-            measurements: [],
-            // 计算结果
-            showResults: false,
-            deltaMinAvg: '0.000',
-            refractiveIndex: '0.000',
-            // 中间结果
-            intermediateResults: [],
-            // 状态
-            lastUpdate: ''
-        };
+    <!-- 操作按钮组 -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
 
-        // DOM 元素
-        const elements = {
-            angleA: document.getElementById('angleA'),
-            measurementsContainer: document.getElementById('measurementsContainer'),
-            calculateBtn: document.getElementById('calculateBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            resultsSection: document.getElementById('resultsSection'),
-            deltaMinAvg: document.getElementById('deltaMinAvg'),
-            refractiveIndex: document.getElementById('refractiveIndex'),
-            intermediateResultsContainer: document.getElementById('intermediateResultsContainer'),
-            angleAValue: document.getElementById('angleAValue'),
-            lastUpdate: document.getElementById('lastUpdate')
-        };
+    <!-- 主要结果卡片 (折射率 n) -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">折射率 $n$</div><div class="result-value" id="n_val">—</div></div>
+        </div>
+    </div>
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initMeasurementTable();
-            loadExperimentData();
-            setupEventListeners();
-        });
+    <!-- 详细计算过程 -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
 
-        // 初始化测量表格
-        function initMeasurementTable() {
-            // 初始化3次测量表格
-            for (let i = 0; i < 3; i++) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${i + 1}</div>
-                    <input class="cell-input" type="text" placeholder="α1" data-index="${i}" data-type="alpha1" />
-                    <input class="cell-input" type="text" placeholder="β1" data-index="${i}" data-type="beta1" />
-                    <input class="cell-input" type="text" placeholder="α2" data-index="${i}" data-type="alpha2" />
-                    <input class="cell-input" type="text" placeholder="β2" data-index="${i}" data-type="beta2" />
-                `;
-                elements.measurementsContainer.appendChild(row);
-            }
+    <!-- 免责声明 -->
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '5-2';
+
+    // ---------- 度分 ⇄ 十进制度 专用函数 (与5-1完全相同) ----------
+    function degreeMinuteToDecimal(degMinStr) {
+        if (!degMinStr || degMinStr.trim() === '') return NaN;
+        const str = degMinStr.trim();
+        const value = parseFloat(str);
+        if (isNaN(value)) return NaN;
+        const degrees = Math.floor(Math.abs(value)) * Math.sign(value);
+        const decimalIndex = str.indexOf('.');
+        if (decimalIndex === -1) return degrees;
+        
+        const decimalStr = str.substring(decimalIndex + 1);
+        let minutes;
+        if (decimalStr.length === 1) {
+            minutes = parseInt(decimalStr, 10);
+        } else {
+            minutes = parseInt(decimalStr.substring(0, 2), 10);
         }
+        return degrees + minutes / 60;
+    }
 
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 基本参数输入
-            elements.angleA.addEventListener('input', onAngleAChange);
+    function decimalToDegreeMinute(decimal) {
+        if (isNaN(decimal)) return '—';
+        const absDeg = Math.abs(decimal);
+        const deg = Math.floor(absDeg);
+        const min = Math.round((absDeg - deg) * 60);
+        return (decimal < 0 ? '-' : '') + deg + '°' + min + '′';
+    }
 
-            // 测量数据输入
-            elements.measurementsContainer.addEventListener('input', onMeasurementChange);
+    // ---------- 构建角度输入表格 (3行,4列, 类似5-1的buildAngleTable) ----------
+    function buildAngleTable(containerId, prefix, rowCount, colCount, colHeaders, defaultValues) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
 
-            // 按钮事件
-            elements.calculateBtn.addEventListener('click', calculateResults);
-            elements.saveBtn.addEventListener('click', saveData);
-        }
+        const tableDiv = document.createElement('div');
+        tableDiv.className = 'data-table';
 
-        // 输入处理函数
-        function onAngleAChange(e) {
-            experimentData.angleA = e.target.value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-        }
-
-        function onMeasurementChange(e) {
-            const index = parseInt(e.target.dataset.index);
-            const type = e.target.dataset.type;
-            const value = e.target.value;
-
-            if (!experimentData.measurements[index]) {
-                experimentData.measurements[index] = {};
-            }
-            experimentData.measurements[index][type] = value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-        }
-
-        // 更新计算按钮状态
-        function updateCalculateStatus() {
-            const hasAngleA = experimentData.angleA && !isNaN(parseDegMin(experimentData.angleA));
-            
-            let hasAllMeasurements = true;
-            for (let i = 0; i < 3; i++) {
-                const measurement = experimentData.measurements[i];
-                if (!measurement || 
-                    !measurement.alpha1 || !measurement.beta1 || 
-                    !measurement.alpha2 || !measurement.beta2 ||
-                    isNaN(parseDegMin(measurement.alpha1)) ||
-                    isNaN(parseDegMin(measurement.beta1)) ||
-                    isNaN(parseDegMin(measurement.alpha2)) ||
-                    isNaN(parseDegMin(measurement.beta2))) {
-                    hasAllMeasurements = false;
-                    break;
-                }
-            }
-            
-            elements.calculateBtn.disabled = !(hasAngleA && hasAllMeasurements);
-        }
-
-        // 将度分格式转换为十进制度
-        function parseDegMin(degMinStr) {
-            if (!degMinStr || degMinStr.trim() === '') return NaN;
-            
-            const str = degMinStr.trim();
-            const parts = str.split('.');
-            
-            if (parts.length === 1) {
-                // 只有度，没有分
-                return parseFloat(parts[0]);
-            } else if (parts.length === 2) {
-                // 度和分
-                const degrees = parseInt(parts[0]);
-                const minutesStr = parts[1];
-                
-                // 处理分钟部分
-                let minutes;
-                if (minutesStr.length <= 2) {
-                    // 如 12.4 -> 12度40分？不，应该是12度24分
-                    // 如 12.04 -> 12度4分
-                    // 如 12.40 -> 12度40分
-                    minutes = parseFloat(minutesStr);
-                    if (minutesStr.length === 1) {
-                        // 一位小数，如 .4 表示 0.4度 = 24分
-                        minutes = minutes * 60 / 100;
-                    } else if (minutesStr.length === 2) {
-                        // 两位小数，如 .40 表示 40分
-                        minutes = minutes / 100 * 60;
-                    }
-                } else {
-                    // 超过两位，按直接数字处理
-                    minutes = parseFloat("0." + minutesStr) * 60;
-                }
-                
-                return degrees + minutes / 60;
-            }
-            
-            return NaN;
-        }
-
-        // 将十进制度转换为度分格式字符串
-        function formatDegMin(decimalDegrees) {
-            if (isNaN(decimalDegrees)) return "NaN";
-            
-            const degrees = Math.floor(decimalDegrees);
-            const minutes = (decimalDegrees - degrees) * 60;
-            
-            // 格式化分钟，保留2位小数
-            const formattedMinutes = minutes.toFixed(2);
-            
-            return `${degrees}°${formattedMinutes.padStart(5, '0')}′`;
-        }
-
-        // 计算功能
-        function calculateResults() {
-            try {
-                // 解析棱镜角A
-                const A = parseDegMin(experimentData.angleA);
-                
-                // 计算每次测量的中间结果
-                const intermediateResults = [];
-                let deltaMinSum = 0;
-                let validCount = 0;
-                
-                for (let i = 0; i < 3; i++) {
-                    const measurement = experimentData.measurements[i];
-                    if (measurement) {
-                        // 解析各个角度
-                        const alpha1 = parseDegMin(measurement.alpha1);
-                        const beta1 = parseDegMin(measurement.beta1);
-                        const alpha2 = parseDegMin(measurement.alpha2);
-                        const beta2 = parseDegMin(measurement.beta2);
-                        
-                        if (!isNaN(alpha1) && !isNaN(beta1) && !isNaN(alpha2) && !isNaN(beta2)) {
-                            // 计算θ1 = α1 - α2, θ2 = β1 - β2
-                            const theta1 = alpha1 - alpha2;
-                            const theta2 = beta1 - beta2;
-                            
-                            // 计算δ_min = (θ1 + θ2) / 2
-                            const deltaMin = (theta1 + theta2) / 2;
-                            
-                            intermediateResults.push({
-                                theta1: theta1,
-                                theta2: theta2,
-                                deltaMin: deltaMin
-                            });
-                            
-                            deltaMinSum += deltaMin;
-                            validCount++;
-                        }
-                    }
-                }
-                
-                if (validCount === 0) {
-                    throw new Error("没有有效的测量数据");
-                }
-                
-                // 计算平均最小偏向角
-                const deltaMinAvg = deltaMinSum / validCount;
-                
-                // 计算折射率 n = sin((δ_min_avg + A)/2) / sin(A/2)
-                const numerator = Math.sin((deltaMinAvg + A) * Math.PI / 180 / 2);
-                const denominator = Math.sin(A * Math.PI / 180 / 2);
-                const n = numerator / denominator;
-                
-                // 保存结果
-                experimentData.intermediateResults = intermediateResults;
-                experimentData.deltaMinAvg = deltaMinAvg.toFixed(6);
-                experimentData.refractiveIndex = n.toFixed(6);
-                
-                // 显示结果
-                displayResults(A);
-                
-                alert('计算完成！');
-            } catch (error) {
-                console.error('计算错误:', error);
-                alert('计算失败，请检查数据格式');
-            }
-        }
-
-        // 显示计算结果
-        function displayResults(A) {
-            // 主要结果
-            elements.deltaMinAvg.textContent = `${experimentData.deltaMinAvg}°`;
-            elements.refractiveIndex.textContent = experimentData.refractiveIndex;
-            
-            // 棱镜角
-            elements.angleAValue.textContent = `${A.toFixed(6)}°`;
-            
-            // 中间结果表格
-            elements.intermediateResultsContainer.innerHTML = '';
-            
-            experimentData.intermediateResults.forEach((result, index) => {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${index + 1}</div>
-                    <div class="cell">${formatDegMin(result.theta1)}</div>
-                    <div class="cell">${formatDegMin(result.theta2)}</div>
-                    <div class="cell">${formatDegMin(result.deltaMin)}</div>
-                `;
-                elements.intermediateResultsContainer.appendChild(row);
+        if (colHeaders && colHeaders.length) {
+            const headerRow = document.createElement('div');
+            headerRow.className = 'table-header';
+            colHeaders.forEach(text => {
+                const cell = document.createElement('div');
+                cell.className = 'header-cell';
+                cell.textContent = text;
+                headerRow.appendChild(cell);
             });
-            
-            // 显示结果区域
-            elements.resultsSection.style.display = 'block';
-            experimentData.showResults = true;
+            tableDiv.appendChild(headerRow);
         }
 
-        // 保存数据到localStorage
-        function saveData() {
-            try {
-                experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('experiment5-2', JSON.stringify(experimentData));
-                elements.lastUpdate.textContent = experimentData.lastUpdate;
-                alert('数据保存成功！');
-            } catch (error) {
-                console.error('保存失败:', error);
-                alert('保存失败，请重试');
-            }
-        }
+        for (let r = 0; r < rowCount; r++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'table-row';
 
-        // 从localStorage加载数据
-        function loadExperimentData() {
-            try {
-                const savedData = localStorage.getItem('experiment5-2');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 恢复基本参数
-                    elements.angleA.value = data.angleA || '';
-                    
-                    // 恢复测量数据
-                    if (data.measurements) {
-                        data.measurements.forEach((measurement, index) => {
-                            if (measurement) {
-                                const inputs = elements.measurementsContainer.querySelectorAll(`[data-index="${index}"]`);
-                                inputs.forEach(input => {
-                                    const type = input.dataset.type;
-                                    if (measurement[type]) {
-                                        input.value = measurement[type];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // 恢复计算结果
-                    if (data.showResults) {
-                        Object.assign(experimentData, data);
-                        
-                        // 重新解析棱镜角A用于显示
-                        const A = parseDegMin(experimentData.angleA);
-                        if (!isNaN(A)) {
-                            displayResults(A);
-                        }
-                    }
-                    
-                    // 恢复最后更新时间
-                    if (data.lastUpdate) {
-                        elements.lastUpdate.textContent = data.lastUpdate;
-                    }
-                    
-                    // 更新计算状态
-                    updateCalculateStatus();
+            const idxCell = document.createElement('div');
+            idxCell.className = 'header-cell';
+            idxCell.textContent = (r + 1).toString();
+            rowDiv.appendChild(idxCell);
+
+            for (let c = 0; c < colCount; c++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.inputMode = 'decimal';
+                input.className = 'cell-input save-input';
+                const idx = r * colCount + c + 1;
+                input.id = `${prefix}${idx}`;
+                if (defaultValues && defaultValues[idx-1] !== undefined) {
+                    input.value = defaultValues[idx-1];
+                } else {
+                    input.value = '';
                 }
-            } catch (error) {
-                console.error('加载数据失败:', error);
+                input.placeholder = '度.分';
+                rowDiv.appendChild(input);
             }
+            tableDiv.appendChild(rowDiv);
         }
-    </script>
+
+        container.appendChild(tableDiv);
+    }
+
+    // ---------- 获取所有输入值 (角度A为数字, 表格数据为字符串, 需转换) ----------
+    function getInputs() {
+        const angleA = parseFloat(document.getElementById('angleA').value) || 0;
+
+        // 读取测量表格数据: 共3行×4列, id按行主序: pm_1 ~ pm_12
+        const alpha1 = [], beta1 = [], alpha2 = [], beta2 = [];
+        for (let i = 0; i < 3; i++) {
+            const base = i * 4;
+            const a1Str = document.getElementById(`pm_${base+1}`)?.value || '';
+            const b1Str = document.getElementById(`pm_${base+2}`)?.value || '';
+            const a2Str = document.getElementById(`pm_${base+3}`)?.value || '';
+            const b2Str = document.getElementById(`pm_${base+4}`)?.value || '';
+            alpha1.push(a1Str);
+            beta1.push(b1Str);
+            alpha2.push(a2Str);
+            beta2.push(b2Str);
+        }
+
+        return {
+            angleA,
+            alpha1Str: alpha1, beta1Str: beta1, alpha2Str: alpha2, beta2Str: beta2
+        };
+    }
+
+    // ---------- 有效性检查 (所有度分字符串必须可转换) ----------
+    function isValid(data) {
+        if (isNaN(data.angleA) || data.angleA <= 0) return false;
+        const { alpha1Str, beta1Str, alpha2Str, beta2Str } = data;
+        for (let i = 0; i < 3; i++) {
+            const a1 = degreeMinuteToDecimal(alpha1Str[i]);
+            const b1 = degreeMinuteToDecimal(beta1Str[i]);
+            const a2 = degreeMinuteToDecimal(alpha2Str[i]);
+            const b2 = degreeMinuteToDecimal(beta2Str[i]);
+            if (isNaN(a1) || isNaN(b1) || isNaN(a2) || isNaN(b2)) return false;
+        }
+        return true;
+    }
+
+    // ---------- 核心计算 ----------
+    function compute(data) {
+        const { angleA, alpha1Str, beta1Str, alpha2Str, beta2Str } = data;
+
+        // 转换为数值
+        const alpha1 = alpha1Str.map(s => degreeMinuteToDecimal(s));
+        const beta1  = beta1Str.map(s => degreeMinuteToDecimal(s));
+        const alpha2 = alpha2Str.map(s => degreeMinuteToDecimal(s));
+        const beta2  = beta2Str.map(s => degreeMinuteToDecimal(s));
+
+        // 计算每次的 θ1, θ2, δ_min
+        const theta1List = [];
+        const theta2List = [];
+        const deltaList = [];
+        for (let i = 0; i < 3; i++) {
+            const t1 = alpha1[i] - alpha2[i];
+            const t2 = beta1[i] - beta2[i];
+            const d = (t1 + t2) / 2;
+            theta1List.push(t1);
+            theta2List.push(t2);
+            deltaList.push(d);
+        }
+
+        // 平均最小偏向角
+        const avgDelta = deltaList.reduce((a, b) => a + b, 0) / 3;
+
+        // 计算折射率 n = sin((avgDelta + A)/2) / sin(A/2)   (角度转弧度)
+        const A_rad = angleA * Math.PI / 180;
+        const avgDelta_rad = avgDelta * Math.PI / 180;
+        const numerator = Math.sin((avgDelta_rad + A_rad) / 2);
+        const denominator = Math.sin(A_rad / 2);
+        const n = numerator / denominator;
+
+        return {
+            angleA,
+            alpha1Str, beta1Str, alpha2Str, beta2Str,  // 原始字符串
+            alpha1, beta1, alpha2, beta2,              // 转换后的数值
+            theta1List,
+            theta2List,
+            deltaList,
+            avgDelta,
+            n
+        };
+    }
+
+    // ---------- 渲染详细计算过程 ----------
+    function renderProcess(res) {
+        const f = (x) => x.toFixed(6);
+        const f4 = (x) => x.toFixed(4);
+        const angleA = res.angleA;
+
+        // 生成原始数据对照表
+        const rowsRaw = [];
+        for (let i = 0; i < 3; i++) {
+            rowsRaw.push(`
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${res.alpha1Str[i]}</td><td>${f4(res.alpha1[i])}°</td>
+                    <td>${res.beta1Str[i]}</td><td>${f4(res.beta1[i])}°</td>
+                    <td>${res.alpha2Str[i]}</td><td>${f4(res.alpha2[i])}°</td>
+                    <td>${res.beta2Str[i]}</td><td>${f4(res.beta2[i])}°</td>
+                </tr>
+            `);
+        }
+
+        // 生成中间量表格
+        const rowsMid = [];
+        for (let i = 0; i < 3; i++) {
+            rowsMid.push(`
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${f4(res.theta1List[i])}°</td>
+                    <td>${f4(res.theta2List[i])}°</td>
+                    <td>${f4(res.deltaList[i])}°</td>
+                </tr>
+            `);
+        }
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 原始读数（度.分）与转换后的十进制度</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead>
+                        <tr><th>次数</th><th>α₁<br>(度.分)</th><th>α₁ (°)</th><th>β₁<br>(度.分)</th><th>β₁ (°)</th><th>α₂<br>(度.分)</th><th>α₂ (°)</th><th>β₂<br>(度.分)</th><th>β₂ (°)</th></tr>
+                    </thead>
+                    <tbody>${rowsRaw.join('')}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 计算每组的中间角度</div>
+            <div class="step-formula">$\\theta_1 = \\alpha_1 - \\alpha_2$，$\\theta_2 = \\beta_1 - \\beta_2$，$\\delta_{\\min} = (\\theta_1+\\theta_2)/2$</div>
+            <div class="output-table-wrapper" style="margin-top:1rem;">
+                <table class="output-table">
+                    <thead><tr><th>次数</th><th>θ₁ (°)</th><th>θ₂ (°)</th><th>δ_min (°)</th></tr></thead>
+                    <tbody>${rowsMid.join('')}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 平均最小偏向角 $\\bar{\\delta}_{\\min}$</div>
+            <div class="step-formula">$$\\bar{\\delta}_{\\min} = \\frac{${res.deltaList.map(d => f(d)).join(' + ')}}{3} = ${f(res.avgDelta)}^\\circ$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 折射率 n 计算</div>
+            <div class="step-formula">$$A = ${f(angleA)}^\\circ, \\quad \\bar{\\delta}_{\\min} = ${f(res.avgDelta)}^\\circ$$</div>
+            <div class="step-formula">$$\\frac{\\bar{\\delta}_{\\min} + A}{2} = \\frac{${f(res.avgDelta)} + ${f(angleA)}}{2} = ${f((res.avgDelta+angleA)/2)}^\\circ$$</div>
+            <div class="step-formula">$$\\sin\\frac{\\bar{\\delta}_{\\min} + A}{2} = \\sin(${f((res.avgDelta+angleA)/2)}^\\circ) = ${Math.sin((res.avgDelta+angleA)/2*Math.PI/180).toFixed(8)}$$</div>
+            <div class="step-formula">$$\\sin\\frac{A}{2} = \\sin(${f(angleA/2)}^\\circ) = ${Math.sin(angleA/2*Math.PI/180).toFixed(8)}$$</div>
+            <div class="step-formula">$$n = \\frac{\\sin\\frac{\\bar{\\delta}_{\\min}+A}{2}}{\\sin\\frac{A}{2}} = \\frac{${Math.sin((res.avgDelta+angleA)/2*Math.PI/180).toFixed(8)}}{${Math.sin(angleA/2*Math.PI/180).toFixed(8)}} = ${res.n.toFixed(8)}$$</div>
+            <div class="step-result">折射率 $n = ${res.n.toFixed(8)}$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // ---------- 显示主要结果 ----------
+    function displayResults(res) {
+        document.getElementById('n_val').innerText = res.n.toFixed(8);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或格式错误：请确保棱镜角 A > 0 且三次测量的 α₁,β₁,α₂,β₂ 均已填写正确的度分格式。');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查数据');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        // 构建测量表格 (3行,4列) 使用度分格式
+        buildAngleTable('measure-table-container', 'pm_', 3, 4,
+            ['次数', 'α₁ (度.分)', 'β₁ (度.分)', 'α₂ (度.分)', 'β₂ (度.分)'],
+            [   // 默认示例数据 (度.分)
+                '120.15', '300.15', '60.30', '240.30',   // 第一次
+                '120.20', '300.20', '60.35', '240.35',   // 第二次
+                '120.10', '300.10', '60.25', '240.25'    // 第三次
+            ]
+        );
+
+        // 若本地无保存，设置默认棱镜角 A
+        if (!localStorage.getItem(APP_KEY)) {
+            document.getElementById('angleA').value = '60.00';
+        }
+
+        // 加载保存数据（会覆盖默认值）
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        // 键盘导航 (表格共4列)
+        window.ExperimentUtils.KeyboardNav.init('#measure-table-container', 4);
+
+        // 深色模式
+        window.ExperimentUtils.ThemeManager.init();
+
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
+
+<!-- 确保输出表格样式与1-1一致 -->
+<style>
+    .output-table { width: 100%; border-collapse: collapse; background: transparent; }
+    .output-table th { background: #f8fafc; font-weight: 500; padding: 0.5rem; }
+    .dark-mode .output-table th { background: #374151; }
+    .output-table td { padding: 0.5rem; text-align: center; border-bottom: 1px solid #e2e8f0; }
+</style>
 </body>
 </html>

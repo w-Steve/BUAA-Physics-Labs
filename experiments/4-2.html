@@ -3,857 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实验 4-2: 电桥法测电阻</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 24px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 12px;
-        }
-        
-        .section {
-            margin-bottom: 28px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background-color: #fafafa;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-content {
-            background-color: white;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        
-        .input-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .data-table {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        .table-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-        }
-        
-        .table-header, .table-row {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header-cell, .cell {
-            flex: 1;
-            padding: 10px 8px;
-            text-align: center;
-            font-weight: 500;
-        }
-        
-        .header-cell {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .cell-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .btn-calculate {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-calculate:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-calculate:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-save {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .btn-save:hover {
-            background-color: #27ae60;
-        }
-        
-        .results-group {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .result-item.highlight {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .result-label {
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .intermediate-results, .uncertainty-details {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 8px;
-        }
-        
-        .uncertainty-group {
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px dashed #e0e0e0;
-        }
-        
-        .group-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-            font-size: 16px;
-        }
-        
-        .data-status {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .status-item {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .input-row {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .input-item {
-                min-width: 100%;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
-        }
-    </style>
+    <title>基物实验助手- 电桥法测电阻</title>
+    <!-- 公共样式 (与1-1共用) -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 (含存储、表格生成、键盘导航、格式修约等) -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 (与1-1相同) -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
 </head>
 <body>
-    <div class="container">
-        <div class="page-title">电桥法测电阻</div>
-        <div class="experiment-content">
-            <!-- 实验简介 -->
-            <div class="section">
-                <div class="section-title">📝 使用必读</div>
-                <div class="section-content">
-                    <p style="margin-top: 10px; color: #e74c3c;">Rₙ 和 Rₙ' 为电桥平衡时的两次电阻箱读数。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">Δx 为检流计偏转格数，ΔR 为引起该偏转的电阻变化值。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">电阻箱残余误差 R₀ 需单独测量或查阅说明书。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">准确度等级 aᵢ 根据电阻箱各档位的标称等级填写。</p>
-                </div>
-            </div>
+<div class="container">
+    <div class="page-title">电桥法测电阻</div>
 
-            <!-- 原始数据输入 -->
-            <div class="section">
-                <div class="section-title">📊 原始数据记录</div>
-                
-                <!-- 基本测量数据 -->
-                <div class="input-group">
-                    <div class="input-row">
-                        <div class="input-item">
-                            <label class="input-label">Rₙ (Ω):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.0" 
-                                id="rn"
-                                step="0.1"
-                            />
-                        </div>
-                        <div class="input-item">
-                            <label class="input-label">Rₙ' (Ω):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.0" 
-                                id="rnPrime"
-                                step="0.1"
-                            />
-                        </div>
-                    </div>
-                    <div class="input-row">
-                        <div class="input-item">
-                            <label class="input-label">Δx (格):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.0" 
-                                id="deltaX"
-                                step="0.1"
-                            />
-                        </div>
-                        <div class="input-item">
-                            <label class="input-label">ΔR (Ω):</label>
-                            <input 
-                                class="input-field" 
-                                type="number" 
-                                placeholder="0.0" 
-                                id="deltaR"
-                                step="0.01"
-                            />
-                        </div>
-                    </div>
-                </div>
+    <!-- 实验要点提示 -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 待测电阻 $R_x = \sqrt{R_N \cdot R_N'}$<br>
+        • 电阻箱误差 $\Delta R_k = R_0 + \sum (a_i\% \times R_i)$  ($R_i$为各档位示值)<br>
+        • 电桥灵敏度 $S = \Delta x / \Delta R$，灵敏度引入误差 $\Delta_{\text{灵}} = 0.2 / S$<br>
+        • 合成不确定度 $u(R_x) = R_x \sqrt{ \left(\frac{u(R_N)}{2R_N}\right)^2 + \left(\frac{u(R_N')}{2R_N'}\right)^2 }$<br>
+    </div>
 
-                <!-- 电阻箱残余误差 -->
-                <div class="input-group">
-                    <div class="input-item">
-                        <label class="input-label">电阻箱残余误差 R₀ (Ω):</label>
-                        <input 
-                            class="input-field" 
-                            type="number" 
-                            placeholder="0.00" 
-                            id="r0"
-                            step="0.001"
-                        />
-                    </div>
-                </div>
+    <!-- 原始数据录入区 -->
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
 
-                <!-- 电阻箱准确度等级表 -->
-                <div class="data-table">
-                    <div class="table-title">电阻箱准确度等级</div>
-                    <div class="table-header">
-                        <div class="header-cell">示值盘 Rᵢ (Ω)</div>
-                        <div class="header-cell">1000</div>
-                        <div class="header-cell">100</div>
-                        <div class="header-cell">10</div>
-                        <div class="header-cell">1</div>
-                        <div class="header-cell">0.1</div>
-                    </div>
-                    <div class="table-row">
-                        <div class="cell">准确度等级 aᵢ (%)</div>
-                        <input class="cell-input" type="number" placeholder="0.1" id="a1000" step="0.01" />
-                        <input class="cell-input" type="number" placeholder="0.1" id="a100" step="0.01" />
-                        <input class="cell-input" type="number" placeholder="0.1" id="a10" step="0.01" />
-                        <input class="cell-input" type="number" placeholder="0.5" id="a1" step="0.01" />
-                        <input class="cell-input" type="number" placeholder="5.0" id="a01" step="0.1" />
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
-                <button class="btn-save" id="saveBtn">💾 保存数据</button>
-            </div>
-            
-            <!-- 计算结果 -->
-            <div class="section" id="resultsSection" style="display: none;">
-                <div class="section-title">🧮 计算结果</div>
-                
-                <div class="results-group">
-                    <div class="result-item highlight">
-                        <div class="result-label">待测电阻 Rₓ:</div>
-                        <div class="result-value" id="rxValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">不确定度 u(Rₓ):</div>
-                        <div class="result-value" id="uRxValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">相对不确定度 u(Rₓ)/Rₓ:</div>
-                        <div class="result-value" id="relativeUncertainty">0.000</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">电桥灵敏度 S:</div>
-                        <div class="result-value" id="sensitivityValue">0.000 格/Ω</div>
-                    </div>
-                    <div class="result-item highlight">
-                        <div class="result-label">灵敏度不确定度 u(S):</div>
-                        <div class="result-value" id="uSensitivityValue">0.000 格/Ω</div>
-                    </div>
-                </div>
+        <!-- 基本测量参数 -->
+        <div class="top-input-group" style="flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="top-input"><label>$R_N$ (Ω):</label><input type="number" id="rn" class="save-input cell-input" step="0.01" value="1000.00"></div>
+            <div class="top-input"><label>$R_N'$ (Ω):</label><input type="number" id="rnPrime" class="save-input cell-input" step="0.01" value="2000.00"></div>
+            <div class="top-input"><label>$\Delta x$ (格):</label><input type="number" id="deltaX" class="save-input cell-input" step="0.1" value="10.0"></div>
+            <div class="top-input"><label>$\Delta R$ (Ω):</label><input type="number" id="deltaR" class="save-input cell-input" step="0.01" value="5.00"></div>
+            <div class="top-input"><label>电阻箱固定误差$R_0$ (Ω):</label><input type="number" id="r0" class="save-input cell-input" step="0.001" value="0.020"></div>
+        </div>
 
-                <!-- 中间计算结果 -->
-                <div class="intermediate-results">
-                    <div class="result-title">中间计算结果</div>
-                    <div class="result-item">
-                        <div class="result-label">Rₙ 的误差 ΔRₙ:</div>
-                        <div class="result-value" id="deltaRnValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Rₙ' 的误差 ΔRₙ':</div>
-                        <div class="result-value" id="deltaRnPrimeValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Rₙ 的不确定度 u(Rₙ):</div>
-                        <div class="result-value" id="uRnValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">Rₙ' 的不确定度 u(Rₙ'):</div>
-                        <div class="result-value" id="uRnPrimeValue">0.000 Ω</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">灵敏度引起的误差 Δ灵:</div>
-                        <div class="result-value" id="deltaSensitivityError">0.000 Ω</div>
-                    </div>
-                </div>
-
-                <!-- 不确定度分量详情 -->
-                <div class="uncertainty-details">
-                    <div class="result-title">不确定度分量分析</div>
-                    
-                    <!-- Rₙ 不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">Rₙ 的不确定度</div>
-                        <div class="result-item">
-                            <div class="result-label">误差 ΔRₙ:</div>
-                            <div class="result-value" id="deltaRnDetail">0.000 Ω</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u(Rₙ):</div>
-                            <div class="result-value" id="uRnDetail">0.000 Ω</div>
-                        </div>
-                    </div>
-
-                    <!-- Rₙ' 不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">Rₙ' 的不确定度</div>
-                        <div class="result-item">
-                            <div class="result-label">误差 ΔRₙ':</div>
-                            <div class="result-value" id="deltaRnPrimeDetail">0.000 Ω</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">B类不确定度 u(Rₙ'):</div>
-                            <div class="result-value" id="uRnPrimeDetail">0.000 Ω</div>
-                        </div>
-                    </div>
-
-                    <!-- 灵敏度相关不确定度 -->
-                    <div class="uncertainty-group">
-                        <div class="group-title">灵敏度相关参数</div>
-                        <div class="result-item">
-                            <div class="result-label">灵敏度 S:</div>
-                            <div class="result-value" id="sensitivityDetail">0.000 格/Ω</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">灵敏度误差 Δ灵:</div>
-                            <div class="result-value" id="deltaSensitivityDetail">0.000 Ω</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">灵敏度不确定度 u(S):</div>
-                            <div class="result-value" id="uSensitivityDetail">0.000 格/Ω</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 数据状态 -->
-            <div class="section">
-                <div class="section-title">💾 数据状态</div>
-                <div class="data-status">
-                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
-                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
-                </div>
-            </div>
+        <!-- 电阻箱准确度等级表格 -->
+        <div style="margin-bottom: 1rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">电阻箱准确度等级 $a_i$ (%)</div>
+            <div id="acc-table-container" class="data-table"></div>
         </div>
     </div>
 
-    <script>
-        // 实验数据模型
-        const experimentData = {
-            experimentId: '4-2',
-            // 基本参数
-            rn: '',
-            rnPrime: '',
-            deltaX: '',
-            deltaR: '',
-            r0: '',
-            // 准确度等级
-            a1000: '0.1',
-            a100: '0.1',
-            a10: '0.1',
-            a1: '0.5',
-            a01: '5.0',
-            // 计算结果
-            showResults: false,
-            rxValue: '0.000',
-            uRxValue: '0.000',
-            relativeUncertainty: '0.000',
-            sensitivityValue: '0.000',
-            uSensitivityValue: '0.000',
-            // 中间结果
-            deltaRnValue: '0.000',
-            deltaRnPrimeValue: '0.000',
-            uRnValue: '0.000',
-            uRnPrimeValue: '0.000',
-            deltaSensitivityError: '0.000',
-            // 详细结果
-            deltaRnDetail: '0.000',
-            uRnDetail: '0.000',
-            deltaRnPrimeDetail: '0.000',
-            uRnPrimeDetail: '0.000',
-            sensitivityDetail: '0.000',
-            deltaSensitivityDetail: '0.000',
-            uSensitivityDetail: '0.000',
-            // 状态
-            lastUpdate: ''
+    <!-- 操作按钮组 -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <!-- 主要结果卡片 (使用修约后的数值) -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">待测电阻 $R_x$ (Ω)</div><div class="result-value" id="rx_val">—</div></div>
+            <div class="result-card"><div class="result-label">合成不确定度 $u(R_x)$ (Ω)</div><div class="result-value" id="urx_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对不确定度 $u(R_x)/R_x$</div><div class="result-value" id="rel_urx_val">—</div></div>
+            <div class="result-card"><div class="result-label">灵敏度 $S$ (格/Ω)</div><div class="result-value" id="sens_val">—</div></div>
+            <div class="result-card"><div class="result-label">$u(S)$ (格/Ω)</div><div class="result-value" id="usens_val">—</div></div>
+        </div>
+    </div>
+
+    <!-- 详细计算过程 (已移除原始数据步骤) -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <!-- 免责声明 -->
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '4-2';
+
+    // ---------- 从DOM获取所有输入值 ----------
+    function getInputs() {
+        const rn = parseFloat(document.getElementById('rn').value);
+        const rnPrime = parseFloat(document.getElementById('rnPrime').value);
+        const deltaX = parseFloat(document.getElementById('deltaX').value);
+        const deltaR = parseFloat(document.getElementById('deltaR').value);
+        const r0 = parseFloat(document.getElementById('r0').value);
+
+        const accValues = [];
+        for (let i = 1; i <= 5; i++) {
+            const inp = document.getElementById(`acc${i}`);
+            accValues.push(inp ? parseFloat(inp.value) : NaN);
+        }
+
+        return {
+            rn, rnPrime, deltaX, deltaR, r0,
+            acc1000: accValues[0], acc100: accValues[1], acc10: accValues[2],
+            acc1: accValues[3], acc01: accValues[4]
+        };
+    }
+
+    // ---------- 数据有效性检查 ----------
+    function isValid(data) {
+        const { rn, rnPrime, deltaX, deltaR, r0, acc1000, acc100, acc10, acc1, acc01 } = data;
+        if (isNaN(rn) || rn <= 0) return false;
+        if (isNaN(rnPrime) || rnPrime <= 0) return false;
+        if (isNaN(deltaX) || deltaX <= 0) return false;
+        if (isNaN(deltaR) || deltaR <= 0) return false;
+        if (isNaN(r0) || r0 < 0) return false;
+        if (isNaN(acc1000) || acc1000 <= 0) return false;
+        if (isNaN(acc100) || acc100 <= 0) return false;
+        if (isNaN(acc10) || acc10 <= 0) return false;
+        if (isNaN(acc1) || acc1 <= 0) return false;
+        if (isNaN(acc01) || acc01 <= 0) return false;
+        return true;
+    }
+
+    // ---------- 辅助：计算单个电阻箱的 ΔR_k ----------
+    function computeDeltaR(R, R0, accMap) {
+        const rounded = Math.round(R * 10) / 10;
+        const intPart = Math.floor(rounded);
+        const fracPart = Math.round((rounded - intPart) * 10);
+
+        const d1000 = Math.floor(intPart / 1000) % 10;
+        const d100  = Math.floor(intPart / 100) % 10;
+        const d10   = Math.floor(intPart / 10) % 10;
+        const d1    = intPart % 10;
+        const d01   = fracPart;
+
+        let sum = 0;
+        sum += accMap[1000] * (d1000 * 1000);
+        sum += accMap[100]  * (d100 * 100);
+        sum += accMap[10]   * (d10 * 10);
+        sum += accMap[1]    * (d1 * 1);
+        sum += accMap[0.1]  * (d01 * 0.1);
+        return R0 + sum;
+    }
+
+    // ---------- 核心计算 ----------
+    function compute(data) {
+        const { rn, rnPrime, deltaX, deltaR, r0, acc1000, acc100, acc10, acc1, acc01 } = data;
+
+        const accMap = {
+            1000: acc1000 / 100,
+            100: acc100 / 100,
+            10: acc10 / 100,
+            1: acc1 / 100,
+            0.1: acc01 / 100
         };
 
-        // DOM 元素
-        const elements = {
-            // 输入元素
-            rn: document.getElementById('rn'),
-            rnPrime: document.getElementById('rnPrime'),
-            deltaX: document.getElementById('deltaX'),
-            deltaR: document.getElementById('deltaR'),
-            r0: document.getElementById('r0'),
-            a1000: document.getElementById('a1000'),
-            a100: document.getElementById('a100'),
-            a10: document.getElementById('a10'),
-            a1: document.getElementById('a1'),
-            a01: document.getElementById('a01'),
-            // 按钮
-            calculateBtn: document.getElementById('calculateBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            // 结果显示元素
-            resultsSection: document.getElementById('resultsSection'),
-            rxValue: document.getElementById('rxValue'),
-            uRxValue: document.getElementById('uRxValue'),
-            relativeUncertainty: document.getElementById('relativeUncertainty'),
-            sensitivityValue: document.getElementById('sensitivityValue'),
-            uSensitivityValue: document.getElementById('uSensitivityValue'),
-            // 中间结果
-            deltaRnValue: document.getElementById('deltaRnValue'),
-            deltaRnPrimeValue: document.getElementById('deltaRnPrimeValue'),
-            uRnValue: document.getElementById('uRnValue'),
-            uRnPrimeValue: document.getElementById('uRnPrimeValue'),
-            deltaSensitivityError: document.getElementById('deltaSensitivityError'),
-            // 详细结果
-            deltaRnDetail: document.getElementById('deltaRnDetail'),
-            uRnDetail: document.getElementById('uRnDetail'),
-            deltaRnPrimeDetail: document.getElementById('deltaRnPrimeDetail'),
-            uRnPrimeDetail: document.getElementById('uRnPrimeDetail'),
-            sensitivityDetail: document.getElementById('sensitivityDetail'),
-            deltaSensitivityDetail: document.getElementById('deltaSensitivityDetail'),
-            uSensitivityDetail: document.getElementById('uSensitivityDetail'),
-            // 状态
-            lastUpdate: document.getElementById('lastUpdate')
-        };
+        const deltaRn = computeDeltaR(rn, r0, accMap);
+        const deltaRnPrime = computeDeltaR(rnPrime, r0, accMap);
+        const uRn = deltaRn / Math.sqrt(3);
+        const uRnPrime = deltaRnPrime / Math.sqrt(3);
+        const rx = Math.sqrt(rn * rnPrime);
+        const term1 = Math.pow(uRn / (2 * rn), 2);
+        const term2 = Math.pow(uRnPrime / (2 * rnPrime), 2);
+        const relU_rx = Math.sqrt(term1 + term2);
+        const uRx = rx * relU_rx;
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            loadExperimentData();
-            setupEventListeners();
-            updateCalculateStatus();
+        const sensitivity = deltaX / deltaR;
+        const deltaSens = 0.2 / sensitivity;
+        const uSens = deltaSens / Math.sqrt(3);
+
+        // 分解档位用于展示
+        const digits = (val) => ({
+            d1000: Math.floor(val/1000)%10,
+            d100: Math.floor(val/100)%10,
+            d10: Math.floor(val/10)%10,
+            d1: Math.floor(val)%10,
+            d01: Math.round((val - Math.floor(val))*10)
         });
 
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 基本参数输入
-            elements.rn.addEventListener('input', onRnChange);
-            elements.rnPrime.addEventListener('input', onRnPrimeChange);
-            elements.deltaX.addEventListener('input', onDeltaXChange);
-            elements.deltaR.addEventListener('input', onDeltaRChange);
-            elements.r0.addEventListener('input', onR0Change);
-            
-            // 准确度等级输入
-            elements.a1000.addEventListener('input', onAccuracyChange);
-            elements.a100.addEventListener('input', onAccuracyChange);
-            elements.a10.addEventListener('input', onAccuracyChange);
-            elements.a1.addEventListener('input', onAccuracyChange);
-            elements.a01.addEventListener('input', onAccuracyChange);
+        return {
+            rn, rnPrime, deltaX, deltaR, r0,
+            acc1000, acc100, acc10, acc1, acc01,
+            deltaRn, deltaRnPrime, uRn, uRnPrime,
+            rx, uRx, relU_rx,
+            sensitivity, deltaSens, uSens,
+            digitsRn: digits(rn),
+            digitsRnPrime: digits(rnPrime)
+        };
+    }
 
-            // 按钮事件
-            elements.calculateBtn.addEventListener('click', calculateResults);
-            elements.saveBtn.addEventListener('click', saveData);
-        }
+    // ---------- 渲染详细计算过程 (已移除原始数据步骤) ----------
+    function renderProcess(res) {
+        const f = (x) => x.toFixed(6);
+        const f2 = (x) => x.toFixed(4);
 
-        // 输入处理函数
-        function onRnChange(e) {
-            experimentData.rn = e.target.value;
-            updateCalculateStatus();
-        }
+        // 使用修约函数获得最终结果的标准表示
+        const [rxRounded, uRxRounded] = window.ExperimentUtils.formatResultWithUncertainty(res.rx, res.uRx);
+        const [sensRounded, uSensRounded] = window.ExperimentUtils.formatResultWithUncertainty(res.sensitivity, res.uSens);
 
-        function onRnPrimeChange(e) {
-            experimentData.rnPrime = e.target.value;
-            updateCalculateStatus();
-        }
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 计算电阻箱误差 $\\Delta R_N$ 和 $\\Delta R_N'$</div>
+            <div class="step-formula">$$\\Delta R_N = ${res.r0.toFixed(4)} + [${f(res.acc1000/100)}(${res.digitsRn.d1000}\\times1000) + ${f(res.acc100/100)}(${res.digitsRn.d100}\\times100) + ${f(res.acc10/100)}(${res.digitsRn.d10}\\times10) + ${f(res.acc1/100)}(${res.digitsRn.d1}\\times1) + ${f(res.acc01/100)}(${res.digitsRn.d01}\\times0.1)] = ${f(res.deltaRn)}\\ \\Omega$$</div>
+            <div class="step-formula">$$\\Delta R_N' = ${res.r0.toFixed(4)} + [${f(res.acc1000/100)}(${res.digitsRnPrime.d1000}\\times1000) + ${f(res.acc100/100)}(${res.digitsRnPrime.d100}\\times100) + ${f(res.acc10/100)}(${res.digitsRnPrime.d10}\\times10) + ${f(res.acc1/100)}(${res.digitsRnPrime.d1}\\times1) + ${f(res.acc01/100)}(${res.digitsRnPrime.d01}\\times0.1)] = ${f(res.deltaRnPrime)}\\ \\Omega$$</div>
+        </div>
 
-        function onDeltaXChange(e) {
-            experimentData.deltaX = e.target.value;
-            updateCalculateStatus();
-        }
+        <div class="calculation-step">
+            <div class="step-title">2. B类不确定度 $u(R_N)$, $u(R_N')$</div>
+            <div class="step-formula">$$u(R_N) = \\frac{\\Delta R_N}{\\sqrt{3}} = \\frac{${f(res.deltaRn)}}{1.73205} = ${f(res.uRn)}\\ \\Omega$$</div>
+            <div class="step-formula">$$u(R_N') = \\frac{\\Delta R_N'}{\\sqrt{3}} = \\frac{${f(res.deltaRnPrime)}}{1.73205} = ${f(res.uRnPrime)}\\ \\Omega$$</div>
+        </div>
 
-        function onDeltaRChange(e) {
-            experimentData.deltaR = e.target.value;
-            updateCalculateStatus();
-        }
+        <div class="calculation-step">
+            <div class="step-title">3. 待测电阻 $R_x$ 及不确定度 $u(R_x)$</div>
+            <div class="step-formula">$$R_x = \\sqrt{R_N R_N'} = \\sqrt{${res.rn.toFixed(4)} \\times ${res.rnPrime.toFixed(4)}} = ${f(res.rx)}\\ \\Omega$$</div>
+            <div class="step-formula">相对合成分量：$$\\frac{u(R_N)}{2R_N} = \\frac{${f(res.uRn)}}{2\\times${res.rn.toFixed(4)}} = ${f(res.uRn/(2*res.rn))},\\quad \\frac{u(R_N')}{2R_N'} = ${f(res.uRnPrime/(2*res.rnPrime))}$$</div>
+            <div class="step-formula">$$\\frac{u(R_x)}{R_x} = \\sqrt{\\left(\\frac{u(R_N)}{2R_N}\\right)^2 + \\left(\\frac{u(R_N')}{2R_N'}\\right)^2} = \\sqrt{(${f(res.uRn/(2*res.rn))})^2 + (${f(res.uRnPrime/(2*res.rnPrime))})^2} = ${f(res.relU_rx)}$$</div>
+            <div class="step-formula">$$u(R_x) = R_x \\times \\frac{u(R_x)}{R_x} = ${f(res.rx)} \\times ${f(res.relU_rx)} = ${f(res.uRx)}\\ \\Omega$$</div>
+        </div>
 
-        function onR0Change(e) {
-            experimentData.r0 = e.target.value;
-            updateCalculateStatus();
-        }
+        <div class="calculation-step">
+            <div class="step-title">4. 电桥灵敏度 $S$ 及其不确定度</div>
+            <div class="step-formula">$$S = \\frac{\\Delta x}{\\Delta R} = \\frac{${res.deltaX.toFixed(2)}}{${res.deltaR.toFixed(4)}} = ${f(res.sensitivity)}\\ \\text{格/Ω}$$</div>
+            <div class="step-formula">灵敏度引入误差 $$\\Delta_{\\text{灵}} = \\frac{0.2}{S} = \\frac{0.2}{${f(res.sensitivity)}} = ${f(res.deltaSens)}\\ \\Omega$$</div>
+            <div class="step-formula">灵敏度不确定度$$u(S) = \\frac{\\Delta_{\\text{灵}}}{\\sqrt{3}} = \\frac{${f(res.deltaSens)}}{1.73205} = ${f(res.uSens)}\\ \\text{格/Ω}$$</div>
+        </div>
 
-        function onAccuracyChange(e) {
-            const id = e.target.id;
-            experimentData[id] = e.target.value;
-            updateCalculateStatus();
-        }
+        <div class="calculation-step">
+            <div class="step-title">5. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">$R_x = (${rxRounded} \\pm ${uRxRounded})\\ \\Omega$</div>
+            <div class="step-result">相对不确定度 = $\\frac{u(R_x)}{R_x} = ${(res.relU_rx*100).toFixed(2)}$ %</div>
+            <div class="step-result">灵敏度 $S = ${sensRounded}\\ \\text{格/Ω}$，$u(S) = ${uSensRounded}\\ \\text{格/Ω}$</div>
+        </div>
+        `;
 
-        // 更新计算按钮状态
-        function updateCalculateStatus() {
-            const hasBasicData = experimentData.rn && experimentData.rnPrime && 
-                               experimentData.deltaX && experimentData.deltaR &&
-                               experimentData.r0;
-            
-            const hasAccuracyData = experimentData.a1000 && experimentData.a100 && 
-                                  experimentData.a10 && experimentData.a1 && 
-                                  experimentData.a01;
-            
-            const canCalculate = hasBasicData && hasAccuracyData;
-            
-            elements.calculateBtn.disabled = !canCalculate;
-        }
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
 
-        // 计算功能
-        function calculateResults() {
-            try {
-                // 解析输入值
-                const rn = parseFloat(experimentData.rn);
-                const rnPrime = parseFloat(experimentData.rnPrime);
-                const deltaX = parseFloat(experimentData.deltaX);
-                const deltaR = parseFloat(experimentData.deltaR);
-                const r0 = parseFloat(experimentData.r0);
-                
-                // 解析准确度等级
-                const accuracyLevels = {
-                    '1000': parseFloat(experimentData.a1000) / 100,
-                    '100': parseFloat(experimentData.a100) / 100,
-                    '10': parseFloat(experimentData.a10) / 100,
-                    '1': parseFloat(experimentData.a1) / 100,
-                    '0.1': parseFloat(experimentData.a01) / 100
-                };
-                
-                // 1. 计算待测电阻 Rₓ = √(Rₙ × Rₙ')
-                const rx = Math.sqrt(rn * rnPrime);
-                
-                // 2. 计算电阻箱误差 ΔRₖ = R₀ₖ + Σ(aᵢ% × Rᵢ)
-                const deltaRn = calculateResistorError(rn, r0, accuracyLevels);
-                const deltaRnPrime = calculateResistorError(rnPrime, r0, accuracyLevels);
-                
-                // 3. 计算电阻箱不确定度 u(Rₖ) = ΔRₖ / √3
-                const uRn = deltaRn / Math.sqrt(3);
-                const uRnPrime = deltaRnPrime / Math.sqrt(3);
-                
-                // 4. 计算 Rₓ 的不确定度
-                const term1 = Math.pow(uRn / (2 * rn), 2);
-                const term2 = Math.pow(uRnPrime / (2 * rnPrime), 2);
-                const relativeUncertaintyRx = Math.sqrt(term1 + term2);
-                const uRx = rx * relativeUncertaintyRx;
-                
-                // 5. 计算电桥灵敏度 S = Δx / ΔR
-                const sensitivity = deltaX / deltaR;
-                
-                // 6. 计算灵敏度引起的误差 Δ灵 = 0.2 / S
-                const deltaSensitivityError = 0.2 / sensitivity;
-                
-                // 7. 计算灵敏度不确定度 u(S) = Δ灵 / √3
-                const uSensitivity = deltaSensitivityError / Math.sqrt(3);
-                
-                // 保存计算结果
-                experimentData.rxValue = rx.toFixed(6);
-                experimentData.uRxValue = uRx.toFixed(6);
-                experimentData.relativeUncertainty = relativeUncertaintyRx.toFixed(6);
-                experimentData.sensitivityValue = sensitivity.toFixed(6);
-                experimentData.uSensitivityValue = uSensitivity.toFixed(6);
-                
-                // 中间结果
-                experimentData.deltaRnValue = deltaRn.toFixed(6);
-                experimentData.deltaRnPrimeValue = deltaRnPrime.toFixed(6);
-                experimentData.uRnValue = uRn.toFixed(6);
-                experimentData.uRnPrimeValue = uRnPrime.toFixed(6);
-                experimentData.deltaSensitivityError = deltaSensitivityError.toFixed(6);
-                
-                // 详细结果
-                experimentData.deltaRnDetail = deltaRn.toFixed(6);
-                experimentData.uRnDetail = uRn.toFixed(6);
-                experimentData.deltaRnPrimeDetail = deltaRnPrime.toFixed(6);
-                experimentData.uRnPrimeDetail = uRnPrime.toFixed(6);
-                experimentData.sensitivityDetail = sensitivity.toFixed(6);
-                experimentData.deltaSensitivityDetail = deltaSensitivityError.toFixed(6);
-                experimentData.uSensitivityDetail = uSensitivity.toFixed(6);
-                
-                // 显示结果
-                displayResults();
-                
-                alert('计算完成！');
-            } catch (error) {
-                console.error('计算错误:', error);
-                alert('计算失败，请检查数据');
-            }
-        }
+    // ---------- 显示主要结果卡片 (应用修约) ----------
+    function displayResults(res) {
+        // 使用 common.js 的修约函数
+        const [rxStr, uRxStr] = window.ExperimentUtils.formatResultWithUncertainty(res.rx, res.uRx);
+        const [sensStr, uSensStr] = window.ExperimentUtils.formatResultWithUncertainty(res.sensitivity, res.uSens);
 
-        // 计算电阻箱误差 ΔRₖ = R₀ + Σ(aᵢ% × Rᵢ)
-        function calculateResistorError(resistance, r0, accuracyLevels) {
-            let error = r0;
-            
-            // 分解电阻值为各档位的贡献
-            const values = resistance.toString().split('.');
-            const integerPart = values[0];
-            const decimalPart = values[1] || '';
-            
-            // 处理整数部分（Ω）
-            for (let i = 0; i < integerPart.length; i++) {
-                const digit = parseInt(integerPart[i]);
-                const position = integerPart.length - 1 - i;
-                const multiplier = Math.pow(10, position);
-                
-                if (multiplier >= 0.1) {
-                    const levelKey = multiplier.toString();
-                    if (accuracyLevels[levelKey]) {
-                        error += accuracyLevels[levelKey] * (digit * multiplier);
-                    }
-                }
-            }
-            
-            // 处理小数部分（0.1Ω档）
-            if (decimalPart.length > 0) {
-                const firstDecimal = parseInt(decimalPart.charAt(0));
-                if (firstDecimal > 0 && accuracyLevels['0.1']) {
-                    error += accuracyLevels['0.1'] * (firstDecimal * 0.1);
-                }
-            }
-            
-            return error;
-        }
+        document.getElementById('rx_val').innerText = rxStr;
+        document.getElementById('urx_val').innerText = uRxStr;
+        document.getElementById('rel_urx_val').innerText = res.relU_rx.toFixed(6);
+        document.getElementById('sens_val').innerText = sensStr;
+        document.getElementById('usens_val').innerText = uSensStr;
 
-        // 显示计算结果
-        function displayResults() {
-            // 主要结果
-            elements.rxValue.textContent = `${experimentData.rxValue} Ω`;
-            elements.uRxValue.textContent = `${experimentData.uRxValue} Ω`;
-            elements.relativeUncertainty.textContent = experimentData.relativeUncertainty;
-            elements.sensitivityValue.textContent = `${experimentData.sensitivityValue} 格/Ω`;
-            elements.uSensitivityValue.textContent = `${experimentData.uSensitivityValue} 格/Ω`;
-            
-            // 中间结果
-            elements.deltaRnValue.textContent = `${experimentData.deltaRnValue} Ω`;
-            elements.deltaRnPrimeValue.textContent = `${experimentData.deltaRnPrimeValue} Ω`;
-            elements.uRnValue.textContent = `${experimentData.uRnValue} Ω`;
-            elements.uRnPrimeValue.textContent = `${experimentData.uRnPrimeValue} Ω`;
-            elements.deltaSensitivityError.textContent = `${experimentData.deltaSensitivityError} Ω`;
-            
-            // 详细结果
-            elements.deltaRnDetail.textContent = `${experimentData.deltaRnDetail} Ω`;
-            elements.uRnDetail.textContent = `${experimentData.uRnDetail} Ω`;
-            elements.deltaRnPrimeDetail.textContent = `${experimentData.deltaRnPrimeDetail} Ω`;
-            elements.uRnPrimeDetail.textContent = `${experimentData.uRnPrimeDetail} Ω`;
-            elements.sensitivityDetail.textContent = `${experimentData.sensitivityDetail} 格/Ω`;
-            elements.deltaSensitivityDetail.textContent = `${experimentData.deltaSensitivityDetail} Ω`;
-            elements.uSensitivityDetail.textContent = `${experimentData.uSensitivityDetail} 格/Ω`;
-            
-            // 显示结果区域
-            elements.resultsSection.style.display = 'block';
-            experimentData.showResults = true;
-        }
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
 
-        // 保存数据到localStorage
-        function saveData() {
-            try {
-                experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('experiment4-2', JSON.stringify(experimentData));
-                elements.lastUpdate.textContent = experimentData.lastUpdate;
-                alert('数据保存成功！');
-            } catch (error) {
-                console.error('保存失败:', error);
-                alert('保存失败，请重试');
-            }
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或格式错误，请确保所有测量值均为正数 (R₀可为零)');
+            return;
         }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查数据');
+        }
+    }
 
-        // 从localStorage加载数据
-        function loadExperimentData() {
-            try {
-                const savedData = localStorage.getItem('experiment4-2');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 恢复基本参数
-                    elements.rn.value = data.rn || '';
-                    elements.rnPrime.value = data.rnPrime || '';
-                    elements.deltaX.value = data.deltaX || '';
-                    elements.deltaR.value = data.deltaR || '';
-                    elements.r0.value = data.r0 || '';
-                    
-                    // 恢复准确度等级
-                    elements.a1000.value = data.a1000 || '0.1';
-                    elements.a100.value = data.a100 || '0.1';
-                    elements.a10.value = data.a10 || '0.1';
-                    elements.a1.value = data.a1 || '0.5';
-                    elements.a01.value = data.a01 || '5.0';
-                    
-                    // 恢复计算结果
-                    if (data.showResults) {
-                        Object.assign(experimentData, data);
-                        displayResults();
-                    }
-                    
-                    // 恢复最后更新时间
-                    if (data.lastUpdate) {
-                        elements.lastUpdate.textContent = data.lastUpdate;
-                    }
-                    
-                    // 更新计算状态
-                    updateCalculateStatus();
-                }
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
-        }
-    </script>
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+        // 生成准确度等级表格
+        TableGenerator.generateInputTable('acc-table-container', {
+            rows: 1,
+            cols: 5,
+            colHeaders: ['','1000 Ω', '100 Ω', '10 Ω', '1 Ω', '0.1 Ω'],
+            rowHeaders: ['准确度等级 aᵢ (%)'],
+            prefix: 'acc',
+            defaultValues: [0.1, 0.1, 0.1, 0.5, 5.0]
+        });
+
+        // 加载保存的数据
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        // 键盘导航
+        window.ExperimentUtils.KeyboardNav.init('#acc-table-container', 5);
+
+        // 深色模式
+        window.ExperimentUtils.ThemeManager.init();
+
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
 </body>
 </html>

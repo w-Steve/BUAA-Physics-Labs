@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 验证平行轴定理</title>
+    <!-- 公共样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="page-title">验证平行轴定理</div>
+
+        <!-- 实验要点提示 -->
+        <div class="tip-box">
+            <strong>Tips</strong><br>
+            • 根据平行轴定理 $I = I_{\text{杆}} + m(d_1^2+d_2^2) + 2I_{\text{滑}}$ 与 $T = 2\pi\sqrt{I/K}$ 可得：
+            $$T^2 = \frac{4\pi^2}{K}\bigl[m(d_1^2+d_2^2) + I_{\text{杆}} + 2I_{\text{滑}}\bigr]$$<br>
+            • 故 $T^2 (y)$ 与 $d_1^2+d_2^2 (x)$ 满足线性关系 $y = A x + B$。<br>
+            • 对 $(x_i, y_i)$ 进行线性回归，求出相关系数 $r$ 以验证线性关系。
+        </div>
+
+        <!-- 原始数据录入区 -->
+        <div class="section">
+            <div class="section-title">原始数据录入</div>
+            <div id="data-table-container" class="data-table" style="margin-bottom: 0.5rem;"></div>
+        </div>
+
+        <!-- 操作按钮组 -->
+        <div class="action-buttons">
+            <button class="primary" id="calculateBtn">计算并保存</button>
+            <button id="saveBtn">仅保存数据</button>
+        </div>
+
+        <!-- 主要结果卡片 (只保留相关系数) -->
+        <div class="section" id="resultMain" style="display: none;">
+            <div class="section-title">测量结果</div>
+            <div style="display: flex; justify-content: center;">
+                <div class="result-card" style="width: 300px; max-width: 100%;">
+                    <div class="result-label">相关系数 $r$</div>
+                    <div class="result-value" id="r_val">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细计算过程 (三个精简部分) -->
+        <div class="section" id="processSection" style="display: none;">
+            <div class="section-title">详细计算过程</div>
+            <div class="process-container" id="calculationProcess"></div>
+        </div>
+
+        <!-- 免责声明 -->
+        <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+    </div>
+
+    <script>
+        (function () {
+            const APP_KEY = '2-3';
+
+            // 获取所有输入值
+            function getInputs() {
+                const d1_arr = [], d2_arr = [], T10_arr = [];
+                for (let i = 0; i < 6; i++) {
+                    const base = i * 3;
+                    const d1 = parseFloat(document.getElementById(`g_${base + 1}`)?.value);
+                    const d2 = parseFloat(document.getElementById(`g_${base + 2}`)?.value);
+                    const t10 = parseFloat(document.getElementById(`g_${base + 3}`)?.value);
+                    d1_arr.push(isNaN(d1) ? NaN : d1);
+                    d2_arr.push(isNaN(d2) ? NaN : d2);
+                    T10_arr.push(isNaN(t10) ? NaN : t10);
+                }
+                return { d1_arr, d2_arr, T10_arr };
+            }
+
+            // 有效性检查
+            function isValid(data) {
+                const { d1_arr, d2_arr, T10_arr } = data;
+                for (let i = 0; i < 6; i++) {
+                    if (isNaN(d1_arr[i]) || isNaN(d2_arr[i]) || isNaN(T10_arr[i])) return false;
+                    if (T10_arr[i] <= 0) return false;
+                }
+                return true;
+            }
+
+            // 核心计算
+            function compute(data) {
+                const { d1_arr, d2_arr, T10_arr } = data;
+                const n = 6;
+                const x = [], y = [], T_arr = [];
+                for (let i = 0; i < n; i++) {
+                    const d1 = d1_arr[i];
+                    const d2 = d2_arr[i];
+                    const T = T10_arr[i] / 10.0;
+                    T_arr.push(T);
+                    x.push(d1 * d1 + d2 * d2);
+                    y.push(T * T);
+                }
+                const reg = window.ExperimentUtils.Data.linearRegression(x, y);
+                return {
+                    d1_arr, d2_arr, T10_arr, T_arr,
+                    x, y,
+                    x_mean: reg.x_mean,
+                    y_mean: reg.y_mean,
+                    sumX: reg.sumX,
+                    sumY: reg.sumY,
+                    sumXX: reg.sumXX,
+                    sumYY: reg.sumYY,
+                    sumXY: reg.sumXY,
+                    slope: reg.slope,
+                    intercept: reg.intercept,
+                    r: reg.r,
+                    n: reg.n
+                };
+            }
+
+            // 渲染详细计算过程 —— 三个精简部分
+            function renderProcess(res) {
+                const { d1_arr, d2_arr, T10_arr, T_arr, x, y, n } = res;
+                const { sumX, sumY, sumXX, sumYY, sumXY, slope, intercept, r } = res;
+
+                // 计算离差平方和与协方差
+                const Sxx = sumXX - sumX * sumX / n;
+                const Syy = sumYY - sumY * sumY / n;
+                const Sxy = sumXY - sumX * sumY / n;
+
+                // 辅助：格式化数字（保留4位或6位）
+                const f4 = (v) => v.toFixed(4);
+                const f6 = (v) => v.toFixed(6);
+
+                // 第一部分：每组 x 和 y 的简洁计算（只列出公式和结果）
+                let part1Rows = '';
+                for (let i = 0; i < n; i++) {
+                    const d1 = d1_arr[i];
+                    const d2 = d2_arr[i];
+                    const t10 = T10_arr[i];
+                    const T = T_arr[i];
+                    const xi = x[i];
+                    const yi = y[i];
+                    part1Rows += `
+            <tr>
+                <td>${i + 1}</td>
+                <td>$$x = ${f4(d1)}^2 + ${f4(d2)}^2 = ${f4(xi)}$$</td>
+                <td>$$y = (${f4(T)})^2 = ${f4(yi)}$$</td>
+            </tr>`;
+                }
+
+                const part1 = `
+        <div class="calculation-step">
+            <div class="step-title">1. 每组 $x = d_1^2 + d_2^2$ 与 $y = T^2$ 的计算</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead><tr><th>次数</th><th>$x$/cm²</th><th>$y$/s²</th></tr></thead>
+                    <tbody>${part1Rows}</tbody>
+                </table>
+            </div>
+        </div>
+        `;
+
+                // 第二部分：线性回归中间量（直接列出求和式子并计算）
+                const part2 = `
+        <div class="calculation-step">
+            <div class="step-title">2. 线性回归中间量</div>
+            <div class="step-formula">$$\\sum x = ${x.map(v => f4(v)).join(' + ')} = ${f4(sumX)}$$</div>
+            <div class="step-formula">$$\\sum y = ${y.map(v => f4(v)).join(' + ')} = ${f4(sumY)}$$</div>
+            <div class="step-formula">$$\\sum x^2 = ${x.map(v => f4(v * v)).join(' + ')} = ${f4(sumXX)}$$</div>
+            <div class="step-formula">$$\\sum y^2 = ${y.map(v => f4(v * v)).join(' + ')} = ${f4(sumYY)}$$</div>
+            <div class="step-formula">$$\\sum xy = ${x.map((v, i) => f4(v * y[i])).join(' + ')} = ${f4(sumXY)}$$</div>
+            <div class="step-formula">离差平方和：$$S_{xx} = \\sum x^2 - \\frac{(\\sum x)^2}{${n}} = ${f4(sumXX)} - \\frac{${f4(sumX)}^2}{${n}} = ${f4(Sxx)}$$</div>
+            <div class="step-formula">$$S_{yy} = \\sum y^2 - \\frac{(\\sum y)^2}{${n}} = ${f4(sumYY)} - \\frac{${f4(sumY)}^2}{${n}} = ${f4(Syy)}$$</div>
+            <div class="step-formula">$$S_{xy} = \\sum xy - \\frac{\\sum x \\sum y}{${n}} = ${f4(sumXY)} - \\frac{${f4(sumX)} \\times ${f4(sumY)}}{${n}} = ${f4(Sxy)}$$</div>
+            <div class="step-formula">斜率：$$b = \\frac{S_{xy}}{S_{xx}} = \\frac{${f4(Sxy)}}{${f4(Sxx)}} = ${f6(slope)}$$</div>
+            <div class="step-formula">截距：$$a = \\bar{y} - b\\bar{x} = \\frac{${f4(sumY)}}{${n}} - ${f6(slope)} \\times \\frac{${f4(sumX)}}{${n}} = ${f6(intercept)}$$</div>
+            <div class="step-formula">回归方程：$$y = (${f6(slope)})\\,x + (${f6(intercept)})$$</div>
+        </div>
+        `;
+
+                // 根据相关系数 r 的绝对值给出客观结论
+                let conclusionText = '';
+                if (Math.abs(r) > 0.99) {
+                    conclusionText = '，表明 $y$ 与 $x$ 线性关系极强，很好地验证了平行轴定理。';
+                } else if (Math.abs(r) > 0.9) {
+                    conclusionText = '，表明 $y$ 与 $x$ 线性关系显著，支持平行轴定理。';
+                } else if (Math.abs(r) > 0.8) {
+                    conclusionText = '，表明 $y$ 与 $x$ 线性关系较强。';
+                } else {
+                    conclusionText = '，表明 $y$ 与 $x$ 线性关系较弱，不符合平行轴定理预期，可能存在实验操作错误。';
+                }
+
+                const part3 = `
+                <div class="calculation-step">
+                    <div class="step-title">3. 相关系数 $r$ 与结论</div>
+                    <div class="step-formula">$$r = \\frac{S_{xy}}{\\sqrt{S_{xx} S_{yy}}} = \\frac{${f4(Sxy)}}{\\sqrt{${f4(Sxx)} \\times ${f4(Syy)}}} = ${f6(r)}$$</div>
+                    <div class="step-result">相关系数 $r = ${f6(r)}$${conclusionText}</div>
+                </div>
+                `;
+
+                const html = part1 + part2 + part3;
+                document.getElementById('calculationProcess').innerHTML = html;
+                window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+            }
+
+            function displayResults(res) {
+                document.getElementById('r_val').innerText = res.r.toFixed(6);
+                renderProcess(res);
+                document.getElementById('resultMain').style.display = 'block';
+                document.getElementById('processSection').style.display = 'block';
+            }
+
+            function calculate() {
+                const data = getInputs();
+                if (!isValid(data)) {
+                    alert('数据不完整或格式错误，请确保所有六组 d₁, d₂, 10T 均已填写且 10T > 0');
+                    return;
+                }
+                try {
+                    const results = compute(data);
+                    displayResults(results);
+                    window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+                } catch (e) {
+                    console.error(e);
+                    alert('计算过程出错，请检查数据');
+                }
+            }
+
+            function saveOnly() {
+                window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+                alert('数据已保存');
+            }
+
+            window.addEventListener('DOMContentLoaded', function () {
+                const TableGenerator = window.ExperimentUtils.TableGenerator;
+                TableGenerator.generateInputTable('data-table-container', {
+                    rows: 6,
+                    cols: 3,
+                    colHeaders: ['次数', '$d_1$ (cm)', '$d_2$ (cm)', '$10T$ (s)'],
+                    rowHeaders: ['1', '2', '3', '4', '5', '6'],
+                    prefix: 'g_',
+                    defaultValues: [
+                        5.0, 5.0, 10.0,
+                        6.0, 6.0, 12.0,
+                        7.0, 7.0, 14.0,
+                        8.0, 8.0, 16.0,
+                        9.0, 9.0, 18.0,
+                        10.0, 10.0, 20.0
+                    ]
+                });
+                window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+                window.ExperimentUtils.KeyboardNav.init('#data-table-container', 3);
+                window.ExperimentUtils.ThemeManager.init();
+                document.getElementById('calculateBtn').addEventListener('click', calculate);
+                document.getElementById('saveBtn').addEventListener('click', saveOnly);
+            });
+        })();
+    </script>
+</body>
+
+</html>

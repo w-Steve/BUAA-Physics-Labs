@@ -3,729 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实验 5-3: 掠入射法测量棱镜折射率</title>
+    <title>基物实验助手 - 掠入射法测量棱镜折射率</title>
+    <!-- 公共样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        
-        .container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
+        /* 针对角度输入框微调 */
+        .cell-input[type="text"], .cell-input[type="number"] {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             text-align: center;
-            margin-bottom: 24px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 12px;
         }
-        
-        .section {
-            margin-bottom: 28px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background-color: #fafafa;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-        }
-        
-        .section-content {
-            background-color: white;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        
-        .input-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-        
-        .data-table {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        
-        .table-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #2c3e50;
-        }
-        
-        .table-header, .table-row {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header-cell, .cell {
-            flex: 1;
-            padding: 10px 8px;
+        .angle-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
             text-align: center;
-            font-weight: 500;
         }
-        
-        .header-cell {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .cell-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 140px;
-        }
-        
-        .btn-calculate {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .btn-calculate:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-calculate:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-save {
-            background-color: #2ecc71;
-            color: white;
-        }
-        
-        .btn-save:hover {
-            background-color: #27ae60;
-        }
-        
-        .results-group {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .result-item.highlight {
-            font-weight: bold;
-            font-size: 18px;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-        }
-        
-        .result-label {
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .intermediate-results {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
-        }
-        
-        .result-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 8px;
-        }
-        
-        .data-status {
-            background-color: white;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        
-        .status-item {
-            display: block;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .degree-format {
-            font-size: 0.9em;
-            color: #666;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 16px;
-            }
-            
-            .input-row {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .input-item {
-                min-width: 100%;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-            }
+        .dark-mode .angle-hint {
+            color: #9ca3af;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="page-title">掠入射法测量棱镜折射率</div>
-        <div class="experiment-content">
-            <!-- 实验简介 -->
-            <div class="section">
-                <div class="section-title">📝 使用必读</div>
-                <div class="section-content">
-                    <p style="margin-top: 10px; color: #e74c3c;">输入数据时，小数部分应理解为分。例如：12.25 表示12度25分（即12°25′）。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">注意区分：13.4 表示13度24分（0.4×60=24′），13.40 表示13度40分。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">中间计算结果以度分形式显示，最终折射率n使用十进制度计算。</p>
-                    <p style="margin-top: 10px; color: #e74c3c;">公式：$n = \sqrt{{(\frac{cosA + sini}{sinA})}^{2} + 1}$</p>
-                </div>
-            </div>
+<div class="container">
+    <div class="page-title">掠入射法测量棱镜折射率</div>
 
-            <!-- 原始数据输入 -->
-            <div class="section">
-                <div class="section-title">📊 原始数据记录</div>
-                
-                <!-- 棱镜顶角A输入 -->
-                <div class="input-group">
-                    <div class="input-row">
-                        <div class="input-item">
-                            <label class="input-label">棱镜顶角 A (度.分):</label>
-                            <input 
-                                class="input-field" 
-                                type="text" 
-                                placeholder="例如：60.00" 
-                                id="A"
-                            />
-                            <div class="degree-format">示例：60.00 表示60°00′，60.30 表示60°30′</div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 实验要点提示 (已修改为A十进制度，表格度分) -->
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • <strong>顶角 A 直接输入十进制度</strong>，例如 <code>60.5</code> 表示 60.5°；<br>
+        • 测量数据 α₁, β₁, α₂, β₂ 采用 <strong>度.分</strong> 格式输入：例如 <code>60.30</code> 表示 60°30′，<code>13.4</code> 表示 13°24′。<br>
+        • 计算 θ₁ = α₁ − α₂ , θ₂ = β₁ − β₂ , 入射角 i = (θ₁+θ₂)/2 。<br>
+        • 取 i 的平均值，代入公式：
+        $$n = \sqrt{ \left( \frac{\cos A + \sin i}{\sin A} \right)^2 + 1 }$$<br>
+        • 本实验不要求不确定度，结果保留四位小数。
+    </div>
 
-                <!-- 测量数据表格 -->
-                <div class="data-table">
-                    <div class="table-title">测量数据 (3次测量)</div>
-                    <div class="table-header">
-                        <div class="header-cell">测量次数</div>
-                        <div class="header-cell">α1 (度.分)</div>
-                        <div class="header-cell">β1 (度.分)</div>
-                        <div class="header-cell">α2 (度.分)</div>
-                        <div class="header-cell">β2 (度.分)</div>
-                    </div>
-                    <div id="measurementsContainer">
-                        <!-- 动态生成测量行 -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-                <button class="btn-calculate" id="calculateBtn">🧮 开始计算</button>
-                <button class="btn-save" id="saveBtn">💾 保存数据</button>
-            </div>
-            
-            <!-- 计算结果 -->
-            <div class="section" id="resultsSection" style="display: none;">
-                <div class="section-title">🧮 计算结果</div>
-                
-                <!-- 中间计算结果表格 -->
-                <div class="intermediate-results">
-                    <div class="result-title">中间计算结果</div>
-                    <div class="data-table">
-                        <div class="table-header">
-                            <div class="header-cell">测量次数</div>
-                            <div class="header-cell">θ1=α1-α2</div>
-                            <div class="header-cell">θ2=β1-β2</div>
-                            <div class="header-cell">i=(θ1+θ2)/2</div>
-                        </div>
-                        <div id="intermediateResultsContainer">
-                            <!-- 动态生成中间结果行 -->
-                        </div>
-                        <div class="table-row" style="background-color: #f8f9fa; font-weight: bold;">
-                            <div class="cell">平均值</div>
-                            <div class="cell" id="avgTheta1">-</div>
-                            <div class="cell" id="avgTheta2">-</div>
-                            <div class="cell" id="avgI">-</div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 原始数据录入区 -->
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
 
-                <!-- 最终结果 -->
-                <div class="results-group">
-                    <div class="result-item highlight">
-                        <div class="result-label">棱镜折射率 n:</div>
-                        <div class="result-value" id="nValue">0.0000</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">计算使用的A值:</div>
-                        <div class="result-value" id="AUsed">0.0000°</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">计算使用的i平均值:</div>
-                        <div class="result-value" id="iUsed">0.0000°</div>
-                    </div>
-                </div>
+        <!-- 棱镜顶角 A (十进制度) -->
+        <div class="top-input-group" style="margin-bottom: 1.5rem;">
+            <div class="top-input">
+                <label>$A$ (°):</label>
+                <input type="number" id="A" class="save-input cell-input" step="any" value="60.00" placeholder="例如 60.00">
             </div>
+            <div style="color: #64748b; font-size:0.9rem; align-self:center;">
+                直接输入十进制度，例如 60.5 表示 60.5°
+            </div>
+        </div>
 
-            <!-- 数据状态 -->
-            <div class="section">
-                <div class="section-title">💾 数据状态</div>
-                <div class="data-status">
-                    <div class="status-item">最后更新: <span id="lastUpdate">暂无数据</span></div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d; text-align: center;">
-                    不保证计算结果的绝对准确性，用户应自行核对重要数据的计算结果，开发者不对因使用本软件造成的任何损失负责
-                </div>
-            </div>
+        <!-- 测量数据表格 (3行4列) 容器 -->
+        <div style="margin-bottom: 1rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">掠入射测量 (3次，单位: 度.分)</div>
+            <div id="measure-table-container" class="data-table"></div>
+            <div class="angle-hint">例如: 119.57 = 119°57′ &nbsp; 60.23 = 60°23′</div>
+        </div>
+
+    </div>
+
+    <!-- 操作按钮组 -->
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <!-- 主要结果卡片 (折射率 n) -->
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">折射率 $n$</div><div class="result-value" id="n_val">—</div></div>
         </div>
     </div>
 
-    <script>
-        // 实验数据模型
-        const experimentData = {
-            experimentId: '5-3',
-            // 基本参数
-            A: '',
-            measurements: [],
-            // 计算结果
-            showResults: false,
-            nValue: '0.0000',
-            intermediateResults: [],
-            avgTheta1: '',
-            avgTheta2: '',
-            avgI: '',
-            AUsed: '',
-            iUsed: '',
-            // 状态
-            lastUpdate: ''
-        };
+    <!-- 详细计算过程 -->
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
 
-        // DOM 元素
-        const elements = {
-            A: document.getElementById('A'),
-            measurementsContainer: document.getElementById('measurementsContainer'),
-            calculateBtn: document.getElementById('calculateBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            resultsSection: document.getElementById('resultsSection'),
-            intermediateResultsContainer: document.getElementById('intermediateResultsContainer'),
-            avgTheta1: document.getElementById('avgTheta1'),
-            avgTheta2: document.getElementById('avgTheta2'),
-            avgI: document.getElementById('avgI'),
-            nValue: document.getElementById('nValue'),
-            AUsed: document.getElementById('AUsed'),
-            iUsed: document.getElementById('iUsed'),
-            lastUpdate: document.getElementById('lastUpdate')
-        };
+    <!-- 免责声明 -->
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initMeasurementTable();
-            loadExperimentData();
-            setupEventListeners();
+<script>
+(function() {
+    const APP_KEY = '5-3';   // 独立存储键
+
+    // ---------- 度分转换工具 (仅用于表格数据) ----------
+    function degreeMinuteToDecimal(degMinStr) {
+        if (!degMinStr || degMinStr.trim() === '') return NaN;
+        const str = degMinStr.trim();
+        const parts = str.split('.');
+        let degrees = parseFloat(parts[0]);
+        if (isNaN(degrees)) return NaN;
+
+        if (parts.length === 1) {
+            return degrees;  // 只有度
+        } else {
+            let minutesPart = parts[1];
+            let minutes;
+            if (minutesPart.length === 1) {
+                // 如 "13.4" 表示 0.4 * 60 = 24分
+                minutes = parseFloat('0.' + minutesPart) * 60;
+            } else {
+                // 取前两位作为分，后面的当作秒的小数 (本实验忽略秒，但保留精度)
+                let mainMinutes = parseFloat(minutesPart.substring(0, 2));
+                if (isNaN(mainMinutes)) mainMinutes = 0;
+                minutes = mainMinutes;
+                if (minutesPart.length > 2) {
+                    let secPart = minutesPart.substring(2);
+                    let seconds = parseFloat('0.' + secPart) * 60;
+                    minutes += seconds / 60;
+                }
+            }
+            return degrees + minutes / 60;
+        }
+    }
+
+    function decimalToDegreeMinute(decimal) {
+        if (isNaN(decimal)) return '—';
+        const deg = Math.floor(decimal);
+        const minFloat = (decimal - deg) * 60;
+        const min = Math.round(minFloat * 100) / 100;  // 保留两位小数显示
+        return `${deg}°${min.toFixed(2).padStart(5,'0')}′`;
+    }
+
+    // ---------- 获取所有输入值 ----------
+    function getInputs() {
+        // A 为十进制度数字
+        const A_val = parseFloat(document.getElementById('A').value);
+
+        // 读取测量表格 (prefix m_, 3行4列，id从 m_1 到 m_12)
+        const alpha1 = [], beta1 = [], alpha2 = [], beta2 = [];
+        for (let row = 0; row < 3; row++) {
+            const base = row * 4;
+            const a1 = document.getElementById(`m_${base+1}`)?.value;
+            const b1 = document.getElementById(`m_${base+2}`)?.value;
+            const a2 = document.getElementById(`m_${base+3}`)?.value;
+            const b2 = document.getElementById(`m_${base+4}`)?.value;
+            alpha1.push(a1 || '');
+            beta1.push(b1 || '');
+            alpha2.push(a2 || '');
+            beta2.push(b2 || '');
+        }
+
+        return { A_val, alpha1, beta1, alpha2, beta2 };
+    }
+
+    // ---------- 数据有效性检查 ----------
+    function isValid(data) {
+        // 检查 A 是否为有效正数
+        if (isNaN(data.A_val) || data.A_val <= 0) return false;
+        // 检查三组数据是否都填了
+        for (let i = 0; i < 3; i++) {
+            if (!data.alpha1[i] || !data.beta1[i] || !data.alpha2[i] || !data.beta2[i]) return false;
+        }
+        return true;
+    }
+
+    // ---------- 核心计算 (返回所有中间值及n) ----------
+    function compute(data) {
+        const A_dec = data.A_val;  // 已是十进制度
+        if (isNaN(A_dec)) throw new Error('顶角A格式错误');
+
+        // 转换每组测量值为十进制度
+        const rows = [];
+        const theta1List = [], theta2List = [], iList = [];
+
+        for (let i = 0; i < 3; i++) {
+            const a1 = degreeMinuteToDecimal(data.alpha1[i]);
+            const b1 = degreeMinuteToDecimal(data.beta1[i]);
+            const a2 = degreeMinuteToDecimal(data.alpha2[i]);
+            const b2 = degreeMinuteToDecimal(data.beta2[i]);
+            if (isNaN(a1) || isNaN(b1) || isNaN(a2) || isNaN(b2)) {
+                throw new Error(`第${i+1}组数据格式不正确`);
+            }
+
+            const theta1 = a1 - a2;
+            const theta2 = b1 - b2;
+            const i_val = (theta1 + theta2) / 2;
+
+            rows.push({
+                alpha1: a1, beta1: b1, alpha2: a2, beta2: b2,
+                theta1, theta2, i: i_val
+            });
+            theta1List.push(theta1);
+            theta2List.push(theta2);
+            iList.push(i_val);
+        }
+
+        // 平均值
+        const avgTheta1 = theta1List.reduce((s, v) => s + v, 0) / 3;
+        const avgTheta2 = theta2List.reduce((s, v) => s + v, 0) / 3;
+        const avgI = iList.reduce((s, v) => s + v, 0) / 3;
+
+        // 计算折射率 n (A_dec, avgI 均为十进制度)
+        const A_rad = A_dec * Math.PI / 180;
+        const i_rad = avgI * Math.PI / 180;
+        const numerator = Math.cos(A_rad) + Math.sin(i_rad);
+        const denominator = Math.sin(A_rad);
+        const n = Math.sqrt(Math.pow(numerator / denominator, 2) + 1);
+
+        return {
+            A_dec,
+            rows,
+            avgTheta1, avgTheta2, avgI,
+            n,
+            // 保留原始字符串用于展示
+            alpha1Raw: data.alpha1,
+            beta1Raw: data.beta1,
+            alpha2Raw: data.alpha2,
+            beta2Raw: data.beta2
+        };
+    }
+
+    // ---------- 渲染详细计算过程 ----------
+    function renderProcess(res) {
+        // 辅助: 显示度分格式
+        const rowsHtml = res.rows.map((r, idx) => {
+            return `<tr>
+                <td>${idx+1}</td>
+                <td>${decimalToDegreeMinute(r.theta1)}</td>
+                <td>${decimalToDegreeMinute(r.theta2)}</td>
+                <td>${decimalToDegreeMinute(r.i)}</td>
+            </tr>`;
+        }).join('');
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 原始数据</div>
+            <div class="step-formula">顶角 A = ${res.A_dec.toFixed(4)}° (十进制度)</div>
+            <div class="step-formula">测量值 (度.分)：
+                <table class="output-table" style="margin-top:0.5rem;">
+                    <thead><tr><th>次数</th><th>α₁</th><th>β₁</th><th>α₂</th><th>β₂</th></tr></thead>
+                    <tbody>
+                        <tr><td>1</td><td>${res.alpha1Raw[0]}</td><td>${res.beta1Raw[0]}</td><td>${res.alpha2Raw[0]}</td><td>${res.beta2Raw[0]}</td></tr>
+                        <tr><td>2</td><td>${res.alpha1Raw[1]}</td><td>${res.beta1Raw[1]}</td><td>${res.alpha2Raw[1]}</td><td>${res.beta2Raw[1]}</td></tr>
+                        <tr><td>3</td><td>${res.alpha1Raw[2]}</td><td>${res.beta1Raw[2]}</td><td>${res.alpha2Raw[2]}</td><td>${res.beta2Raw[2]}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 转换为十进制度并计算中间角</div>
+            <table class="output-table">
+                <thead><tr><th>次数</th><th>θ₁ = α₁−α₂ (°)</th><th>θ₂ = β₁−β₂ (°)</th><th>i = (θ₁+θ₂)/2 (°)</th></tr></thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 平均值</div>
+            <div class="step-formula">
+                $$\\bar{\\theta_1} = \\frac{${res.rows.map(r => r.theta1.toFixed(4)).join('+')}}{3} = ${res.avgTheta1.toFixed(6)}^\\circ$$
+                $$\\bar{\\theta_2} = \\frac{${res.rows.map(r => r.theta2.toFixed(4)).join('+')}}{3} = ${res.avgTheta2.toFixed(6)}^\\circ$$
+                $$\\bar{i} = \\frac{${res.rows.map(r => r.i.toFixed(4)).join('+')}}{3} = ${res.avgI.toFixed(6)}^\\circ$$
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 计算折射率 n</div>
+            <div class="step-formula">
+                顶角 A = ${res.A_dec.toFixed(6)}°， $\\sin A = ${Math.sin(res.A_dec*Math.PI/180).toFixed(6)}$， $\\cos A = ${Math.cos(res.A_dec*Math.PI/180).toFixed(6)}$<br>
+                平均入射角 $\\bar{i} = ${res.avgI.toFixed(6)}°$， $\\sin \\bar{i} = ${Math.sin(res.avgI*Math.PI/180).toFixed(6)}$
+            </div>
+            <div class="step-formula">
+                $$n = \\sqrt{ \\left( \\frac{\\cos A + \\sin \\bar{i}}{\\sin A} \\right)^2 + 1 }$$
+                $$= \\sqrt{ \\left( \\frac{${Math.cos(res.A_dec*Math.PI/180).toFixed(6)} + ${Math.sin(res.avgI*Math.PI/180).toFixed(6)}}{${Math.sin(res.A_dec*Math.PI/180).toFixed(6)}} \\right)^2 + 1 }$$
+            </div>
+            <div class="step-formula">
+                中间比值 = ${((Math.cos(res.A_dec*Math.PI/180) + Math.sin(res.avgI*Math.PI/180)) / Math.sin(res.A_dec*Math.PI/180)).toFixed(6)}
+            </div>
+            <div class="step-result">
+                $$n = ${res.n.toFixed(6)}$$
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">
+                折射率 $n = ${res.n.toFixed(4)}$
+            </div>
+            
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // ---------- 显示主要结果卡片 ----------
+    function displayResults(res) {
+        document.getElementById('n_val').innerText = res.n.toFixed(4);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('请完整填写顶角A（有效正数）和所有三组测量数据 (α₁,β₁,α₂,β₂)');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错：' + e.message);
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+        // 生成测量表格：3行，4列 (α1,β1,α2,β2)
+        TableGenerator.generateInputTable('measure-table-container', {
+            rows: 3,
+            cols: 4,
+            colHeaders: ['次数', 'α₁ (度.分)', 'β₁ (度.分)', 'α₂ (度.分)', 'β₂ (度.分)'],
+            rowHeaders: ['1', '2', '3'],
+            prefix: 'm_',
+            defaultValues: [
+                '119.57', '060.23', '299.57', '240.23',
+                '119.55', '060.25', '299.55', '240.25',
+                '119.58', '060.22', '299.58', '240.22'
+            ]
         });
 
-        // 初始化测量表格
-        function initMeasurementTable() {
-            // 初始化3次测量表格
-            for (let i = 0; i < 3; i++) {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${i + 1}</div>
-                    <input class="cell-input" type="text" placeholder="α1" data-index="${i}" data-type="alpha1" />
-                    <input class="cell-input" type="text" placeholder="β1" data-index="${i}" data-type="beta1" />
-                    <input class="cell-input" type="text" placeholder="α2" data-index="${i}" data-type="alpha2" />
-                    <input class="cell-input" type="text" placeholder="β2" data-index="${i}" data-type="beta2" />
-                `;
-                elements.measurementsContainer.appendChild(row);
-            }
+        // 设置顶角A默认值 (若localStorage无数据)
+        if (!localStorage.getItem(APP_KEY)) {
+            document.getElementById('A').value = '60.00';
         }
 
-        // 设置事件监听器
-        function setupEventListeners() {
-            // 基本参数输入
-            elements.A.addEventListener('input', onAChange);
+        // 加载已保存的数据
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
 
-            // 测量数据输入
-            elements.measurementsContainer.addEventListener('input', onMeasurementChange);
+        // 键盘导航：表格内列数为4
+        window.ExperimentUtils.KeyboardNav.init('#measure-table-container', 4);
 
-            // 按钮事件
-            elements.calculateBtn.addEventListener('click', calculateResults);
-            elements.saveBtn.addEventListener('click', saveData);
-        }
+        // 深色模式
+        window.ExperimentUtils.ThemeManager.init();
 
-        // 输入处理函数
-        function onAChange(e) {
-            experimentData.A = e.target.value;
-            updateCalculateStatus();
-        }
-
-        function onMeasurementChange(e) {
-            const index = parseInt(e.target.dataset.index);
-            const type = e.target.dataset.type;
-            const value = e.target.value;
-
-            if (!experimentData.measurements[index]) {
-                experimentData.measurements[index] = {};
-            }
-            experimentData.measurements[index][type] = value;
-            experimentData.showResults = false;
-            updateCalculateStatus();
-        }
-
-        // 将度分格式转换为十进制度
-        function degreeMinuteToDecimal(degreeMinuteStr) {
-            if (!degreeMinuteStr || degreeMinuteStr.trim() === '') return null;
-            
-            const str = degreeMinuteStr.trim();
-            const parts = str.split('.');
-            
-            if (parts.length === 1) {
-                // 只有整数部分，没有分
-                const degrees = parseFloat(parts[0]);
-                return isNaN(degrees) ? null : degrees;
-            } else if (parts.length === 2) {
-                // 有整数和小数部分
-                const degrees = parseFloat(parts[0]);
-                const minutesStr = parts[1];
-                
-                if (isNaN(degrees)) return null;
-                
-                // 处理小数部分作为分
-                // 如果小数部分只有1位，表示十分位，如13.4表示13度24分（0.4×60=24）
-                // 如果小数部分有2位，直接作为分，如13.40表示13度40分
-                let minutes;
-                if (minutesStr.length === 1) {
-                    // 一位小数，如13.4
-                    minutes = parseFloat("0." + minutesStr) * 60;
-                } else {
-                    // 两位或更多小数，如13.40或13.403
-                    // 取前两位作为分，后续作为秒（本实验不需要秒）
-                    const firstTwoDigits = minutesStr.length >= 2 ? minutesStr.substring(0, 2) : minutesStr;
-                    minutes = parseFloat(firstTwoDigits);
-                    
-                    // 如果有更多位，处理秒
-                    if (minutesStr.length > 2) {
-                        const secondsStr = minutesStr.substring(2);
-                        const seconds = parseFloat("0." + secondsStr) * 60;
-                        minutes += seconds / 60;
-                    }
-                }
-                
-                if (isNaN(minutes)) return null;
-                
-                return degrees + minutes / 60;
-            }
-            
-            return null;
-        }
-
-        // 将十进制度转换为度分格式字符串
-        function decimalToDegreeMinute(decimalDegrees) {
-            if (decimalDegrees === null || isNaN(decimalDegrees)) return '-';
-            
-            const degrees = Math.floor(decimalDegrees);
-            const minutes = (decimalDegrees - degrees) * 60;
-            
-            // 四舍五入到两位小数
-            const roundedMinutes = Math.round(minutes * 100) / 100;
-            
-            // 格式化为两位数字
-            const minutesStr = roundedMinutes.toFixed(2).padStart(5, '0');
-            
-            return `${degrees}°${minutesStr}′`;
-        }
-
-        // 更新计算按钮状态
-        function updateCalculateStatus() {
-            const hasA = experimentData.A && experimentData.A.trim() !== '';
-            
-            const hasMeasurements = experimentData.measurements.some(item => 
-                item && item.alpha1 && item.beta1 && item.alpha2 && item.beta2
-            );
-            
-            const canCalculate = hasA && hasMeasurements;
-            
-            elements.calculateBtn.disabled = !canCalculate;
-        }
-
-        // 计算功能
-        function calculateResults() {
-            try {
-                // 转换A为十进制度
-                const A_decimal = degreeMinuteToDecimal(experimentData.A);
-                if (A_decimal === null) {
-                    alert('请输入有效的棱镜顶角A值');
-                    return;
-                }
-                
-                // 转换所有测量值为十进制度并计算中间结果
-                const intermediateResults = [];
-                const theta1Values = [];
-                const theta2Values = [];
-                const iValues = [];
-                
-                for (let i = 0; i < 3; i++) {
-                    const measurement = experimentData.measurements[i];
-                    if (!measurement) continue;
-                    
-                    const alpha1 = degreeMinuteToDecimal(measurement.alpha1);
-                    const beta1 = degreeMinuteToDecimal(measurement.beta1);
-                    const alpha2 = degreeMinuteToDecimal(measurement.alpha2);
-                    const beta2 = degreeMinuteToDecimal(measurement.beta2);
-                    
-                    if (alpha1 === null || beta1 === null || alpha2 === null || beta2 === null) {
-                        continue;
-                    }
-                    
-                    // 计算θ1, θ2, i
-                    const theta1 = alpha1 - alpha2;
-                    const theta2 = beta1 - beta2;
-                    const i_val = (theta1 + theta2) / 2;
-                    
-                    intermediateResults.push({
-                        theta1: theta1,
-                        theta2: theta2,
-                        i: i_val
-                    });
-                    
-                    theta1Values.push(theta1);
-                    theta2Values.push(theta2);
-                    iValues.push(i_val);
-                }
-                
-                if (intermediateResults.length === 0) {
-                    alert('请输入有效的测量数据');
-                    return;
-                }
-                
-                // 计算平均值
-                const avgTheta1 = theta1Values.reduce((a, b) => a + b, 0) / theta1Values.length;
-                const avgTheta2 = theta2Values.reduce((a, b) => a + b, 0) / theta2Values.length;
-                const avgI = iValues.reduce((a, b) => a + b, 0) / iValues.length;
-                
-                // 计算折射率n
-                const A_rad = A_decimal * Math.PI / 180;
-                const i_rad = avgI * Math.PI / 180;
-                
-                // 公式: n = sqrt(((cosA + sini)/sinA)^2 + 1)
-                const numerator = Math.cos(A_rad) + Math.sin(i_rad);
-                const denominator = Math.sin(A_rad);
-                const n = Math.sqrt(Math.pow(numerator / denominator, 2) + 1);
-                
-                // 更新数据模型
-                experimentData.intermediateResults = intermediateResults;
-                experimentData.avgTheta1 = avgTheta1;
-                experimentData.avgTheta2 = avgTheta2;
-                experimentData.avgI = avgI;
-                experimentData.nValue = n.toFixed(4);
-                experimentData.AUsed = A_decimal.toFixed(4) + '°';
-                experimentData.iUsed = avgI.toFixed(4) + '°';
-                experimentData.showResults = true;
-                
-                // 显示结果
-                displayResults();
-                
-                alert('计算完成！');
-            } catch (error) {
-                console.error('计算错误:', error);
-                alert('计算失败，请检查数据格式');
-            }
-        }
-
-        // 显示计算结果
-        function displayResults() {
-            // 清空中问结果容器
-            elements.intermediateResultsContainer.innerHTML = '';
-            
-            // 显示中间结果
-            experimentData.intermediateResults.forEach((result, index) => {
-                const row = document.createElement('div');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <div class="cell">${index + 1}</div>
-                    <div class="cell">${decimalToDegreeMinute(result.theta1)}</div>
-                    <div class="cell">${decimalToDegreeMinute(result.theta2)}</div>
-                    <div class="cell">${decimalToDegreeMinute(result.i)}</div>
-                `;
-                elements.intermediateResultsContainer.appendChild(row);
-            });
-            
-            // 显示平均值
-            elements.avgTheta1.textContent = decimalToDegreeMinute(experimentData.avgTheta1);
-            elements.avgTheta2.textContent = decimalToDegreeMinute(experimentData.avgTheta2);
-            elements.avgI.textContent = decimalToDegreeMinute(experimentData.avgI);
-            
-            // 显示最终结果
-            elements.nValue.textContent = experimentData.nValue;
-            elements.AUsed.textContent = experimentData.AUsed;
-            elements.iUsed.textContent = experimentData.iUsed;
-            
-            // 显示结果区域
-            elements.resultsSection.style.display = 'block';
-        }
-
-        // 保存数据到localStorage
-        function saveData() {
-            try {
-                experimentData.lastUpdate = new Date().toLocaleString();
-                localStorage.setItem('experiment5-3', JSON.stringify(experimentData));
-                elements.lastUpdate.textContent = experimentData.lastUpdate;
-                alert('数据保存成功！');
-            } catch (error) {
-                console.error('保存失败:', error);
-                alert('保存失败，请重试');
-            }
-        }
-
-        // 从localStorage加载数据
-        function loadExperimentData() {
-            try {
-                const savedData = localStorage.getItem('experiment5-3');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    
-                    // 恢复基本参数
-                    elements.A.value = data.A || '';
-                    
-                    // 恢复测量数据
-                    if (data.measurements) {
-                        data.measurements.forEach((measurement, index) => {
-                            if (measurement) {
-                                const inputs = elements.measurementsContainer.querySelectorAll(`[data-index="${index}"]`);
-                                inputs.forEach(input => {
-                                    const type = input.dataset.type;
-                                    if (measurement[type]) {
-                                        input.value = measurement[type];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    // 恢复计算结果
-                    if (data.showResults) {
-                        Object.assign(experimentData, data);
-                        displayResults();
-                    }
-                    
-                    // 恢复最后更新时间
-                    if (data.lastUpdate) {
-                        elements.lastUpdate.textContent = data.lastUpdate;
-                    }
-                    
-                    // 更新计算状态
-                    updateCalculateStatus();
-                }
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
-        }
-    </script>
+        // 绑定按钮
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
 </body>
 </html>

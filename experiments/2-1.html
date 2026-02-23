@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 光杠杆法测量杨氏模量</title>
+    <!-- 公共样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 公共工具库 -->
+    <script src="common.js"></script>
+    <!-- MathJax 配置 -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="page-title">光杠杆法测量杨氏模量</div>
+
+        <!-- 实验要点提示 (固定 Δm = 0.01 kg, Δ仪 = 0.005 mm) -->
+        <div class="tip-box">
+            <strong>Tips</strong><br>
+            • $H$ 为标尺到镜面距离/cm, $\Delta H$为其最大允许误差<br>
+            • $L$ 为钢丝长度/cm, $\Delta L$为其最大允许误差<br>
+            • $b$ 为光杠杆前后足垂直距离/cm, $\Delta b$为其最大允许误差<br>
+            • $m_0$: 单个砝码经过杠杆放大后的实际作用质量  (kg)<br>
+            • $x_0$：千分尺零点<br>
+        </div>
+
+        <!-- 原始数据录入区 -->
+        <div class="section">
+            <div class="section-title">原始数据录入</div>
+
+            <!-- 几何参数 + 零点 + 砝码质量 + g (已移除 Δm 和 Δ仪 输入框) -->
+            <div class="top-input-group" style="flex-wrap: wrap; gap: 1.2rem; margin-bottom: 1.5rem;">
+                <div class="top-input"><label>$H$ (cm):</label><input type="number" id="H" class="save-input cell-input"
+                        step="0.01" value="150.0"></div>
+                <div class="top-input"><label>$\Delta H$ (cm):</label><input type="number" id="dH"
+                        class="save-input cell-input" step="0.01" value="0.5"></div>
+                <div class="top-input"><label>$L$ (cm):</label><input type="number" id="L" class="save-input cell-input"
+                        step="0.01" value="80.0"></div>
+                <div class="top-input"><label>$\Delta L$ (cm):</label><input type="number" id="dL"
+                        class="save-input cell-input" step="0.01" value="0.5"></div>
+                <div class="top-input"><label>$b$ (cm):</label><input type="number" id="b" class="save-input cell-input"
+                        step="0.01" value="7.5"></div>
+                <div class="top-input"><label>$\Delta b$ (cm):</label><input type="number" id="db"
+                        class="save-input cell-input" step="0.01" value="0.2"></div>
+                <div class="top-input"><label>$x_0$ (mm):</label><input type="number" id="x0"
+                        class="save-input cell-input" step="0.001" value="0.00"></div>
+            </div>
+
+            <!-- 钢丝直径 6次测量表格 -->
+            <div style="margin-bottom: 2rem;">
+                <div style="font-weight: 500; margin-bottom: 0.5rem;">钢丝直径 (mm)</div>
+                <div id="diameter-table-container" class="data-table"></div>
+            </div>
+
+            <div class="top-input-group" style="flex-wrap: wrap; gap: 1.2rem; margin-bottom: 1rem;">
+                <div class="top-input"><label>$m_0$ (kg):</label><input type="number" id="m0"
+                        class="save-input cell-input" step="0.01" value="1.00"></div>
+                <div class="top-input"><label>$g$ (m/s²):</label><input type="number" id="g"
+                        class="save-input cell-input" step="0.01" value="9.80"></div>
+                <div class="top-input"><label>标尺初始读数$r_0$ (mm):</label><input type="number" id="r0"
+                        class="save-input cell-input" step="0.01" value="10.0"></div>
+            </div>
+            <!-- 标尺读数 r_i 表格 (砝码个数 1~10) -->
+            <div style="margin-bottom: 2rem;">
+                <div style="font-weight: 500; margin-bottom: 0.5rem;">标尺读数 r_i (mm)</div>
+                <div id="r-table-container" class="data-table"></div>
+            </div>
+
+        </div> <!-- 结束原始数据区 -->
+
+        <!-- 操作按钮组 -->
+        <div class="action-buttons">
+            <button class="primary" id="calculateBtn">计算并保存</button>
+            <button id="saveBtn">仅保存数据</button>
+        </div>
+
+        <!-- 主要结果卡片 (杨氏模量) -->
+        <div class="section" id="resultMain" style="display: none;">
+            <div class="section-title">测量结果</div>
+            <div class="result-grid">
+                <div class="result-card">
+                    <div class="result-label">杨氏模量 $E$ (×10¹⁰ Pa)</div>
+                    <div class="result-value" id="E_val">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">合成不确定度 $u(E)$ (×10¹⁰ Pa)</div>
+                    <div class="result-value" id="uE_val">—</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">相对不确定度 $u(E)/E$</div>
+                    <div class="result-value" id="rel_uE_val">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细计算过程 (仿1-1 逐步骤显示) -->
+        <div class="section" id="processSection" style="display: none;">
+            <div class="section-title">详细计算过程</div>
+            <div class="process-container" id="calculationProcess"></div>
+        </div>
+
+        <!-- 免责声明 -->
+        <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+    </div>
+
+    <script>
+        (function () {
+            const APP_KEY = '2-1';
+
+            // 固定仪器参数 (不再由输入框提供)
+            const FIXED_DELTA_M = 0.01;      // kg
+            const FIXED_DELTA_MIC = 0.005;   // mm
+
+            // ---------- 获取所有输入值 (含零点修正) ----------
+            function getInputs() {
+                const x0 = parseFloat(document.getElementById('x0').value) || 0;
+
+                // 几何参数
+                const H = parseFloat(document.getElementById('H').value);      // cm
+                const dH = parseFloat(document.getElementById('dH').value);
+                const L = parseFloat(document.getElementById('L').value);
+                const dL = parseFloat(document.getElementById('dL').value);
+                const b = parseFloat(document.getElementById('b').value);
+                const db = parseFloat(document.getElementById('db').value);
+                const m0 = parseFloat(document.getElementById('m0').value);    // kg
+                const g = parseFloat(document.getElementById('g').value);      // m/s²
+                const r0_input = parseFloat(document.getElementById('r0').value); // mm
+
+                // 钢丝直径 (6次) 修正零点
+                const D_arr = [];
+                for (let i = 1; i <= 6; i++) {
+                    const val = parseFloat(document.getElementById(`D_${i}`)?.value);
+                    D_arr.push(isNaN(val) ? NaN : val - x0);
+                }
+
+                // 标尺读数 r_i (10次) 
+                const r_arr = [];
+                for (let i = 1; i <= 10; i++) {
+                    const val = parseFloat(document.getElementById(`r_${i}`)?.value);
+                    r_arr.push(isNaN(val) ? NaN : val);
+                }
+
+                return {
+                    x0, H, dH, L, dL, b, db, m0, g, r0: r0_input,
+                    D_arr, r_arr
+                };
+            }
+
+            // ---------- 有效性检查 ----------
+            function isValid(data) {
+                // 几何参数必须为正且Δ>0
+                if (data.H <= 0 || data.dH <= 0 || data.L <= 0 || data.dL <= 0 || data.b <= 0 || data.db <= 0) return false;
+                if (data.m0 <= 0 || data.g <= 0) return false;
+                // 直径6个有效
+                if (data.D_arr.length !== 6 || data.D_arr.some(v => isNaN(v))) return false;
+                // 读数10个有效
+                if (data.r_arr.length !== 10 || data.r_arr.some(v => isNaN(v))) return false;
+                return true;
+            }
+
+            // ---------- 核心计算 ----------
+            function compute(data) {
+                const { H, dH, L, dL, b, db, m0, g, r0, D_arr, r_arr } = data;
+                const nD = 6, nR = 10;
+
+                // 固定仪器参数
+                const deltaM = FIXED_DELTA_M;
+                const deltaMic = FIXED_DELTA_MIC;
+
+                // --- 直径 D 处理 ---
+                const D_mm = D_arr; // 已修正, 单位 mm
+                const D_mean = window.ExperimentUtils.Data.mean(D_mm);
+                const uDA = window.ExperimentUtils.Data.stdErrorOfMean(D_mm); // A类不确定度 (mm)
+                const uDB = deltaMic / Math.sqrt(3);                         // B类 (mm)
+                const uD = Math.hypot(uDA, uDB);                              // 合成 (mm)
+
+                // --- 几何参数 B类 (保留原单位用于相对不确定度) ---
+                const uH = dH / Math.sqrt(3);      // cm
+                const uL = dL / Math.sqrt(3);      // cm
+                const ub = db / Math.sqrt(3);      // cm
+
+                // --- 构造自变量 m (kg) 和因变量 r (mm) ---
+                const m_vals = Array.from({ length: nR }, (_, i) => (i + 1) * m0); // 1*m0, 2*m0, ... 10*m0
+                const r_vals = r_arr.slice(); // mm
+
+                // 线性回归
+                const reg = window.ExperimentUtils.Data.linearRegression(m_vals, r_vals);
+                const b_hat = reg.slope;          // 斜率 单位 mm/kg
+                const a_hat = reg.intercept;       // 截距 mm
+                const corr = reg.r;                // 相关系数 r (小写)
+
+                // 计算 x 平均值、x²平均值等 (用于展示)
+                const mean_x = reg.x_mean;
+                const mean_x2 = reg.sumXX / nR;
+                const mean_y = reg.y_mean;
+                const mean_y2 = reg.sumYY / nR;
+                const mean_xy = reg.sumXY / nR;
+
+                // --- 斜率不确定度 ---
+                const uA_b = (Math.abs(corr) < 1e-10) ? 0 : b_hat * Math.sqrt((1 / (corr * corr) - 1) / (nR - 2));
+                const denomXB = nR * (mean_x2 - mean_x * mean_x);
+                const uB_b = (denomXB > 0) ? (deltaM / Math.sqrt(3)) * Math.sqrt(1 / denomXB) : 0; // mm/kg
+                const u_b_hat = Math.hypot(uA_b, uB_b);
+
+                // --- 转换单位到国际制 (用于E) ---
+                const L_m = L / 100;
+                const H_m = H / 100;
+                const b_m = b / 100;
+                const D_m = D_mean / 1000;
+                const b_hat_m = b_hat / 1000;    // m/kg
+
+                const numerator = 16 * g * L_m * H_m;
+                const denominator = Math.PI * D_m * D_m * b_m * b_hat_m;
+                const E = numerator / denominator;  // Pa
+
+                // 相对不确定度合成
+                const rel_L = uL / L;
+                const rel_H = uH / H;
+                const rel_b = ub / b;
+                const rel_D = (2 * uD) / D_mean;
+                const rel_b_hat = u_b_hat / b_hat;
+
+                const relU_E = Math.sqrt(
+                    rel_L * rel_L + rel_H * rel_H + rel_b * rel_b + rel_D * rel_D + rel_b_hat * rel_b_hat
+                );
+                const uE = E * relU_E;
+
+                const E10 = E / 1e10;
+                const uE10 = uE / 1e10;
+
+                return {
+                    x0: data.x0,
+                    H, dH, L, dL, b, db, m0, g, r0,
+                    deltaM, deltaMic,        // 固定值，用于渲染
+                    D_arr: D_mm, D_mean, uDA, uDB, uD,
+                    uH, uL, ub,
+                    m_vals, r_vals,
+                    reg, mean_x, mean_x2, mean_y, mean_y2, mean_xy, corr, b_hat, a_hat,
+                    uA_b, uB_b, u_b_hat,
+                    rel_L, rel_H, rel_b, rel_D, rel_b_hat,
+                    E, uE, relU_E,
+                    E10, uE10
+                };
+            }
+
+            // ---------- 渲染详细过程 ----------
+            function renderProcess(res) {
+                // 为了方便，提取所有需要的量
+                const {
+                    x0, H, dH, L, dL, b, db, m0, g, r0,
+                    deltaM, deltaMic,
+                    D_arr, D_mean, uDA, uDB, uD,
+                    uH, uL, ub,
+                    m_vals, r_vals,
+                    mean_x, mean_x2, mean_y, mean_y2, mean_xy, corr, b_hat, a_hat,
+                    uA_b, uB_b, u_b_hat,
+                    rel_L, rel_H, rel_b, rel_D, rel_b_hat,
+                    E, uE, relU_E,
+                    E10, uE10
+                } = res;
+
+                // 辅助函数：生成带序号的列表项
+                const n = 10; // 数据点数
+
+                // 1. 原始数据表格（直径）
+                const diameterRows = D_arr.map((val, idx) => `<tr><td>${idx + 1}</td><td>${(val + x0).toFixed(4)}</td><td>${x0.toFixed(2)}</td><td>${val.toFixed(4)}</td></tr>`).join('');
+
+                // 2. 标尺读数表格 (m_i, r_i)
+                const rulerRows = m_vals.map((m, i) => `<tr><td>${i + 1}</td><td>${m.toFixed(3)}</td><td>${r_vals[i].toFixed(2)}</td></tr>`).join('');
+
+                // 3. 直径残差平方和计算
+                const D_residuals = D_arr.map(v => (v - D_mean).toFixed(6));
+                const D_sqResiduals = D_arr.map(v => ((v - D_mean) ** 2).toExponential(6));
+
+                // 4. 线性回归中间量详细计算
+                // 计算 x 和 y 的离差平方和、协方差
+                const sum_x = m_vals.reduce((a, b) => a + b, 0).toFixed(4);
+                const sum_y = r_vals.reduce((a, b) => a + b, 0).toFixed(2);
+                const sum_xx = m_vals.reduce((a, b) => a + b * b, 0).toFixed(4);
+                const sum_yy = r_vals.reduce((a, b) => a + b * b, 0).toFixed(2);
+                const sum_xy = m_vals.reduce((a, b, i) => a + b * r_vals[i], 0).toFixed(4);
+                const n_val = n;
+
+                const Sxx = (m_vals.reduce((a, b) => a + b * b, 0) - sum_x * sum_x / n_val).toExponential(6);
+                const Sxy = (m_vals.reduce((a, b, i) => a + b * r_vals[i], 0) - sum_x * sum_y / n_val).toExponential(6);
+                const b_hat_num = Sxy;
+                const b_hat_den = Sxx;
+
+                // 5. 斜率不确定度 uA 详细计算
+                const corr_sq = (corr * corr).toFixed(6);
+                const termA = (1 / corr_sq - 1).toFixed(6);
+                const sqrtTermA = Math.sqrt(termA / (n - 2)).toExponential(6);
+                const uA_b_calc = (b_hat * sqrtTermA).toExponential(6);
+
+                // 6. uB 详细计算
+                const denomXB = n * (mean_x2 - mean_x * mean_x);
+                const sqrtTermB = Math.sqrt(1 / denomXB).toExponential(6);
+                const uB_b_calc = (deltaM / Math.sqrt(3) * sqrtTermB).toExponential(6);
+
+                // 7. 单位转换数值
+                const L_m = (L / 100).toFixed(4);
+                const H_m = (H / 100).toFixed(4);
+                const b_m = (b / 100).toFixed(4);
+                const D_m = (D_mean / 1000).toExponential(6);
+                const b_hat_m = (b_hat / 1000).toExponential(6);
+
+                // 8. E 的分子分母逐步计算
+                const numerator_16g = (16 * g).toFixed(4);
+                const numerator_step1 = (16 * g * L_m).toExponential(6);
+                const numerator_step2 = (16 * g * L_m * H_m).toExponential(6);
+                const denominator_pi = Math.PI.toFixed(6);
+                const denominator_D2 = (Math.pow(D_mean / 1000, 2)).toExponential(6);
+                const denominator_step1 = (Math.PI * Math.pow(D_mean / 1000, 2)).toExponential(6);
+                const denominator_step2 = (Math.PI * Math.pow(D_mean / 1000, 2) * b_m).toExponential(6);
+                const denominator_step3 = (Math.PI * Math.pow(D_mean / 1000, 2) * b_m * b_hat / 1000).toExponential(6);
+
+                // 9. 相对不确定度各分量详细数值
+                const rel_L_val = (uL / L).toFixed(6);
+                const rel_H_val = (uH / H).toFixed(6);
+                const rel_b_val = (ub / b).toFixed(6);
+                const rel_D_val = (2 * uD / D_mean).toFixed(6);
+                const rel_b_hat_val = (u_b_hat / b_hat).toFixed(6);
+
+                // 最终修约结果
+                const [valStr, uncStr] = window.ExperimentUtils.formatResultWithUncertainty(E10, uE10);
+
+
+                const diameterTable = `
+        <table class="output-table" style="width: 100%; table-layout: fixed; margin: 0.5rem 0;">
+            <thead><tr><th colspan="6">修正后钢丝直径 D (mm)</th></tr></thead>
+                <tbody><tr>
+                    ${res.D_arr.map(v => `<td style="text-align: center;">${v.toFixed(3)}</td>`).join('')}
+                </tr></tbody>
+        </table>
+        `;
+
+                const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 直径平均值</div>
+            <div class="step-formula">${diameterTable}</div>
+            <div class="step-formula">$$\\bar{D} = \\frac{${res.D_arr.map(v => v.toFixed(3)).join('+')}}{6} = ${res.D_mean.toFixed(4)}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 几何参量不确定度 (cm)</div>
+            <div class="step-formula">$u(H)=\\frac{${res.dH}}{\\sqrt3} = ${res.uH.toFixed(4)}, u(L)=${res.uL.toFixed(4)}, u(b)=${res.ub.toFixed(4)}$</div>
+            <div class="step-formula">$u_A(D) = \\sqrt{\\frac{\\sum v_i^2}{n(n-1)}} = \\sqrt{\\frac{${D_arr.reduce((s,v)=>s+(v-D_mean)**2,0).toExponential(6)}}{6\\times5}} = ${uDA.toExponential(6)}$ mm</div>
+            <div class="step-formula">$u_B(D) = \\frac{\\Delta_{\\text{仪}}}{\\sqrt{3}} = \\frac{${deltaMic}}{\\sqrt{3}} = ${uDB.toExponential(6)}$ mm</div>
+            <div class="step-formula">$u(D) = \\sqrt{u_A^2 + u_B^2} = \\sqrt{(${uDA.toExponential(6)})^2 + (${uDB.toExponential(6)})^2} = ${uD.toExponential(6)}$ mm</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 线性拟合中间量 (x = m/kg, y = r/mm)</div>
+            <div class="step-formula">$\\bar{x} = \\frac{\\sum x_i}{n} = \\frac{${sum_x}}{${n}} = ${mean_x.toFixed(4)}$ kg</div>
+            <div class="step-formula">$\\bar{y} = \\frac{\\sum y_i}{n} = \\frac{${sum_y}}{${n}} = ${mean_y.toFixed(2)}$ mm</div>
+            <div class="step-formula">$\\bar{x^2} = \\frac{\\sum x_i^2}{n} = \\frac{${sum_xx}}{${n}} = ${mean_x2.toFixed(4)}$ kg²</div>
+            <div class="step-formula">$\\bar{y^2} = \\frac{\\sum y_i^2}{n} = \\frac{${sum_yy}}{${n}} = ${mean_y2.toFixed(2)}$ mm²</div>
+            <div class="step-formula">$\\bar{xy} = \\frac{\\sum x_i y_i}{n} = \\frac{${sum_xy}}{${n}} = ${mean_xy.toFixed(4)}$ kg·mm</div>
+            <div class="step-formula">$$S_{xx} = \\sum x_i^2 - \\frac{(\\sum x_i)^2}{n} = ${sum_xx} - \\frac{(${sum_x})^2}{${n}} = ${Sxx}$$</div>
+            <div class="step-formula">$$S_{xy} = \\sum x_i y_i - \\frac{\\sum x_i \\sum y_i}{n} = ${sum_xy} - \\frac{${sum_x} \\times ${sum_y}}{${n}} = ${Sxy}$$</div>
+            <div class="step-formula">$$\\widehat{b} = \\frac{S_{xy}}{S_{xx}} = \\frac{${Sxy}}{${Sxx}} = ${b_hat.toFixed(6)}\\ \\mathrm{mm/kg}$$</div>
+            <div class="step-formula">截距 $\\widehat{a} = \\bar{y} - \\widehat{b}\\bar{x} = ${mean_y.toFixed(2)} - ${b_hat.toFixed(6)} \\times ${mean_x.toFixed(4)} = ${a_hat.toFixed(4)}$ mm</div>
+            <div class="step-formula">相关系数 $r = \\frac{S_{xy}}{\\sqrt{S_{xx}S_{yy}}} = \\frac{${Sxy}}{\\sqrt{${Sxx} \\times ${(sum_yy - sum_y * sum_y / n).toExponential(6)}}} = ${corr.toFixed(6)}$</div>
+            <div class="step-formula">$$u_A(\\widehat{b}) = \\widehat{b} \\sqrt{\\frac{1/r^2 - 1}{n-2}} = ${b_hat.toFixed(6)} \\times \\sqrt{\\frac{1/${corr_sq} - 1}{8}} = ${b_hat.toFixed(6)} \\times ${sqrtTermA} = ${uA_b.toExponential(4)}\\ \\mathrm{mm/kg}$$</div>
+        <div class="step-formula">$$u_B(\\widehat{b}) = \\frac{\\Delta m}{\\sqrt{3}} \\sqrt{\\frac{1}{n(\\bar{x^2} - \\bar{x}^2)}} = \\frac{${deltaM}}{\\sqrt{3}} \\times \\sqrt{\\frac{1}{${n} \\times (${mean_x2.toFixed(4)} - ${mean_x.toFixed(4)}^2)}} = ${(deltaM/Math.sqrt(3)).toExponential(4)} \\times ${sqrtTermB} = ${uB_b.toExponential(4)}\\ \\mathrm{mm/kg}$$</div>
+        <div class="step-formula">$$u(\\widehat{b}) = \\sqrt{u_A^2 + u_B^2} = \\sqrt{(${uA_b.toExponential(4)})^2 + (${uB_b.toExponential(4)})^2} = ${u_b_hat.toExponential(4)}\\ \\mathrm{mm/kg}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 杨氏模量 E 计算</div>
+            <div class="step-formula">$L = ${res.L} \\,\\text{cm} = ${(res.L / 100).toFixed(4)}\\,\\text{m}$, $H = ${res.H}\\,\\text{cm} = ${(res.H / 100).toFixed(4)}\\,\\text{m}$</div>
+            <div class="step-formula">$b = ${res.b}\\,\\text{cm} = ${(res.b / 100).toFixed(4)}\\,\\text{m}$, $\\bar D = ${res.D_mean.toFixed(4)}\\,\\text{mm} = ${(res.D_mean / 1000).toFixed(6)}\\,\\text{m}$</div>
+            <div class="step-formula">$\\widehat{b} = ${b_hat.toFixed(4)}\\,\\text{mm/kg} = ${(b_hat / 1000).toExponential(4)}\\,\\text{m/kg}$, $g = ${res.g}\\,\\text{m/s}^2$</div>
+            <div class="step-formula">$$E = \\frac{16 g L H}{\\pi D^2 b \\widehat{b}} = \\frac{16\\times${res.g}\\times${(res.L / 100).toFixed(4)}\\times${(res.H / 100).toFixed(4)}}{\\pi\\times(${(res.D_mean / 1000).toExponential(4)})^2\\times${(res.b / 100).toFixed(4)}\\times${(b_hat / 1000).toExponential(4)}}$$</div>
+            <div class="step-result">$E = ${res.E.toExponential(4)}\\,\\text{Pa} = ${(res.E / 1e10).toFixed(4)}\\times 10^{10}\\,\\text{Pa}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 相对不确定度合成</div>
+            <div class="step-formula">各相对分量:<br>
+            $u(L)/L = ${res.rel_L.toFixed(6)}$, $u(H)/H = ${res.rel_H.toFixed(6)}$, $u(b)/b = ${res.rel_b.toFixed(6)}$,<br>
+            $2u(D)/\\bar D = ${res.rel_D.toFixed(6)}$, $u(\\widehat{b})/\\widehat{b} = ${res.rel_b_hat.toFixed(6)}$</div>
+            <div class="step-formula">$$\\frac{u(E)}{E} = \\sqrt{ \\left( \\frac{u(L)}{L} \\right)^2 + \\left( \\frac{u(H)}{H} \\right)^2 + \\left( \\frac{2u(D)}{D} \\right)^2 + \\left( \\frac{u(b)}{b} \\right)^2 + \\left( \\frac{u(\\widehat{b})}{\\widehat{b}} \\right)^2 }$$</div>
+            <div class="step-formula">$$= \\sqrt{ (${res.rel_L.toFixed(6)})^2 + (${res.rel_H.toFixed(6)})^2 + (${res.rel_b.toFixed(6)})^2 + (${res.rel_D.toFixed(6)})^2 + (${res.rel_b_hat.toFixed(6)})^2 } = ${res.relU_E.toFixed(6)}$$</div>
+            <div class="step-formula">$u(E) = E \\times \\frac{u(E)}{E} = ${res.E.toExponential(4)} \\times ${res.relU_E.toFixed(6)} = ${res.uE.toExponential(4)}\\,\\text{Pa}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">6. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">$E = (${(() => { const [v, u] = window.ExperimentUtils.formatResultWithUncertainty(res.E10, res.uE10); return `${v} \\pm ${u}`; })()})\\times 10^{10}\\,\\text{Pa}$</div>
+            <div class="step-result">相对不确定度 = ${(res.relU_E * 100).toFixed(2)} %</div>
+        </div>
+        `;
+                document.getElementById('calculationProcess').innerHTML = html;
+                window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+            }
+
+            // 显示主要结果
+            function displayResults(res) {
+                const [valStr, uncStr] = window.ExperimentUtils.formatResultWithUncertainty(res.E10, res.uE10);
+                document.getElementById('E_val').innerText = valStr;
+                document.getElementById('uE_val').innerText = uncStr;
+                document.getElementById('rel_uE_val').innerText = (res.relU_E * 100).toFixed(2) + '%';
+                renderProcess(res);
+                document.getElementById('resultMain').style.display = 'block';
+                document.getElementById('processSection').style.display = 'block';
+            }
+
+            // 计算入口
+            function calculate() {
+                const data = getInputs();
+                if (!isValid(data)) {
+                    alert('数据不完整或格式错误，请确保所有测量值已填');
+                    return;
+                }
+                try {
+                    const results = compute(data);
+                    displayResults(results);
+                    window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+                } catch (e) {
+                    console.error(e);
+                    alert('计算过程出错，请检查数据');
+                }
+            }
+
+            function saveOnly() {
+                window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+                alert('数据已保存');
+            }
+
+            // 页面初始化
+            window.addEventListener('DOMContentLoaded', function () {
+                const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+                // 钢丝直径表格: 6行1列
+                TableGenerator.generateInputTable('diameter-table-container', {
+                    rows: 6,
+                    cols: 1,
+                    colHeaders: ['次数', '千分尺读数 (mm)'],
+                    rowHeaders: ['1', '2', '3', '4', '5', '6'],
+                    prefix: 'D_',
+                    defaultValues: [0.892, 0.894, 0.890, 0.893, 0.891, 0.895]
+                });
+
+                // 标尺读数表格: 10行1列
+                TableGenerator.generateInputTable('r-table-container', {
+                    rows: 10,
+                    cols: 1,
+                    colHeaders: ['砝码数量 i', 'r_i (mm)'],
+                    rowHeaders: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                    prefix: 'r_',
+                    defaultValues: [12.5, 15.2, 17.8, 20.5, 23.1, 25.7, 28.4, 31.0, 33.6, 36.2]
+                });
+
+                // 加载保存数据
+                window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+                // 键盘导航
+                window.ExperimentUtils.KeyboardNav.init('#diameter-table-container', 1);
+                window.ExperimentUtils.KeyboardNav.init('#r-table-container', 1);
+
+                // 深色模式
+                window.ExperimentUtils.ThemeManager.init();
+
+                // 绑定按钮
+                document.getElementById('calculateBtn').addEventListener('click', calculate);
+                document.getElementById('saveBtn').addEventListener('click', saveOnly);
+            });
+        })();
+    </script>
+</body>
+
+</html>
