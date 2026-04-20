@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 电磁铁电流与磁感应强度拟合</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .dark-mode .final-conclusion-box { background: #1e293b; border-color: #cbd5e1; color: #f1f5f9; }
+        #data-table-container .table-header, #data-table-container .table-row { min-width: 600px; }
+        .var-definition { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #94a3b8; }
+        .dark-mode .var-definition { background: #374151; border-left-color: #4a5568; }
+        .step-formula { overflow-x: auto; white-space: nowrap; padding-bottom: 8px; }
+        .chart-wrapper {
+            margin-top: 1.5rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1rem;
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .dark-mode .chart-wrapper { background: #374151; border-color: #4a5568; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">电磁铁电流与磁感应强度拟合</div>
+
+    <div class="tip-box">
+        <strong>计算说明</strong><br>
+        采用自适应最小二乘法进行线性拟合。系统会优先匹配最高相关系数（最高测试至 $R > 0.999$），并在条件允许的情况下尽力保证包含至少 15 个数据点；若无法满足，则自动向下放宽阈值。
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+        <div class="top-input-group" style="margin-bottom: 1.5rem;">
+            <div class="top-input">
+                <label>线性区截止电流 (A):</label>
+                <input type="number" id="manualCutoff" class="save-input cell-input" step="0.1" placeholder="留空则自动识别" style="width: 150px;">
+            </div>
+        </div>
+        <div style="margin-bottom: 2rem;">
+            <div id="data-table-container" class="data-table"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">拟合结果概览</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">线性上限 $x_{max}$ (A)</div><div class="result-value" id="res_imax">—</div></div>
+            <div class="result-card"><div class="result-label">拟合斜率 $k$ (mT/A)</div><div class="result-value" id="res_k">—</div></div>
+            <div class="result-card"><div class="result-label">拟合截距 $b$ (mT)</div><div class="result-value" id="res_b">—</div></div>
+            <div class="result-card"><div class="result-label">相关系数 $R$</div><div class="result-value" id="res_r">—</div></div>
+            <div class="result-card"><div class="result-label">标准差 $s$</div><div class="result-value" id="res_s">—</div></div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="fitChart"></canvas>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">标准线性回归详细过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; color: #94a3b8; font-size: 0.85rem; margin-top: 2rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '9-1';
+    let chartInstance = null;
+
+    function getInputs() {
+        const manualCutoff = parseFloat(document.getElementById('manualCutoff').value);
+        const validPoints = [];
+        for (let r = 0; r < 15; r++) {
+            const x1 = parseFloat(document.getElementById(`data_${r*4 + 1}`).value);
+            const y1 = parseFloat(document.getElementById(`data_${r*4 + 2}`).value);
+            if (!isNaN(x1) && !isNaN(y1)) validPoints.push({x: x1, y: y1});
+            const x2 = parseFloat(document.getElementById(`data_${r*4 + 3}`).value);
+            const y2 = parseFloat(document.getElementById(`data_${r*4 + 4}`).value);
+            if (!isNaN(x2) && !isNaN(y2)) validPoints.push({x: x2, y: y2});
+        }
+        validPoints.sort((a, b) => a.x - b.x);
+        return { manualCutoff, validPoints };
+    }
+
+    function compute(data) {
+        const { manualCutoff, validPoints } = data;
+        if (validPoints.length < 5) throw new Error("有效数据点不足（请至少输入5组数据）");
+        
+        let bestIndex = validPoints.length;
+        let isAuto = isNaN(manualCutoff);
+        let appliedThreshold = 0;
+
+        if (isAuto) {
+            const rValues = [];
+            // 计算不同截断点下的拟合优度 R
+            for (let k = 5; k <= validPoints.length; k++) {
+                let reg = window.ExperimentUtils.Data.linearRegression(
+                    validPoints.slice(0, k).map(p=>p.x), 
+                    validPoints.slice(0, k).map(p=>p.y)
+                );
+                rValues.push({ k: k, r: reg.r });
+            }
+
+            // 自适应降级阈值寻找策略
+            const thresholds = [0.999, 0.998, 0.995, 0.99, 0.985, 0.98];
+            let found = false;
+
+            for (let t of thresholds) {
+                let maxK = 0;
+                for (let rv of rValues) {
+                    if (rv.r >= t) {
+                        maxK = rv.k;
+                    } else {
+                        break; // 遇到拐点后断开，避免跨越饱和区后 R 再次回升的异常情况
+                    }
+                }
+                // 若在该严格阈值下，还能保证至少有15个点，则采纳
+                if (maxK >= 15) {
+                    bestIndex = maxK;
+                    appliedThreshold = t;
+                    found = true;
+                    break;
+                }
+            }
+
+            // 若所有阈值都无法保证 >= 15 个点，回退至基础的 0.995 阈值，点数能取多少取多少
+            if (!found) {
+                appliedThreshold = 0.995;
+                for (let rv of rValues) {
+                    if (rv.r >= appliedThreshold) bestIndex = rv.k;
+                    else break;
+                }
+            }
+        } else {
+            bestIndex = validPoints.filter(p => p.x <= manualCutoff).length;
+        }
+        
+        const linearPoints = validPoints.slice(0, bestIndex);
+        const res = window.ExperimentUtils.Data.linearRegression(linearPoints.map(p=>p.x), linearPoints.map(p=>p.y));
+        
+        let sumResidualsSq = 0;
+        linearPoints.forEach(p => {
+            const y_hat = res.slope * p.x + res.intercept;
+            sumResidualsSq += Math.pow(p.y - y_hat, 2);
+        });
+        res.s = Math.sqrt(sumResidualsSq / (res.n - 2));
+        res.sumResidualsSq = sumResidualsSq;
+
+        return { 
+            allPoints: validPoints, 
+            linearPoints, 
+            res, 
+            maxI: linearPoints[linearPoints.length-1].x, 
+            isAuto, 
+            appliedThreshold 
+        };
+    }
+
+    function renderChart(result) {
+        const ctx = document.getElementById('fitChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        const maxI = result.maxI;
+        const r = result.res;
+
+        const linearData = result.allPoints.filter(p => p.x <= maxI).map(p => ({x: p.x, y: p.y}));
+        const excludedData = result.allPoints.filter(p => p.x > maxI).map(p => ({x: p.x, y: p.y}));
+
+        const minX = Math.min(...linearData.map(p => p.x));
+        const lineData = [
+            { x: minX, y: r.slope * minX + r.intercept },
+            { x: maxI, y: r.slope * maxI + r.intercept }
+        ];
+
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#e2e8f0' : '#334155';
+        const gridColor = isDarkMode ? '#4a5568' : '#e2e8f0';
+
+        chartInstance = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: '最小二乘法拟合线',
+                        data: lineData,
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0
+                    },
+                    {
+                        label: '有效线性数据点',
+                        data: linearData,
+                        backgroundColor: '#3b82f6',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: '非线性点',
+                        data: excludedData,
+                        backgroundColor: '#94a3b8',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: textColor, font: { family: 'Inter, sans-serif' } } },
+                    tooltip: { callbacks: { label: function(ctx) { return `I: ${ctx.parsed.x} A, B: ${ctx.parsed.y} mT`; } } }
+                },
+                scales: {
+                    x: { title: { display: true, text: '电流 I (A)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } },
+                    y: { title: { display: true, text: '磁感应强度 B (mT)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } }
+                }
+            }
+        });
+    }
+
+    function renderProcess(result) {
+        const r = result.res;
+        const n = r.n;
+        const sign = r.intercept >= 0 ? '+' : '-';
+        const absB = Math.abs(r.intercept).toFixed(2);
+        const kFixed = r.slope.toFixed(2);
+
+        const pts = result.linearPoints;
+        const strX = pts.map(p => p.x).join(' + ');
+        const strY = pts.map(p => p.y).join(' + ');
+        const strXX = pts.map(p => `${p.x}^2`).join(' + ');
+        const strYY = pts.map(p => `${p.y}^2`).join(' + ');
+        const strXY = pts.map(p => `(${p.x} \\times ${p.y})`).join(' + ');
+        const strResiduals = pts.map(p => `(${p.y} - ${r.slope.toFixed(4)} \\times ${p.x} - ${r.intercept.toFixed(4)})^2`).join(' + ');
+
+        const autoStepHTML = result.isAuto 
+            ? `依据自适应算法（动态应用阈值 $R > ${result.appliedThreshold}$）寻优，判定线性区上限电流为 $I \\le ${result.maxI}\\ \\mathrm{A}$。` 
+            : `依据手动预设阈值，判定线性区上限电流为 $I \\le ${result.maxI}\\ \\mathrm{A}$。`;
+
+        const html = `
+        <div class="var-definition">
+            <strong>符号定义：</strong><br>
+            设自变量 $x = I$ (A)，因变量 $y = B$ (mT)。<br>
+            线性拟合方程为：$\\hat{y} = kx + b$
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">1. 区间判定与中间量统计</div>
+            <div class="step-formula">${autoStepHTML}</div>
+            <div class="step-formula">参与拟合数据点数 $n = ${n}$</div>
+            <div class="step-formula" style="margin-top: 1rem;">$\\sum x_i = ${strX} = ${r.sumX.toFixed(4)}$</div>
+            <div class="step-formula">$\\sum y_i = ${strY} = ${r.sumY.toFixed(4)}$</div>
+            <div class="step-formula">$\\sum x_i^2 = ${strXX} = ${r.sumXX.toFixed(4)}$</div>
+            <div class="step-formula">$\\sum y_i^2 = ${strYY} = ${r.sumYY.toFixed(4)}$</div>
+            <div class="step-formula">$\\sum x_i y_i = ${strXY} = ${r.sumXY.toFixed(4)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 斜率 $k$ 与截距 $b$ 的计算</div>
+            <div class="step-formula">公式：$k = \\frac{n \\sum x_i y_i - \\sum x_i \\sum y_i}{n \\sum x_i^2 - (\\sum x_i)^2}$</div>
+            <div class="step-formula">$ = \\frac{${n} \\times ${r.sumXY.toFixed(4)} - ${r.sumX.toFixed(4)} \\times ${r.sumY.toFixed(4)}}{${n} \\times ${r.sumXX.toFixed(4)} - (${r.sumX.toFixed(4)})^2}$</div>
+            <div class="step-result">$k = ${r.slope.toFixed(6)} \\approx ${kFixed}\\ \\mathrm{mT/A}$</div>
+            <div class="step-formula">公式：$b = \\bar{y} - k\\bar{x} = \\frac{\\sum y_i - k \\sum x_i}{n}$</div>
+            <div class="step-formula">$ = \\frac{${r.sumY.toFixed(4)} - ${r.slope.toFixed(6)} \\times ${r.sumX.toFixed(4)}}{${n}}$</div>
+            <div class="step-result">$b = ${r.intercept.toFixed(6)} \\approx ${r.intercept.toFixed(2)}\\ \\mathrm{mT}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 相关系数 $R$</div>
+            <div class="step-formula">公式：$R = \\frac{n \\sum x_i y_i - \\sum x_i \\sum y_i}{\\sqrt{[n \\sum x_i^2 - (\\sum x_i)^2][n \\sum y_i^2 - (\\sum y_i)^2]}}$</div>
+            <div class="step-formula">$= \\frac{${n} \\times ${r.sumXY.toFixed(4)} - ${r.sumX.toFixed(4)} \\times ${r.sumY.toFixed(4)}}{\\sqrt{[${n} \\times ${r.sumXX.toFixed(4)} - (${r.sumX.toFixed(4)})^2][${n} \\times ${r.sumYY.toFixed(4)} - (${r.sumY.toFixed(4)})^2]}}$</div>
+            <div class="step-result">$R = ${r.r.toFixed(6)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 标准差 $s$ 的计算</div>
+            <div class="step-formula">公式：$s = \\sqrt{\\frac{\\sum (y_i - \\hat{y}_i)^2}{n-2}} = \\sqrt{\\frac{\\sum (y_i - kx_i - b)^2}{n-2}}$</div>
+            <div class="step-formula">$\\sum (y_i - kx_i - b)^2 = ${strResiduals} = ${r.sumResidualsSq.toFixed(6)}$</div>
+            <div class="step-formula">代入：$s = \\sqrt{\\frac{${r.sumResidualsSq.toFixed(6)}}{${n} - 2}}$</div>
+            <div class="step-result">$s = ${r.s.toFixed(6)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 最终结论</div>
+            <div class="step-result final-conclusion-box">
+                因此，电磁铁中心磁感应强度 $B$ 与电流 $I$ 关系为：<br>
+                <strong>$B = ${kFixed}\ I ${sign} ${absB}\ \\mathrm{(mT)} \\qquad (I \\le ${result.maxI}A，线性区)$</strong>
+            </div>
+        </div>`;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    function calculate() {
+        try {
+            const data = getInputs();
+            const results = compute(data);
+            
+            document.getElementById('res_imax').innerText = results.maxI.toFixed(1);
+            document.getElementById('res_k').innerText = results.res.slope.toFixed(3);
+            document.getElementById('res_b').innerText = results.res.intercept.toFixed(3);
+            document.getElementById('res_r').innerText = results.res.r.toFixed(5);
+            document.getElementById('res_s').innerText = results.res.s.toFixed(5);
+            
+            document.getElementById('resultMain').style.display = 'block';
+            document.getElementById('processSection').style.display = 'block';
+            
+            renderChart(results);
+            renderProcess(results);
+            
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) { alert(e.message); }
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const defaultVals = new Array(60).fill('');
+        for (let r = 0; r < 15; r++) {
+            defaultVals[r*4] = (0.1 + r*0.1).toFixed(1);
+            defaultVals[r*4 + 2] = (1.6 + r*0.1).toFixed(1);
+        }
+        window.ExperimentUtils.TableGenerator.generateInputTable('data-table-container', {
+            rows: 15, cols: 4,
+            colHeaders: ['$x (I/A)$', '$y (B/mT)$', '$x (I/A)$', '$y (B/mT)$'],
+            rowHeaders: Array.from({length:15}, (_,i)=>(i+1).toString()),
+            prefix: 'data_', defaultValues: defaultVals
+        });
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.KeyboardNav.init('#data-table-container', 4);
+        window.ExperimentUtils.ThemeManager.init();
+        
+        document.getElementById('calculateBtn').onclick = calculate;
+        document.getElementById('saveBtn').onclick = () => { window.ExperimentUtils.Storage.saveFromInputs(APP_KEY); alert('已保存'); };
+        
+        document.body.addEventListener('click', (e) => {
+            if (e.target.id === 'theme-toggle' && document.getElementById('resultMain').style.display === 'block') {
+                setTimeout(calculate, 50); 
+            }
+        });
+    });
+})();
+</script>
+</body>
+</html>

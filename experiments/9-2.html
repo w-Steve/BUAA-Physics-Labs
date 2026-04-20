@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 费尔德常数测量</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">费尔德常数测量</div>
+
+    <div class="tip-box">
+        <strong>实验参数说明</strong><br>
+        • 电流 $I$ 固定为 $1.5\text{ A}$，样品厚度 $d$ 固定为 $7.96\text{ mm}$。<br>
+        • $u(\theta)$ 由 A 类与 B 类合成；$u(B)$ 仅包含残差项 $S_b$。
+    </div>
+
+    <div class="section">
+        <div class="section-title">拟合参数录入 (单位: mT)</div>
+        <div class="top-input-group" style="flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="top-input"><label>斜率 $k$:</label><input type="number" id="k_val" class="save-input cell-input" step="0.0001" placeholder="mT/A"></div>
+            <div class="top-input"><label>截距 $b$:</label><input type="number" id="b_val" class="save-input cell-input" step="0.0001" placeholder="mT"></div>
+            <div class="top-input"><label>残差 $S_b$:</label><input type="number" id="Sb_val" class="save-input cell-input" step="0.0001" placeholder="mT"></div>
+            <div class="top-input"><label>角度仪器误差 $\Delta_{ins}(\theta)$ (°):</label><input type="number" id="delta_ins" class="save-input cell-input" step="0.01" value="0.5"></div>
+        </div>
+
+        <div class="section-title">角度测量数据 (单位: °)</div>
+        <div style="margin-bottom: 2rem;">
+            <div id="t-table-container" class="data-table"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">计算结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">费尔德常数 $V$ ($\text{rad}/(\text{T}\cdot\text{m})$)</div><div class="result-value" id="V_val">—</div></div>
+            <div class="result-card"><div class="result-label">合成不确定度 $u(V)$</div><div class="result-value" id="uV_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对不确定度 $u(V)/V$</div><div class="result-value" id="rel_uV_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; color: #94a3b8; font-size: 0.85rem; margin-top: 2rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '9-2';
+    const FIXED_I = 1.5;   // A
+    const FIXED_D = 7.96;  // mm
+    const DEG_TO_RAD = Math.PI / 180;
+
+    function getInputs() {
+        const k = parseFloat(document.getElementById('k_val').value);
+        const b = parseFloat(document.getElementById('b_val').value);
+        const Sb = parseFloat(document.getElementById('Sb_val').value);
+        const deltaIns = parseFloat(document.getElementById('delta_ins').value);
+
+        const t1_arr = [], t2_arr = [];
+        for (let i = 0; i < 5; i++) {
+            t1_arr.push(parseFloat(document.getElementById(`t_${i*2+1}`)?.value));
+            t2_arr.push(parseFloat(document.getElementById(`t_${i*2+2}`)?.value));
+        }
+        return { k, b, Sb, deltaIns, t1_arr, t2_arr };
+    }
+
+    function isValid(data) {
+        if (isNaN(data.k) || isNaN(data.b) || isNaN(data.Sb) || isNaN(data.deltaIns)) return false;
+        if (data.t1_arr.some(isNaN) || data.t2_arr.some(isNaN)) return false;
+        return true;
+    }
+
+    function compute(data) {
+        const { k, b, Sb, deltaIns, t1_arr, t2_arr } = data;
+        
+        // 1. 角度处理
+        const theta_raw = [];
+        const theta_deg_arr = [];
+        for (let i = 0; i < 5; i++) {
+            let diff = Math.abs(t1_arr[i] - t2_arr[i]);
+            theta_raw.push(diff);
+            while (diff > 180) diff -= 180;
+            theta_deg_arr.push(diff);
+        }
+
+        const avgThetaDeg = window.ExperimentUtils.Data.mean(theta_deg_arr);
+        const avgThetaRad = avgThetaDeg * DEG_TO_RAD;
+
+        // 2. 磁感应强度处理 (mT -> T)
+        const B_mT = k * FIXED_I + b;
+        const B_T = B_mT / 1000;
+        const uB_T = Sb / 1000;
+
+        // 3. 角度不确定度 (A+B类合成)
+        const uThetaA_deg = window.ExperimentUtils.Data.stdErrorOfMean(theta_deg_arr);
+        const uThetaB_deg = deltaIns / Math.sqrt(3);
+        const uTheta_deg = Math.hypot(uThetaA_deg, uThetaB_deg);
+        const uTheta_rad = uTheta_deg * DEG_TO_RAD;
+
+        // 4. 费尔德常数 V = theta / (B * d)
+        const d_m = FIXED_D / 1000;
+        const V = avgThetaRad / (B_T * d_m);
+
+        // 5. 不确定度合成
+        const relTheta = uTheta_rad / avgThetaRad;
+        const relB = uB_T / B_T;
+        const relU = Math.sqrt(relTheta**2 + relB**2);
+        const uV = V * relU;
+
+        return {
+            k, b, Sb, I: FIXED_I, deltaIns,
+            t1_arr, t2_arr, theta_raw, theta_deg_arr,
+            avgThetaDeg, avgThetaRad,
+            B_mT, B_T, uB_T,
+            uThetaA_deg, uThetaB_deg, uTheta_deg, uTheta_rad,
+            FIXED_D, d_m, V, uV, relU
+        };
+    }
+
+    function renderProcess(res) {
+        const [vStr, uvStr] = window.ExperimentUtils.formatResultWithUncertainty(res.V, res.uV);
+        
+        // 生成残差平方字符串
+        const formatResiduals = (arr, mean) => arr.map(v => {
+            const diff = v - mean;
+            return (diff < 0 ? `(${diff.toFixed(4)})` : diff.toFixed(4)) + '^2';
+        }).join(' + ');
+
+        const sumThetaStr = res.theta_deg_arr.map(v => v.toFixed(2)).join(' + ');
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. $\\theta$ 数据预处理与平均值计算</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead>
+                        <tr>
+                            <th>次数</th>
+                            <th>$\\theta_1$ (°)</th>
+                            <th>$\\theta_2$ (°)</th>
+                            <th>原始差值 $|\\theta_1 - \\theta_2|$</th>
+                            <th>修正后差值 $\\theta$ (°)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${[0,1,2,3,4].map(i => `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td>${res.t1_arr[i].toFixed(2)}</td>
+                            <td>${res.t2_arr[i].toFixed(2)}</td>
+                            <td>${res.theta_raw[i].toFixed(2)}</td>
+                            <td style="font-weight: bold; color: #2563eb;">${res.theta_deg_arr[i].toFixed(2)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="step-formula" style="margin-top: 1rem;">$$\\bar{\\theta}_{deg} = \\frac{\\sum \\theta_i}{5} = \\frac{${sumThetaStr}}{5} = ${res.avgThetaDeg.toFixed(4)}^\\circ$$</div>
+            <div class="step-formula">转换为弧度：$$\\bar{\\theta}_{rad} = ${res.avgThetaDeg.toFixed(4)} \\times \\frac{\\pi}{180} = ${res.avgThetaRad.toFixed(6)}\\text{ rad}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 计算磁感应强度 B 及不确定度</div>
+            <div class="step-formula">$$B_{mT} = kI + b = (${res.k}) \\times ${res.I} + (${res.b}) = ${res.B_mT.toFixed(4)}\\text{ mT}$$</div>
+            <div class="step-formula">转换为特斯拉(T)：$$B_T = \\frac{${res.B_mT.toFixed(4)}}{1000} = ${res.B_T.toExponential(4)}\\text{ T}$$</div>
+            <div class="step-formula">B 的不确定度 (仅残差项)：$$u(B)_T = \\frac{S_b}{1000} = \\frac{${res.Sb}}{1000} = ${res.uB_T.toExponential(4)}\\text{ T}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. $\\theta$ 的合成不确定度评定</div>
+            <div class="step-formula">A类不确定度：</div>
+            <div class="step-formula">$$u_A(\\theta)_{deg} = \\sqrt{\\frac{\\sum(\\theta_i - \\bar{\\theta}_{deg})^2}{n(n-1)}} = \\sqrt{\\frac{${formatResiduals(res.theta_deg_arr, res.avgThetaDeg)}}{5 \\times 4}} = ${res.uThetaA_deg.toFixed(6)}^\\circ$$</div>
+            <div class="step-formula">B类不确定度 (仪器误差 $\\Delta_{ins} = ${res.deltaIns}^\\circ$)：</div>
+            <div class="step-formula">$$u_B(\\theta)_{deg} = \\frac{\\Delta_{ins}}{\\sqrt{3}} = \\frac{${res.deltaIns}}{\\sqrt{3}} = ${res.uThetaB_deg.toFixed(6)}^\\circ$$</div>
+            <div class="step-formula">合成标准不确定度 (度)：</div>
+            <div class="step-formula">$$u(\\theta)_{deg} = \\sqrt{u_A^2 + u_B^2} = \\sqrt{(${res.uThetaA_deg.toFixed(6)})^2 + (${res.uThetaB_deg.toFixed(6)})^2} = ${res.uTheta_deg.toFixed(6)}^\\circ$$</div>
+            <div class="step-formula">转换为弧度：$$u(\\theta)_{rad} = ${res.uTheta_deg.toFixed(6)} \\times \\frac{\\pi}{180} = ${res.uTheta_rad.toFixed(6)}\\text{ rad}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 费尔德常数 V 计算</div>
+            <div class="step-formula">样品厚度 $d$ (固定)：$d = ${res.FIXED_D}\\text{ mm} = ${res.d_m}\\text{ m}$</div>
+            <div class="step-formula">$$V = \\frac{\\theta_{rad}}{B_T \\cdot d_m} = \\frac{${res.avgThetaRad.toFixed(6)}}{${res.B_T.toExponential(4)} \\times ${res.d_m}} = ${res.V.toFixed(4)}\\text{ rad/(T·m)}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 最终不确定度合成</div>
+            <div class="step-formula">$$\\frac{u(V)}{V} = \\sqrt{ \\left(\\frac{u(\\theta)_{rad}}{\\theta_{rad}}\\right)^2 + \\left(\\frac{u(B)_T}{B_T}\\right)^2 }$$</div>
+            <div class="step-formula">$$= \\sqrt{ \\left(\\frac{${res.uTheta_rad.toFixed(6)}}{${res.avgThetaRad.toFixed(6)}}\\right)^2 + \\left(\\frac{${res.uB_T.toExponential(4)}}{${res.B_T.toExponential(4)}}\\right)^2 } = ${res.relU.toFixed(6)}$$</div>
+            <div class="step-result">$u(V) = V \\times \\frac{u(V)}{V} = ${res.V.toFixed(6)} \\times ${res.relU.toFixed(6)} = ${res.uV.toFixed(6)}\\text{ rad/(T·m)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">6. 标准结果表达</div>
+            <div class="step-result" style="font-size:1.2rem;">$V = (${vStr} \\pm ${uvStr})\\text{ rad/(T·m)}$</div>
+            <div class="step-result">相对不确定度 = ${(res.relU * 100).toFixed(2)} \%</div>
+        </div>`;
+        
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) { alert('请检查输入是否完整'); return; }
+        const res = compute(data);
+        const [vStr, uvStr] = window.ExperimentUtils.formatResultWithUncertainty(res.V, res.uV);
+        document.getElementById('V_val').innerText = vStr;
+        document.getElementById('uV_val').innerText = uvStr;
+        document.getElementById('rel_uV_val').innerText = res.relU.toFixed(6);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        window.ExperimentUtils.TableGenerator.generateInputTable('t-table-container', {
+            rows: 5, cols: 2, colHeaders: ['次数', '$\\theta_1$ (°)', '$\\theta_2$ (°)'],
+            rowHeaders: ['1','2','3','4','5'], prefix: 't_'
+        });
+        document.getElementById('calculateBtn').onclick = calculate;
+        document.getElementById('saveBtn').onclick = () => window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        
+        if (!localStorage.getItem(APP_KEY)) {
+            document.getElementById('k_val').value = '45.2';
+            document.getElementById('b_val').value = '1.2';
+            document.getElementById('Sb_val').value = '0.5';
+        }
+
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.ThemeManager.init();
+    });
+})();
+</script>
+</body>
+</html>
