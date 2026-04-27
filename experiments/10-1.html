@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 衍射光栅常数测量</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <style>
+        .cell-input[type="text"] {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            text-align: center;
+        }
+        .angle-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+        .dark-mode .angle-hint {
+            color: #9ca3af;
+        }
+        .param-input-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .tip-box.red-alert {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .dark-mode .tip-box.red-alert {
+            background: #450a0a;
+            border-left-color: #dc2626;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">衍射光栅常数的测量</div>
+
+    <div class="tip-box red-alert">
+        <strong>Tips</strong><br>
+        角度测量数据采用 <strong>度.分</strong> 格式输入：例如 $226.29$ 表示 $226^\circ 29'$<br>
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+        <div class="param-input-group">
+            <div class="top-input">
+                <label>$\lambda$ (nm):</label>
+                <input type="number" id="lambdaVal" class="save-input cell-input" step="any" value="589.3">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">±2级衍射角读数</div>
+            <div id="measure-table-container" class="data-table"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">光栅常数 $d$ ($\mu$m)</div><div class="result-value" id="d_val">—</div></div>
+            <div class="result-card"><div class="result-label">不确定度 $u(d)$ ($\mu$m)</div><div class="result-value" id="ud_val">—</div></div>
+            <div class="result-card"><div class="result-label">最终结果表示 ($\mu$m)</div><div class="result-value" id="final_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; margin-top: 2rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '10-1';
+    const K_ORDER = 2;
+    const DELTA_INSTR = 1.0; // 分度值固定为 1'
+
+    // 度分 ⇄ 十进制度
+    function degreeMinuteToDecimal(s) {
+        if (!s || s.trim() === '') return NaN;
+        const val = parseFloat(s);
+        const deg = Math.floor(Math.abs(val));
+        const decPart = s.split('.')[1] || "0";
+        const min = parseInt(decPart.substring(0, 2).padEnd(2, '0')) || 0;
+        return (deg + min / 60) * Math.sign(val);
+    }
+
+    function decimalToDegMinStr(d) {
+        const absD = Math.abs(d);
+        const deg = Math.floor(absD);
+        const min = Math.floor((absD - deg) * 60 + 0.0001);
+        const sec = Math.round(((absD - deg) * 60 - min) * 60);
+        if (sec === 60) return `${d < 0 ? '-' : ''}${deg}°${min + 1}′0″`;
+        return `${d < 0 ? '-' : ''}${deg}°${min}′${sec > 0 ? sec + '″' : ''}`;
+    }
+
+    function getInputs() {
+        const lambda = parseFloat(document.getElementById('lambdaVal').value) || 589.3;
+        const raw = [];
+        for (let i = 1; i <= 20; i++) {
+            raw.push(document.getElementById(`pm_${i}`)?.value || '');
+        }
+        return { lambda, raw };
+    }
+
+    function formatRawToDegMin(s) {
+        if (!s || s.trim() === '') return '—';
+        const parts = s.trim().split('.');
+        const deg = parts[0] === '' ? (s.startsWith('-') ? '-0' : '0') : parts[0];
+        const min = parts[1] ? parts[1].substring(0, 2).padEnd(2, '0') : '00';
+        return `${deg}°${min}′`;
+    }
+    
+    function compute(data) {
+        const { lambda, raw } = data;
+        const n = 5;
+        const thetaList = [];
+        const thetaRadList = [];
+        const processedRows = [];
+        
+        for (let i = 0; i < n; i++) {
+            const a1 = degreeMinuteToDecimal(raw[i*4]);
+            const b1 = degreeMinuteToDecimal(raw[i*4+1]);
+            const a2 = degreeMinuteToDecimal(raw[i*4+2]);
+            const b2 = degreeMinuteToDecimal(raw[i*4+3]);
+            
+            // 计算 2θ = 1/2 * (|a1-a2| + |b1-b2|)
+            let diffA = Math.abs(a1 - a2); if (diffA > 180) diffA = 360 - diffA;
+            let diffB = Math.abs(b1 - b2); if (diffB > 180) diffB = 360 - diffB;
+            
+            const twoTheta = (diffA + diffB) / 2;
+            const theta = twoTheta / 2;
+            thetaList.push(theta);
+            thetaRadList.push(theta * Math.PI / 180);
+
+            processedRows.push({
+                idx: i+1, 
+                a1: formatRawToDegMin(raw[i*4]), 
+                b1: formatRawToDegMin(raw[i*4+1]), 
+                a2: formatRawToDegMin(raw[i*4+2]), 
+                b2: formatRawToDegMin(raw[i*4+3]),
+                twoTheta: decimalToDegMinStr(twoTheta),
+                theta: decimalToDegMinStr(theta)
+            });
+        }
+
+        const thetaAvgRad = thetaRadList.reduce((a, b) => a + b, 0) / n;
+        const d = (K_ORDER * (lambda / 1000)) / Math.sin(thetaAvgRad);
+
+        // A类不确定度：按照图片公式 u_a = sqrt((mean(theta^2) - mean(theta)^2) / (n-1))
+        const meanSq = thetaRadList.reduce((a, b) => a + b*b, 0) / n;
+        const uA = Math.sqrt((meanSq - thetaAvgRad**2) / (n - 1));
+        
+        // B类不确定度：u_b = 1/2 * (delta / sqrt(3))
+        const uB = (1/2) * (DELTA_INSTR / 60 * Math.PI / 180) / Math.sqrt(3);
+        const uTheta = Math.sqrt(uA**2 + uB**2);
+
+        // 不确定度传递：u(d) = d * u(theta) / tan(theta)
+        const ud = d * (uTheta / Math.tan(thetaAvgRad));
+        const final = window.ExperimentUtils.formatResultWithUncertainty(d, ud, true);
+
+        return { ...data, processedRows, thetaRadList, thetaAvgRad, d, uA, uB, uTheta, ud, meanSq, final };
+    }
+
+    function renderProcess(res) {
+        const f = (x, n=6) => x.toFixed(n);
+        const s = (x) => x.toExponential(4);
+
+        const tableHtml = res.processedRows.map(r => `
+            <tr>
+                <td>${r.idx}</td>
+                <td>${r.a1}</td><td>${r.b1}</td>
+                <td>${r.a2}</td><td>${r.b2}</td>
+                <td>${r.twoTheta}</td><td>${r.theta}</td>
+            </tr>
+        `).join('');
+
+        let html = `
+            <div class="calculation-step">
+                <div class="step-title">1. 数据汇总与衍射角计算</div>
+                <div class="step-formula">$$2\\theta_i = \\frac{1}{2}(|\\alpha_{1i} - \\alpha_{2i}| + |\\beta_{1i} - \\beta_{2i}|), \\quad \\theta_i = \\frac{2\\theta_i}{2}$$</div>
+                <div class="output-table-wrapper" style="margin-top:1rem;">
+                    <table class="output-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">次数</th><th colspan="2">$+2$ 级</th><th colspan="2">$-2$ 级</th><th rowspan="2">$2\\theta_i$</th><th rowspan="2">$\\theta_i$</th>
+                            </tr>
+                            <tr><th>$\\alpha_1$</th><th>$\\beta_1$</th><th>$\\alpha_2$</th><th>$\\beta_2$</th></tr>
+                        </thead>
+                        <tbody>${tableHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="calculation-step">
+                <div class="step-title">2. 平均衍射角 $\\bar{\\theta}$ 与光栅常数 $d$</div>
+                <div class="step-formula">$$\\bar{\\theta} = \\frac{\\sum \\theta_i}{5} = \\frac{${res.thetaRadList.map(v=>f(v)).join(' + ')}}{5} = ${f(res.thetaAvgRad)} \\text{ rad}$$</div>
+                <div class="step-formula">$$d = \\frac{k\\lambda}{\\sin\\bar{\\theta}} = \\frac{2 \\times ${(res.lambda/1000).toFixed(4)}}{\\sin(${f(res.thetaAvgRad)})} = \\frac{${(res.lambda*2/1000).toFixed(4)}}{${f(Math.sin(res.thetaAvgRad))}} = ${f(res.d)} \\ \\mu\\text{m}$$</div>
+            </div>
+
+            <div class="calculation-step">
+                <div class="step-title">3. 不确定度计算</div>
+                <p><strong>A类不确定度 $u_A(\\theta)$：</strong></p>
+                <div class="step-formula">$$u_A(\\theta) = \\sqrt{\\frac{\\overline{\\theta^2} - \\bar{\\theta}^2}{5-1}} = \\sqrt{\\frac{${f(res.meanSq)} - ${f(res.thetaAvgRad)}^2}{4}} = ${f(res.uA)} \\text{ rad}$$</div>
+                <p><strong>B类不确定度 $u_B(\\theta)$：</strong></p>
+                <div class="step-formula">$$u_B(\\theta) = \\frac{1}{2} \\cdot \\frac{\\Delta_{限}}{\\sqrt{3}} = \\frac{1}{2} \\cdot \\frac{1'}{60 \\times 180/\\pi \\cdot \\sqrt{3}} = ${s(res.uB)} \\text{ rad}$$</div>
+                <p><strong>合成角不确定度 $u(\\theta)$：</strong></p>
+                <div class="step-formula">$$u(\\theta) = \\sqrt{u_A^2 + u_B^2} = \\sqrt{${f(res.uA)}^2 + (${s(res.uB)})^2} = ${f(res.uTheta)} \\text{ rad}$$</div>
+            </div>
+
+            <div class="calculation-step">
+                <div class="step-title">4. 不确定度传递与结果</div>
+                <div class="step-formula">$$\\frac{u(d)}{d} = \\frac{u(\\theta)}{\\tan\\bar{\\theta}} = \\frac{${f(res.uTheta)}}{\\tan(${f(res.thetaAvgRad)})} = ${f(res.uTheta/Math.tan(res.thetaAvgRad))}$$</div>
+                <div class="step-formula">$$u(d) = d \\cdot \\frac{u(d)}{d} = ${f(res.d)} \\times ${f(res.uTheta/Math.tan(res.thetaAvgRad))} = ${f(res.ud)} \\ \\mu\\text{m}$$</div>
+                <div class="step-result">结果：$d = (${res.final.value} \\pm ${res.final.uncertainty}) \\ \\mu\\text{m}$</div>
+            </div>
+        `;
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    document.getElementById('calculateBtn').onclick = () => {
+        const res = compute(getInputs());
+        document.getElementById('d_val').innerText = res.d.toFixed(6);
+        document.getElementById('ud_val').innerText = res.ud.toFixed(6);
+        document.getElementById('final_val').innerText = `${res.final.value} ± ${res.final.uncertainty}`;
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    };
+
+    document.getElementById('saveBtn').onclick = () => {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    };
+
+    window.onload = () => {
+    window.ExperimentUtils.TableGenerator.generateInputTable('measure-table-container', {
+        rows: 5, cols: 4, prefix: 'pm_', 
+        colHeaders: ['测量次数', 'α₁(+2)', 'β₁(+2)', 'α₂(-2)', 'β₂(-2)'],
+        rowHeaders: ['1', '2', '3', '4', '5'],
+        defaultValues: []
+    });
+    document.querySelectorAll('#measure-table-container .cell-input').forEach(input => {
+            input.type = 'text'; 
+            input.placeholder = '度.分';
+        });
+    window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+    window.ExperimentUtils.KeyboardNav.init('#measure-table-container', 4);
+    window.ExperimentUtils.ThemeManager.init();
+};
+})();
+</script>
+
+<style>
+    .output-table { width: 100%; border-collapse: collapse; }
+    .output-table th, .output-table td { 
+        padding: 0.6rem; text-align: center; border: 1px solid #e2e8f0; 
+        font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+    }
+    .output-table th { background: #f8fafc; font-weight: 600; }
+    .dark-mode .output-table th { background: #374151; }
+    .dark-mode .output-table th, .dark-mode .output-table td { border-color: #4a5568; }
+</style>
+</body>
+</html>

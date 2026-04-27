@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 里德伯常数测量</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <style>
+        .cell-input[type="text"] {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            text-align: center;
+        }
+        .angle-hint {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+        .data-table-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .dark-mode .data-table-grid { border-color: #4a5568; }
+        .data-table-grid th, .data-table-grid td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        .dark-mode .data-table-grid th, .dark-mode .data-table-grid td { border-color: #4a5568; }
+        .data-table-grid th { background: #f8fafc; font-weight: 500; }
+        .dark-mode .data-table-grid th { background: #374151; }
+        .tip-box.red-alert {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            color: #7f1d1d;
+        }
+        .dark-mode .tip-box.red-alert {
+            background: #450a0a;
+            border-left-color: #dc2626;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">里德伯常数测量</div>
+
+    <div class="tip-box red-alert">
+        <strong>实验要点</strong><br>
+        • 角度录入：采用 <strong>度.分</strong> 格式（如 $120.15$ 代表 $120^\circ 15'$）。<br>
+        • 过零处理：自动处理跨越 $0^\circ/360^\circ$ 刻线的情况。<br>
+        • 数据有效性：若某级光谱未观测到，对应行留空即可，计算时会自动剔除。
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+        <div class="top-input-group" style="margin-bottom: 1.5rem;">
+            <div class="top-input">
+                <label>$d$ (μm):</label>
+                <input type="number" id="val_d" class="save-input cell-input" step="any" value="3.333333">
+            </div>
+            <div class="top-input">
+                <label>$u(d)$ (μm):</label>
+                <input type="number" id="val_ud" class="save-input cell-input" step="any" value="0.000001">
+            </div>
+            <div class="top-input">
+                <label>光栅宽 $D$ (cm):</label>
+                <input type="number" id="val_D" class="save-input cell-input" step="any" value="2.2">
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table-grid" id="inputTable">
+                <thead>
+                    <tr>
+                        <th>波长</th>
+                        <th>级数 $k$</th>
+                        <th>$\alpha_1$</th>
+                        <th>$\beta_1$</th>
+                        <th>$\alpha_2$</th>
+                        <th>$\beta_2$</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="angle-hint">$\alpha_1, \beta_1$ 为正向位置；$\alpha_2, \beta_2$ 为反向位置。</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">里德伯常数 $R_H$ (m⁻¹)</div><div class="result-value" id="rh_val">—</div></div>
+            <div class="result-card"><div class="result-label">不确定度 $u(R_H)$ (m⁻¹)</div><div class="result-value" id="urh_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对误差</div><div class="result-value" id="err_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '10-2';
+    const TRUE_RH = 1.09737315689396e7;
+
+    const config = [
+        { name: '红光', n: 3, ks: [1, 2, 3] },
+        { name: '蓝光', n: 4, ks: [1, 2, 3] },
+        { name: '紫光', n: 5, ks: [1, 2, 3] }
+    ];
+
+    function dmToDec(str) {
+        if (!str || str.trim() === '') return NaN;
+        const val = parseFloat(str);
+        if (isNaN(val)) return NaN;
+        const deg = Math.floor(Math.abs(val)) * Math.sign(val);
+        const decPart = str.split('.')[1] || "0";
+        const min = parseInt(decPart.substring(0, 2), 10);
+        return deg + min / 60;
+    }
+
+    function getAngleDiff(a, b) {
+        let diff = Math.abs(a - b);
+        if (diff > 180) diff = 360 - diff;
+        return diff;
+    }
+
+    function initTable() {
+        const tbody = document.getElementById('tableBody');
+        let rowIdx = 0;
+        config.forEach(color => {
+            color.ks.forEach((k, ki) => {
+                const tr = document.createElement('tr');
+                if (ki === 0) {
+                    const tdLabel = document.createElement('td');
+                    tdLabel.rowSpan = color.ks.length;
+                    tdLabel.innerHTML = `<span class="row-label">${color.name}</span><br><small>(n=${color.n})</small>`;
+                    tr.appendChild(tdLabel);
+                }
+                tr.innerHTML += `
+                    <td>${k}</td>
+                    <td><input type="text" id="a1_${rowIdx}" class="cell-input save-input" placeholder="度.分"></td>
+                    <td><input type="text" id="b1_${rowIdx}" class="cell-input save-input" placeholder="度.分"></td>
+                    <td><input type="text" id="a2_${rowIdx}" class="cell-input save-input" placeholder="度.分"></td>
+                    <td><input type="text" id="b2_${rowIdx}" class="cell-input save-input" placeholder="度.分"></td>
+                `;
+                tbody.appendChild(tr);
+                rowIdx++;
+            });
+        });
+    }
+
+    function calculate() {
+        const d_um = parseFloat(document.getElementById('val_d').value);
+        const ud_um = parseFloat(document.getElementById('val_ud').value);
+        const D_cm = parseFloat(document.getElementById('val_D').value);
+        
+        const d_m = d_um * 1e-6;
+        const ud_m = ud_um * 1e-6;
+        const u_theta = (1/60 * Math.PI/180) / (2 * Math.sqrt(3)); // 8.397e-5 rad
+
+        let validResults = [];
+        let rowIdx = 0;
+
+        config.forEach(color => {
+            color.ks.forEach(k => {
+                const a1 = dmToDec(document.getElementById(`a1_${rowIdx}`).value);
+                const b1 = dmToDec(document.getElementById(`b1_${rowIdx}`).value);
+                const a2 = dmToDec(document.getElementById(`a2_${rowIdx}`).value);
+                const b2 = dmToDec(document.getElementById(`b2_${rowIdx}`).value);
+
+                if (!isNaN(a1) && !isNaN(b1) && !isNaN(a2) && !isNaN(b2)) {
+                    const diffA = getAngleDiff(a1, a2);
+                    const diffB = getAngleDiff(b1, b2);
+                    const twoTheta = (diffA + diffB) / 2;
+                    const theta = twoTheta / 2;
+                    const thetaRad = theta * (Math.PI / 180);
+                    const lambda = (d_m * Math.sin(thetaRad)) / k;
+                    const RH = (4 * color.n**2) / (lambda * (color.n**2 - 4));
+                    const rel_uRH = Math.sqrt(Math.pow(ud_m/d_m, 2) + Math.pow(u_theta/Math.tan(thetaRad), 2));
+                    const uRH = RH * rel_uRH;
+                    validResults.push({ color: color.name, n: color.n, k, twoTheta, theta, lambda, RH, uRH, thetaRad });
+                }
+                rowIdx++;
+            });
+        });
+
+        if (validResults.length === 0) { alert('请填写完整的数据'); return; }
+
+        let sumW = 0, sumWRH = 0;
+        validResults.forEach(r => {
+            const w = 1 / (r.uRH * r.uRH);
+            sumWRH += r.RH * w;
+            sumW += w;
+        });
+
+        const avgRH = sumWRH / sumW;
+        const avgURH = Math.sqrt(1 / sumW);
+        const err = (Math.abs(avgRH - TRUE_RH) / TRUE_RH) * 100;
+
+        // 调用 common.js 格式化函数
+        const formatted = window.ExperimentUtils.formatResultWithUncertainty(avgRH, avgURH, true);
+        document.getElementById('rh_val').innerText = formatted.value;
+        document.getElementById('urh_val').innerText = formatted.uncertainty;
+        document.getElementById('err_val').innerText = err.toFixed(4) + '%';
+        
+        renderProcess(validResults, avgRH, avgURH, err, d_m, D_cm, formatted);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    }
+
+    function renderProcess(results, avgRH, avgURH, err, d_m, D_cm, formatted) {
+        const ex = results[0];
+        const fE = x => x.toExponential(5);
+        const f4 = x => x.toFixed(4);
+
+        // 1. 原始数据处理表格
+        let rawRows = results.map(r => `
+            <tr><td>${r.color}(n=${r.n})</td><td>${r.k}</td><td>${f4(r.twoTheta)}°</td><td>${f4(r.theta)}°</td><td>${fE(r.lambda)}</td><td>${fE(r.RH)}</td></tr>
+        `).join('');
+
+        // 2. 不确定度表格
+        let uncRows = results.map(r => `
+            <tr><td>${r.color}</td><td>${r.k}</td><td>${fE(r.uRH/r.RH)}</td><td>${fE(r.uRH)}</td></tr>
+        `).join('');
+
+        // 3. 加权计算数值式
+        const numStr = results.map(r => `\\frac{${fE(r.RH)}}{${fE(r.uRH)}^2}`).join(' + ');
+        const denStr = results.map(r => `\\frac{1}{${fE(r.uRH)}^2}`).join(' + ');
+
+        // 4. 性能参数 (k=2)
+        const resK2 = results.find(r => r.k === 2) || ex;
+        const D_theta = 2 / (d_m * Math.cos(resK2.thetaRad));
+        const Res_R = 2 * ((D_cm * 1e-2) / d_m);
+
+        let html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 原始数据处理</div>
+            <div class="step-formula">$$ 2\\theta = \\frac{|\\alpha_1-\\alpha_2| + |\\beta_1-\\beta_2|}{2} $$</div>
+            <div class="step-formula">$$ \\lambda = \\frac{d \\sin\\theta}{k} \\quad R_H = \\frac{4n^2}{\\lambda(n^2-4)} $$</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead><tr><th>谱线</th><th>k</th><th>2θ</th><th>θ</th><th>λ (m)</th><th>$R_H$ (m⁻¹)</th></tr></thead>
+                    <tbody>${rawRows}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 不确定度计算</div>
+            <div class="step-formula">$$ \\frac{u(R_H)}{R_H} = \\sqrt{(\\frac{u(d)}{d})^2 + (\\frac{u(\\theta)}{\\tan\\theta})^2} $$</div>
+            <div class="output-table-wrapper">
+                <table class="output-table">
+                    <thead><tr><th>谱线</th><th>k</th><th>$u(R_H)/R_H$</th><th>$u(R_H)$ (m⁻¹)</th></tr></thead>
+                    <tbody>${uncRows}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 不等精度加权与最终结果</div>
+            <div class="step-formula">$$ \\overline{R_H} = \\frac{\\sum R_{Hi}u(R_{Hi})^2}{\\sum u(R_{Hi})^2} = \\frac{${numStr}}{${denStr}} = ${avgRH.toExponential(6)} \\text{ m}^{-1} $$</div>
+            <div class="step-formula">$$ u(\\overline{R_H}) = \\sqrt{\\frac{1}{\\sum u(R_{Hi})^2}} = \\sqrt{\\frac{1}{${denStr}}} = ${avgURH.toExponential(6)} \\text{ m}^{-1} $$</div>
+            <div class="step-result">最终结果：$R_H \\pm u(R_H) = (${formatted.value} \\pm ${formatted.uncertainty}) \\text{ m}^{-1}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 仪器性能参数 (取 k=2)</div>
+            <div class="step-formula">$$ D_\\theta = \\frac{k}{d \\cos\\theta} = \\frac{2}{${d_m.toExponential(4)} \\times \\cos(${f4(resK2.thetaRad*180/Math.PI)}^\\circ)} = ${D_theta.toExponential(4)} \\text{ rad/m} $$</div>
+            <div class="step-formula">$$ R = kN = k \\cdot \\frac{D}{d} = 2 \\times \\frac{${D_cm} \\times 10^{-2}}{${d_m.toExponential(4)}} = ${Res_R.toFixed(0)} $$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTable();
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.ThemeManager.init();
+        window.ExperimentUtils.KeyboardNav.init('#inputTable', 4);
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+            alert('数据已本地保存');
+        });
+    });
+})();
+</script>
+</body>
+</html>
