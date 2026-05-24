@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 激光双棱镜干涉</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">激光双棱镜干涉</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • $K, \Delta, L_1, L_2$ 分别为扩束镜位置、修正值、放大像透镜位置、缩小像透镜位置 (cm)<br>
+        • $\Delta x$ 由 10 个干涉条纹位置 $x_i$ 经一元线性回归求得 (mm)<br>
+        • 虚光源间距 $a = \sqrt{b \cdot b'}$，其中 $b$ 和 $b'$ 分别为小像和大像距离 (mm)
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+
+        <div style="font-weight: 500; margin-bottom: 0.5rem;">光具座元件位置及修正参数 (cm)</div>
+        <div class="top-input-group" style="margin-bottom: 2rem;">
+            <div class="top-input"><label>$K$:</label><input type="number" id="pos_K" class="save-input cell-input" step="0.01" value="125.03"></div>
+            <div class="top-input"><label>$\Delta$:</label><input type="number" id="pos_delta" class="save-input cell-input" step="0.01" value="1.20"></div>
+            <div class="top-input"><label>$L_1$ (大像):</label><input type="number" id="pos_L1" class="save-input cell-input" step="0.01" value="94.20"></div>
+            <div class="top-input"><label>$L_2$ (小像):</label><input type="number" id="pos_L2" class="save-input cell-input" step="0.01" value="66.63"></div>
+        </div>
+
+        <div style="font-weight: 500; margin-bottom: 0.5rem;">仪器误差参数 (B类不确定度来源)</div>
+        <div class="top-input-group" style="margin-bottom: 2rem;">
+            <div class="top-input" title="测微目镜和游标卡尺的不确定度"><label>$\Delta_{inst}(x, b)$ (mm):</label><input type="number" id="err_x" class="save-input cell-input" step="0.001" value="0.005"></div>
+            <div class="top-input" title="光具座刻度尺的不确定度"><label>$\Delta_{inst}(S)$ (cm):</label><input type="number" id="err_S" class="save-input cell-input" step="0.01" value="0.5"></div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">各级亮条纹位置 $x_i$ (mm)</div>
+            <div id="x-table-container" class="data-table"></div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 1rem;">
+            <div style="flex: 1; min-width: 300px;">
+                <div style="font-weight: 500; margin-bottom: 0.5rem;">缩小像间距 $b$ 测量 (mm)</div>
+                <div id="b-table-container" class="data-table"></div>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <div style="font-weight: 500; margin-bottom: 0.5rem;">放大像间距 $b'$ 测量 (mm)</div>
+                <div id="bp-table-container" class="data-table"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">条纹间距 $\Delta x$ (mm)</div><div class="result-value" id="dx_val">—</div></div>
+            <div class="result-card"><div class="result-label">虚光源间距 $a$ (mm)</div><div class="result-value" id="a_val">—</div></div>
+            <div class="result-card"><div class="result-label">激光波长 $\lambda$ (nm)</div><div class="result-value" id="lambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">波长不确定度 $u(\lambda)$ (nm)</div><div class="result-value" id="ulambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对不确定度 $u(\lambda)/\lambda$</div><div class="result-value" id="rel_ulambda_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; color: #94a3b8; font-size: 0.9rem; margin-top: 2rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '11-1';
+
+    function getInputs() {
+        const K = parseFloat(document.getElementById('pos_K').value);
+        const delta = parseFloat(document.getElementById('pos_delta').value);
+        const L1 = parseFloat(document.getElementById('pos_L1').value);
+        const L2 = parseFloat(document.getElementById('pos_L2').value);
+        const err_x = parseFloat(document.getElementById('err_x').value) || 0.005;
+        const err_S = parseFloat(document.getElementById('err_S').value) || 0.5;
+
+        const x_arr = [];
+        for (let i = 1; i <= 10; i++) {
+            x_arr.push(parseFloat(document.getElementById(`x_${i}`)?.value));
+        }
+
+        const b1_LR = parseFloat(document.getElementById('b_1')?.value);
+        const b2_LR = parseFloat(document.getElementById('b_2')?.value);
+        const b1_RL = parseFloat(document.getElementById('b_3')?.value);
+        const b2_RL = parseFloat(document.getElementById('b_4')?.value);
+
+        const bp1_LR = parseFloat(document.getElementById('bp_1')?.value);
+        const bp2_LR = parseFloat(document.getElementById('bp_2')?.value);
+        const bp1_RL = parseFloat(document.getElementById('bp_3')?.value);
+        const bp2_RL = parseFloat(document.getElementById('bp_4')?.value);
+
+        return {
+            K, delta, L1, L2, err_x, err_S, x_arr,
+            b1_LR, b2_LR, b1_RL, b2_RL,
+            bp1_LR, bp2_LR, bp1_RL, bp2_RL
+        };
+    }
+
+    function isValid(data) {
+        if (isNaN(data.K) || isNaN(data.delta) || isNaN(data.L1) || isNaN(data.L2)) return false;
+        if (data.x_arr.some(v => isNaN(v))) return false;
+        const b_vars = [data.b1_LR, data.b2_LR, data.b1_RL, data.b2_RL, data.bp1_LR, data.bp2_LR, data.bp1_RL, data.bp2_RL];
+        if (b_vars.some(v => isNaN(v))) return false;
+        return true;
+    }
+
+    function compute(data) {
+        const { K, delta, L1, L2, err_x, err_S, x_arr } = data;
+
+        // 1. 光学长度计算 (cm)
+        const S = Math.abs(L2 - K - delta);
+        const S_prime = Math.abs(L1 - K - delta);
+        const D = S + S_prime;
+        const D_mm = D * 10;
+
+        // 2. a = sqrt(b * b') (mm)
+        const b_LR = Math.abs(data.b1_LR - data.b2_LR);
+        const b_RL = Math.abs(data.b1_RL - data.b2_RL);
+        const b_mean = (b_LR + b_RL) / 2;
+
+        const bp_LR = Math.abs(data.bp1_LR - data.bp2_LR);
+        const bp_RL = Math.abs(data.bp1_RL - data.bp2_RL);
+        const bp_mean = (bp_LR + bp_RL) / 2;
+
+        const a = Math.sqrt(b_mean * bp_mean);
+
+        // 3. 线性回归求 \Delta x
+        const i_arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const reg = window.ExperimentUtils.Data.linearRegression(i_arr, x_arr);
+        const n = reg.n;
+        const i_mean = reg.x_mean;       // 自变量平均值
+        const x_mean = reg.y_mean;       // 因变量平均值
+        const i2_mean = reg.sumXX / n;   // 自变量平方的平均值
+        const x2_mean = reg.sumYY / n;   // 因变量平方的平均值
+        const ix_mean = reg.sumXY / n;   // 乘积的平均值
+        
+        reg.xVar = reg.sumXX - (reg.sumX * reg.sumX) / n;
+        const dx = Math.abs(reg.slope);
+
+        // 4. 计算波长 (nm)
+        const lambda = (a * dx / D_mm) * 1e6;
+
+        // 5. 不确定度计算 (统一采用GUM标准框架)
+        const Data = window.ExperimentUtils.Data;
+        
+        // b 的不确定度
+        const uA_b = Data.stdErrorOfMean([b_LR, b_RL]);
+        const uB_b = err_x / Math.sqrt(3);
+        const u_b = Math.hypot(uA_b, uB_b);
+
+        // b' 的不确定度
+        const uA_bp = Data.stdErrorOfMean([bp_LR, bp_RL]);
+        const uB_bp = err_x / Math.sqrt(3);
+        const u_bp = Math.hypot(uA_bp, uB_bp);
+
+        // \Delta x 的不确定度 (线性回归不确定度)
+        const r2 = reg.r * reg.r;
+        const uA_dx = dx * Math.sqrt((1 / (n - 2)) * (1 / r2 - 1));
+        const uB_xi = err_x / Math.sqrt(3); // 补充单次测量 B 类不确定度
+        const uB_dx = uB_xi * Math.sqrt(1 / reg.xVar);
+        const u_dx = Math.hypot(uA_dx, uB_dx);
+
+        // S 和 S' 的不确定度
+        const u_S = err_S / Math.sqrt(3);
+        const u_Sp = err_S / Math.sqrt(3);
+
+        // 相对不确定度合成
+        const rel_b = u_b / (2 * b_mean);
+        const rel_bp = u_bp / (2 * bp_mean);
+        const rel_dx = u_dx / dx;
+        const rel_S_pdf = u_S / S;
+        const rel_Sp_pdf = u_Sp / S_prime;
+
+        const rel_u = Math.sqrt(rel_b**2 + rel_bp**2 + rel_dx**2 + rel_S_pdf**2 + rel_Sp_pdf**2);
+        const u_lambda = lambda * rel_u;
+
+        return {
+            S, S_prime, D, D_mm,
+            b_LR, b_RL, b_mean, bp_LR, bp_RL, bp_mean, a,
+            reg, dx, lambda,
+            i_mean, x_mean, i2_mean, x2_mean, ix_mean,
+            uA_b, uB_b, u_b,
+            uA_bp, uB_bp, u_bp,
+            uA_dx, uB_xi, uB_dx, u_dx,
+            u_S, u_Sp, rel_u, u_lambda,
+            data
+        };
+    }
+
+    function renderProcess(res) {
+        const [lambdaStr, uLambdaStr] = window.ExperimentUtils.formatResultWithUncertainty(res.lambda, res.u_lambda);
+        const d = res.data;
+        const reg = res.reg;
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 光学元件间距与 $D$ 计算</div>
+            <div class="step-formula">$S = |L_2 - K - \\Delta| = |${d.L2.toFixed(2)} - ${d.K.toFixed(2)} - (${d.delta.toFixed(2)})| = ${res.S.toFixed(2)}\\ \\mathrm{cm}$</div>
+            <div class="step-formula">$S' = |L_1 - K - \\Delta| = |${d.L1.toFixed(2)} - ${d.K.toFixed(2)} - (${d.delta.toFixed(2)})| = ${res.S_prime.toFixed(2)}\\ \\mathrm{cm}$</div>
+            <div class="step-formula">$D = S + S' = ${res.S.toFixed(2)} + ${res.S_prime.toFixed(2)} = ${res.D.toFixed(2)}\\ \\mathrm{cm} = ${res.D_mm.toFixed(1)}\\ \\mathrm{mm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 虚光源间距 $a$ 计算</div>
+            <div style="font-weight: 500; margin-top: 0.5rem;">缩小像间距 $b$：</div>
+            <div class="step-formula">$b_{左\\rightarrow右} = |${d.b1_LR.toFixed(3)} - ${d.b2_LR.toFixed(3)}| = ${res.b_LR.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$b_{右\\rightarrow左} = |${d.b1_RL.toFixed(3)} - ${d.b2_RL.toFixed(3)}| = ${res.b_RL.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$\\bar{b} = \\frac{${res.b_LR.toFixed(3)} + ${res.b_RL.toFixed(3)}}{2} = ${res.b_mean.toFixed(4)}\\ \\mathrm{mm}$</div>
+
+            <div style="font-weight: 500; margin-top: 1rem;">放大像间距 $b'$：</div>
+            <div class="step-formula">$b'_{左\\rightarrow右} = |${d.bp1_LR.toFixed(3)} - ${d.bp2_LR.toFixed(3)}| = ${res.bp_LR.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$b'_{右\\rightarrow左} = |${d.bp1_RL.toFixed(3)} - ${d.bp2_RL.toFixed(3)}| = ${res.bp_RL.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$\\bar{b'} = \\frac{${res.bp_LR.toFixed(3)} + ${res.bp_RL.toFixed(3)}}{2} = ${res.bp_mean.toFixed(4)}\\ \\mathrm{mm}$</div>
+
+            <div style="font-weight: 500; margin-top: 1rem;">双虚光源间距 $a$：</div>
+            <div class="step-formula">$a = \\sqrt{\\bar{b} \\cdot \\bar{b'}} = \\sqrt{${res.b_mean.toFixed(4)} \\times ${res.bp_mean.toFixed(4)}} = ${res.a.toFixed(5)}\\ \\mathrm{mm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 条纹间距 $\\Delta x$ 计算 (一元线性回归)</div>
+            <div class="step-formula">设自变量为级数 $i$，因变量为位置 $x_i$，回归方程：$\\hat{x}_i = \\hat{A} + \\hat{B} \\cdot i$</div>
+            <div class="step-formula">$\\overline{i} = \\frac{\\sum i}{10} = ${res.i_mean.toFixed(1)}$</div>
+            <div class="step-formula">$\\overline{i^2} = \\frac{\\sum i^2}{10} = ${res.i2_mean.toFixed(1)}$</div>
+            <div class="step-formula">$\\overline{x_i} = \\frac{\\sum x_i}{10} = ${res.x_mean.toFixed(4)}$</div>
+            <div class="step-formula">$\\overline{x_i^2} = \\frac{\\sum x_i^2}{10} = ${res.x2_mean.toFixed(4)}$</div>
+            <div class="step-formula">$\\overline{i \\cdot x_i} = \\frac{\\sum i \\cdot x_i}{10} = ${res.ix_mean.toFixed(4)}$</div>
+            <div class="step-formula">$$\\hat{B} = \\frac{\\overline{i \\cdot x_i} - \\overline{i} \\cdot \\overline{x_i}}{\\overline{i^2} - (\\overline{i})^2} = \\frac{${res.ix_mean.toFixed(4)} - ${res.i_mean.toFixed(1)} \\times ${res.x_mean.toFixed(4)}}{${res.i2_mean.toFixed(1)} - (${res.i_mean.toFixed(1)})^2} = ${res.reg.slope.toFixed(5)}\\ \\mathrm{mm/级}$$</div>
+            <div class="step-formula">$$r = \\frac{\\overline{i \\cdot x_i} - \\overline{i} \\cdot \\overline{x_i}}{\\sqrt{(\\overline{i^2} - (\\overline{i})^2)(\\overline{x_i^2} - (\\overline{x_i})^2)}} = \\frac{${res.ix_mean.toFixed(4)} - ${res.i_mean.toFixed(1)} \\times ${res.x_mean.toFixed(4)}}{\\sqrt{(${res.i2_mean.toFixed(1)} - ${res.i_mean.toFixed(1)}^2)(${res.x2_mean.toFixed(4)} - ${res.x_mean.toFixed(4)}^2)}} = ${res.reg.r.toFixed(5)}$$</div>
+            <div class="step-formula">$\\Delta x = |\\hat{B}| = ${res.dx.toFixed(5)}\\ \\mathrm{mm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 波长 $\\lambda$ 计算</div>
+            <div class="step-formula">$$\\lambda = \\frac{a \\cdot \\Delta x}{D} = \\frac{${res.a.toFixed(5)} \\times ${res.dx.toFixed(5)}}{${res.D_mm.toFixed(1)}} \\times 10^6\\ \\mathrm{nm}$$</div>
+            <div class="step-result">$\\lambda = ${res.lambda.toFixed(2)}\\ \\mathrm{nm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">5. 不确定度计算</div>
+            <div style="font-weight: 500;">$b$ 的不确定度：</div>
+            <div class="step-formula">$u_A(b) = \\sqrt{\\frac{\\sum(b_j - \\bar{b})^2}{n(n-1)}} = ${res.uA_b.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$u_B(b) = \\frac{\\Delta_{inst}}{\\sqrt{3}} = \\frac{${d.err_x}}{\\sqrt{3}} = ${res.uB_b.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$u(b) = \\sqrt{u_A^2 + u_B^2} = ${res.u_b.toFixed(5)}\\ \\mathrm{mm}$</div>
+
+            <div style="font-weight: 500; margin-top: 1rem;">$b'$ 的不确定度：</div>
+            <div class="step-formula">$u_A(b') = ${res.uA_bp.toFixed(5)}\\ \\mathrm{mm}, \\quad u_B(b') = ${res.uB_bp.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$u(b') = \\sqrt{u_A^2 + u_B^2} = ${res.u_bp.toFixed(5)}\\ \\mathrm{mm}$</div>
+
+            <div style="font-weight: 500; margin-top: 1rem;">$\\Delta x$ 的不确定度：</div>
+            <div class="step-formula">$u_A(\\Delta x) = \\hat{B} \\sqrt{\\frac{1}{n-2} (\\frac{1}{r^2} - 1)} = ${res.uA_dx.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$u_B(\\Delta x) = u_B(x_i) \\sqrt{\\frac{1}{\\sum(i - \\overline{i})^2}} = ${res.uB_xi.toFixed(5)} \\times \\sqrt{\\frac{1}{${reg.xVar.toFixed(2)}}} = ${res.uB_dx.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$u(\\Delta x) = \\sqrt{u_A^2 + u_B^2} = ${res.u_dx.toFixed(5)}\\ \\mathrm{mm}$</div>
+            
+            <div style="font-weight: 500; margin-top: 1rem;">相对不确定度合成：</div>
+            <div class="step-formula">$$\\frac{u(\\lambda)}{\\lambda} = \\sqrt{\\left(\\frac{u(b)}{2b}\\right)^2 + \\left(\\frac{u(b')}{2b'}\\right)^2 + \\left(\\frac{u(\\Delta x)}{\\Delta x}\\right)^2 + \\left(\\frac{u(S)}{S}\\right)^2 + \\left(\\frac{u(S')}{S'}\\right)^2}$$</div>
+            <div class="step-formula">$= \\sqrt{ (${(res.u_b/(2*res.b_mean)).toFixed(5)})^2 + (${(res.u_bp/(2*res.bp_mean)).toFixed(5)})^2 + (${(res.u_dx/res.dx).toFixed(5)})^2 + (${(res.u_S/res.S).toFixed(5)})^2 + (${(res.u_Sp/res.S_prime).toFixed(5)})^2 }$</div>
+            <div class="step-formula">$= ${(res.rel_u).toFixed(5)}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">6. 最终结果</div>
+            <div class="step-result" style="font-size:1.2rem;">$\\lambda = (${lambdaStr} \\pm ${uLambdaStr})\\ \\mathrm{nm}$</div>
+            <div class="step-result">相对不确定度 = $\\frac{u(\\lambda)}{\\lambda} = ${(res.rel_u*100).toFixed(2)}$ %</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    function displayResults(res) {
+        const [lStr, ulStr] = window.ExperimentUtils.formatResultWithUncertainty(res.lambda, res.u_lambda);
+        document.getElementById('dx_val').innerText = res.dx.toFixed(5);
+        document.getElementById('a_val').innerText = res.a.toFixed(5);
+        document.getElementById('lambda_val').innerText = lStr;
+        document.getElementById('ulambda_val').innerText = ulStr;
+        document.getElementById('rel_ulambda_val').innerText = res.rel_u.toFixed(5);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('数据不完整或格式错误，请确保所有测量值均已正确输入');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请检查输入数据逻辑');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const TableGenerator = window.ExperimentUtils.TableGenerator;
+
+        // 条纹位置 x 表格 (1x10)
+        TableGenerator.generateInputTable('x-table-container', {
+            rows: 1,
+            cols: 10,
+            colHeaders: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            rowHeaders: ['条纹位置'],
+            prefix: 'x_',
+            defaultValues: [8.270, 7.925, 7.560, 7.209, 6.892, 6.559, 6.227, 5.913, 5.567, 5.221]
+        });
+
+        // 缩小像 b 表格 (2x2)
+        TableGenerator.generateInputTable('b-table-container', {
+            rows: 2,
+            cols: 2,
+            colHeaders: ['$b_1$', '$b_2$'],
+            rowHeaders: ['从左向右', '从右向左'],
+            prefix: 'b_',
+            defaultValues: [5.490, 4.526, 5.481, 4.516]
+        });
+
+        // 放大像 b' 表格 (2x2)
+        TableGenerator.generateInputTable('bp-table-container', {
+            rows: 2,
+            cols: 2,
+            colHeaders: ['$b\'_1$', '$b\'_2$'],
+            rowHeaders: ['从左向右', '从右向左'],
+            prefix: 'bp_',
+            defaultValues: [7.533, 4.200, 7.545, 4.428]
+        });
+
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        window.ExperimentUtils.KeyboardNav.init('#x-table-container', 10);
+        window.ExperimentUtils.KeyboardNav.init('#b-table-container', 2);
+        window.ExperimentUtils.KeyboardNav.init('#bp-table-container', 2);
+
+        window.ExperimentUtils.ThemeManager.init();
+
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
+</body>
+</html>
