@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 迈克尔逊干涉</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">迈克尔逊干涉仪测量氦氖激光波长</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 支持剔除粗大误差。若某组读数误差较大，直接清空该输入框即可，系统会自动跳过该组数据。<br>
+        • 有效数据总数必须至少保留 8 组。
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据录入</div>
+
+        <div class="top-input-group" style="margin-bottom: 2rem;">
+            <div class="top-input">
+                <label>标准波长 $\lambda_0$ (nm):</label>
+                <input type="number" id="lambda0" class="save-input cell-input" step="0.1" value="632.8">
+            </div>
+            <div class="top-input">
+                <label>仪器误差限 $\Delta x$ (mm):</label>
+                <input type="number" id="deltaX" class="save-input cell-input" step="0.000001" value="0.000005">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">干涉条纹吞吐读数记录 (留空代表剔除该组)</div>
+            <div id="d-table-container" class="data-table" style="max-width: 400px;"></div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">激光波长 $\lambda$ (nm)</div><div class="result-value" id="lambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">合成不确定度 $u(\lambda)$ (nm)</div><div class="result-value" id="ulambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对误差 $\eta$</div><div class="result-value" id="rel_err_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; margin-top: 2rem; color: #94a3b8; font-size: 0.85rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '12-1';
+
+    // ---------- 获取有效输入值 (自动过滤空值) ----------
+    function getInputs() {
+        const d_vals = [];
+        const N_vals = [];
+        
+        for (let i = 0; i < 10; i++) {
+            const rawVal = document.getElementById(`d_${i+1}`)?.value;
+            // 只有当用户确实填写了数据时才计入统计
+            if (rawVal !== undefined && rawVal.trim() !== '') {
+                const d = parseFloat(rawVal);
+                if (!isNaN(d)) {
+                    d_vals.push(d);
+                    N_vals.push((i + 1) * 100);
+                }
+            }
+        }
+        
+        const lambda0 = parseFloat(document.getElementById('lambda0').value) || 632.8;
+        const deltaX = parseFloat(document.getElementById('deltaX').value) || 0.000005;
+
+        return { d_vals, N_vals, lambda0, deltaX };
+    }
+
+    // ---------- 数据有效性检查 (必须 >= 8组) ----------
+    function isValid(data) {
+        if (data.d_vals.length < 8) return false;
+        if (isNaN(data.lambda0) || isNaN(data.deltaX)) return false;
+        return true;
+    }
+
+    // ---------- 核心计算 ----------
+    function compute(data) {
+        const { d_vals, N_vals, lambda0, deltaX } = data;
+        const n = d_vals.length;
+
+        // 调用 common.js 中的线性回归工具进行自适应拟合
+        const lr = window.ExperimentUtils.Data.linearRegression(N_vals, d_vals);
+        
+        const b = lr.slope;
+        const a = lr.intercept;
+        
+        // 波长换算 (mm 转 nm)
+        const lambda_mm = 2 * b;
+        const lambda_nm = lambda_mm * 1e6;
+
+        // 动态计算残差平方和
+        let sumSqRes = 0;
+        for (let i = 0; i < n; i++) {
+            sumSqRes += Math.pow(d_vals[i] - (a + b * N_vals[i]), 2);
+        }
+        const sumSqX = lr.sumXX - (lr.sumX * lr.sumX) / n;
+        
+        // A类不确定度 uA(b) - 分母动态适配自由度 (n - 2)
+        const uA_b = Math.sqrt(sumSqRes / (sumSqX * (n - 2)));
+
+        // B类不确定度 uB(b)
+        const uB_b = deltaX / Math.sqrt(3);
+
+        // 合成标准不确定度
+        const u_b = Math.hypot(uA_b, uB_b);
+        const u_lambda_nm = 2 * u_b * 1e6;
+
+        // 相对误差
+        const rel_error = Math.abs(lambda_nm - lambda0) / lambda0 * 100;
+
+        return {
+            N_vals, d_vals, n,
+            sumX: lr.sumX, sumY: lr.sumY, sumXY: lr.sumXY, sumXX: lr.sumXX, sumYY: lr.sumYY,
+            b, a, sumSqRes, sumSqX,
+            lambda_mm, lambda_nm,
+            uA_b, uB_b, u_b, u_lambda_nm,
+            lambda0, rel_error, deltaX
+        };
+    }
+
+    // ---------- 渲染详细计算过程 ----------
+    function renderProcess(res) {
+        const [lambdaDisplay, uLambdaDisplay] = window.ExperimentUtils.formatResultWithUncertainty(res.lambda_nm, res.u_lambda_nm);
+
+        // 动态生成参与计算的条纹和读数映射字符串
+        const dataPointsStr = res.N_vals.map((N, idx) => `(N=${N}, d=${res.d_vals[idx].toFixed(5)})`).join(', ');
+
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 数据筛选与中间统计 (当前有效组数：${res.n} 组)</div>
+            <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 0.8rem; line-height:1.5;">
+                <strong>参与拟合的点集：</strong><br>${dataPointsStr}
+            </div>
+            <div class="step-formula">$$\\sum x_i = \\sum N_i = ${res.sumX}$$</div>
+            <div class="step-formula">$$\\sum y_i = \\sum d_i = ${res.sumY.toFixed(5)}\\ \\mathrm{mm}$$</div>
+            <div class="step-formula">$$\\sum x_i y_i = ${res.sumXY.toFixed(4)}$$</div>
+            <div class="step-formula">$$\\sum x_i^2 = ${res.sumXX}$$</div>
+            <div class="step-formula">$$\\sum y_i^2 = ${res.sumYY.toFixed(5)}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 线性拟合求解</div>
+            <div class="step-formula">设定模型：$y = a + bx$ ，即 $d = d_0 + \\frac{\\lambda}{2}N$</div>
+            <div class="step-formula">$$b = \\frac{n\\sum x_i y_i - \\sum x_i \\sum y_i}{n\\sum x_i^2 - (\\sum x_i)^2} = \\frac{${res.n} \\times ${res.sumXY.toFixed(4)} - ${res.sumX} \\times ${res.sumY.toFixed(5)}}{${res.n} \\times ${res.sumXX} - ${res.sumX}^2}$$</div>
+            <div class="step-result">$b = ${res.b.toExponential(6)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$$a = \\frac{\\sum y_i - b\\sum x_i}{n} = ${res.a.toFixed(5)}\\ \\mathrm{mm}$$</div>
+            <div class="step-formula">波长：$\\lambda = 2b = ${res.lambda_mm.toExponential(6)}\\ \\mathrm{mm} = ${res.lambda_nm.toFixed(2)}\\ \\mathrm{nm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 斜率不确定度计算</div>
+            <div class="step-formula">A类不确定度</div>
+            <div class="step-formula">$$u_A(b) = \\sqrt{\\frac{\\sum [y_i - (a + b x_i)]^2}{(${res.n}-2)\\sum(x_i - \\bar{x})^2}} = \\sqrt{\\frac{${res.sumSqRes.toExponential(4)}}{${res.n - 2} \\times ${res.sumSqX}}} = ${res.uA_b.toExponential(6)}\\ \\mathrm{mm}$$</div>
+            
+            <div class="step-formula" style="margin-top:1rem;">B类不确定度：</div>
+            <div class="step-formula">$$u_B(b) = \\frac{\\Delta x}{\\sqrt{3}} = \\frac{${res.deltaX}}{\\sqrt{3}} = ${res.uB_b.toExponential(6)}\\ \\mathrm{mm}$$</div>
+            
+            <div class="step-formula" style="margin-top:1rem;">合成标准不确定度：</div>
+            <div class="step-formula">$$u(b) = \\sqrt{u_A^2(b) + u_B^2(b)} = \\sqrt{(${res.uA_b.toExponential(4)})^2 + (${res.uB_b.toExponential(4)})^2} = ${res.u_b.toExponential(6)}\\ \\mathrm{mm}$$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 最终结果评估</div>
+            <div class="step-formula">波长不确定度：$u(\\lambda) = 2 \\times u(b) = ${ (2 * res.u_b).toExponential(6) }\\ \\mathrm{mm} = ${res.u_lambda_nm.toFixed(2)}\\ \\mathrm{nm}$</div>
+            <div class="step-formula">相对误差：$$\\eta = \\frac{|\\lambda - \\lambda_0|}{\\lambda_0} \\times 100\\% = \\frac{|${res.lambda_nm.toFixed(2)} - ${res.lambda0}|}{${res.lambda0}} \\times 100\\% = ${res.rel_error.toFixed(2)}\\%$$</div>
+            <div class="step-result" style="font-size:1.2rem;">$\\lambda = (${lambdaDisplay} \\pm ${uLambdaDisplay})\\ \\mathrm{nm}$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    // ---------- 显示主要结果 ----------
+    function displayResults(res) {
+        const [lambdaRoundedStr, uLambdaRoundedStr] = window.ExperimentUtils.formatResultWithUncertainty(res.lambda_nm, res.u_lambda_nm);
+        document.getElementById('lambda_val').innerText = lambdaRoundedStr;
+        document.getElementById('ulambda_val').innerText = uLambdaRoundedStr;
+        document.getElementById('rel_err_val').innerText = res.rel_error.toFixed(2) + '%';
+        
+        renderProcess(res);
+        
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    // ---------- 计算入口 ----------
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert(`当前有效数据仅有 ${data.d_vals.length} 组。请至少填写 8 组有效读数（可以将误差较大的行完全清空）。`);
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算过程出错，请核对输入数据格式！');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    // ---------- 页面初始化 ----------
+    window.addEventListener('DOMContentLoaded', function() {
+        // 生成 10行1列的输入表格
+        window.ExperimentUtils.TableGenerator.generateInputTable('d-table-container', {
+            rows: 10,
+            cols: 1,
+            colHeaders: ['读数 $d_i$ (mm)'],
+            rowHeaders: ['N=100', 'N=200', 'N=300', 'N=400', 'N=500', 'N=600', 'N=700', 'N=800', 'N=900', 'N=1000'],
+            prefix: 'd_',
+            defaultValues: [54.80000, 54.83147, 54.86304, 54.89472, 54.92603, 54.95752, 54.98916, 55.02081, 55.05247, 55.08409]
+        });
+
+        // 优先加载本地存储数据
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        // 键盘导航绑定
+        window.ExperimentUtils.KeyboardNav.init('#d-table-container', 1);
+
+        // 初始化深色模式与按钮挂件
+        window.ExperimentUtils.ThemeManager.init();
+
+        // 事件监听
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+    });
+})();
+</script>
+</body>
+</html>

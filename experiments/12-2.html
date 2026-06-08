@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 钠双线波长差测量</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">迈克尔逊干涉 - 钠双线波长差测量</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 可直接在下方图表中拖动十字准星（点 A 和点 B），系统会实时计算直线斜率及最终结果。<br>
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据与取点参数</div>
+
+        <div class="top-input-group" style="margin-bottom: 2rem;">
+            <div class="top-input">
+                <label>钠双线平均波长 $\bar{\lambda}$ (mm):</label>
+                <input type="number" id="lambdaAvg" class="save-input cell-input" step="0.000001" value="0.0005893" style="width: 140px;">
+            </div>
+            <div class="top-input">
+                <label>标准波长差 $\Delta \lambda_0$ (nm):</label>
+                <input type="number" id="deltaLambda0" class="save-input cell-input" step="0.01" value="0.60">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">模糊点位置读数记录 (用于画布散点映射)</div>
+            <div id="sodium-table-container" class="data-table" style="max-width: 400px;"></div>
+        </div>
+
+        <div style="border-top: 1px dashed #cbd5e1; padding-top: 1.5rem; margin-top: 1.5rem;">
+            <div style="font-weight: 600; margin-bottom: 1rem; color: #2563eb;">直线上选取的两点 (支持在图中直接拖拽)</div>
+            <div class="top-input-group" style="margin-bottom: 1rem;">
+                <div class="top-input">
+                    <label>点A 横轴 $m_A$:</label>
+                    <input type="number" id="pA_m" class="save-input cell-input" step="0.01" value="1.0">
+                </div>
+                <div class="top-input">
+                    <label>纵轴 $d_A$ (mm):</label>
+                    <input type="number" id="pA_d" class="save-input cell-input" step="0.001" value="48.123">
+                </div>
+            </div>
+            <div class="top-input-group">
+                <div class="top-input">
+                    <label>点B 横轴 $m_B$:</label>
+                    <input type="number" id="pB_m" class="save-input cell-input" step="0.01" value="5.0">
+                </div>
+                <div class="top-input">
+                    <label>纵轴 $d_B$ (mm):</label>
+                    <input type="number" id="pB_d" class="save-input cell-input" step="0.001" value="49.280">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并绘制图表</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">作图法斜率 $K$ (mm)</div><div class="result-value" id="k_val">—</div></div>
+            <div class="result-card"><div class="result-label">波长差 $\Delta \lambda$ (nm)</div><div class="result-value" id="delta_lambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对误差 $\eta$</div><div class="result-value" id="rel_err_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="chartSection" style="display: none;">
+        <div class="section-title">实验数据描点与作图直线 (可拖拽 A/B 点)</div>
+        <div style="width: 100%; overflow-x: auto; text-align: center; padding: 1rem 0;">
+            <canvas id="graphChart" width="640" height="400" style="max-width: 100%; background: transparent; touch-action: none;"></canvas>
+        </div>
+        <div style="text-align: center; font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">
+            注：圆形散点为实验原始数据，直线为通过点A与点B的连线。支持直接拖拽红色的十字准星调整位置。
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细数据处理步骤</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; margin-top: 2rem; color: #94a3b8; font-size: 0.85rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '12-2';
+
+    let graphState = null;
+    let isDragging = null; 
+
+    function getInputs() {
+        const d_vals = [];
+        const m_vals = [];
+        for (let i = 0; i < 5; i++) {
+            const rawVal = document.getElementById(`sodium_${i+1}`)?.value;
+            if (rawVal !== undefined && rawVal.trim() !== '') {
+                const d = parseFloat(rawVal);
+                if (!isNaN(d)) {
+                    d_vals.push(d);
+                    m_vals.push(i + 1); 
+                }
+            }
+        }
+        
+        const lambdaAvg = parseFloat(document.getElementById('lambdaAvg').value);
+        const deltaLambda0 = parseFloat(document.getElementById('deltaLambda0').value);
+        const pA_m = parseFloat(document.getElementById('pA_m').value);
+        const pA_d = parseFloat(document.getElementById('pA_d').value);
+        const pB_m = parseFloat(document.getElementById('pB_m').value);
+        const pB_d = parseFloat(document.getElementById('pB_d').value);
+
+        return { 
+            d_vals, m_vals, lambdaAvg, deltaLambda0,
+            pA: { m: pA_m, d: pA_d },
+            pB: { m: pB_m, d: pB_d }
+        };
+    }
+
+    function isValid(data) {
+        if (isNaN(data.pA.m) || isNaN(data.pA.d) || isNaN(data.pB.m) || isNaN(data.pB.d)) return false;
+        if (Math.abs(data.pA.m - data.pB.m) < 0.001) return false; 
+        if (isNaN(data.lambdaAvg) || isNaN(data.deltaLambda0)) return false;
+        return true;
+    }
+
+    function compute(data) {
+        const { lambdaAvg, deltaLambda0, pA, pB } = data;
+
+        const K_raw = (pB.d - pA.d) / (pB.m - pA.m);
+        const K = Math.abs(K_raw);
+        const intercept = pA.d - K_raw * pA.m;
+        
+        const deltaLambda_mm = (lambdaAvg * lambdaAvg) / (2 * K);
+        const deltaLambda_nm = deltaLambda_mm * 1e6;
+        const rel_error = Math.abs(deltaLambda_nm - deltaLambda0) / deltaLambda0 * 100;
+
+        return {
+            ...data,
+            K, K_raw, intercept,
+            deltaLambda_mm, deltaLambda_nm,
+            rel_error
+        };
+    }
+
+    function drawPhysicalChart(res) {
+        const canvas = document.getElementById('graphChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const colors = {
+            bg: isDarkMode ? '#2d3748' : '#ffffff',
+            text: isDarkMode ? '#cbd5e1' : '#1e293b',
+            grid: isDarkMode ? '#4a5568' : '#e2e8f0',
+            line: isDarkMode ? '#5a67d8' : '#2563eb',
+            point: isDarkMode ? '#94a3b8' : '#64748b',
+            picked: isDarkMode ? '#ef4444' : '#dc2626'
+        };
+
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const padding = { top: 40, right: 40, bottom: 50, left: 70 };
+        const graphWidth = canvas.width - padding.left - padding.right;
+        const graphHeight = canvas.height - padding.top - padding.bottom;
+
+        // 核心修改：将坐标轴比例严格锁定为仅受实验原始数据 d_vals 影响
+        const minY = Math.min(...res.d_vals);
+        const maxY = Math.max(...res.d_vals);
+        // 增加 40% 的上下留白，以确保拖拽区域足够宽裕
+        const yMargin = (maxY - minY) * 0.4 || 0.1; 
+        const yAxisMin = minY - yMargin;
+        const yAxisMax = maxY + yMargin;
+        const xAxisMin = 0;
+        const xAxisMax = 6; 
+
+        const getXPixel = (m) => padding.left + ((m - xAxisMin) / (xAxisMax - xAxisMin)) * graphWidth;
+        const getYPixel = (d) => padding.top + graphHeight - ((d - yAxisMin) / (yAxisMax - yAxisMin)) * graphHeight;
+
+        graphState = {
+            xAxisMin, xAxisMax, yAxisMin, yAxisMax,
+            padding, graphWidth, graphHeight,
+            pxA: getXPixel(res.pA.m), pyA: getYPixel(res.pA.d),
+            pxB: getXPixel(res.pB.m), pyB: getYPixel(res.pB.d)
+        };
+
+        ctx.lineWidth = 1;
+        ctx.font = "12px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+
+        for (let m = xAxisMin; m <= xAxisMax; m++) {
+            const x = getXPixel(m);
+            ctx.strokeStyle = colors.grid;
+            ctx.beginPath();
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, padding.top + graphHeight);
+            ctx.stroke();
+            ctx.fillStyle = colors.text;
+            ctx.fillText(m, x, padding.top + graphHeight + 8);
+        }
+
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        const ySegments = 5;
+        for (let i = 0; i <= ySegments; i++) {
+            const yVal = yAxisMin + (i * (yAxisMax - yAxisMin)) / ySegments;
+            const y = getYPixel(yVal);
+            ctx.strokeStyle = colors.grid;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + graphWidth, y);
+            ctx.stroke();
+            ctx.fillStyle = colors.text;
+            ctx.fillText(yVal.toFixed(4), padding.left - 10, y);
+        }
+
+        ctx.strokeStyle = colors.text;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(padding.left, padding.top, graphWidth, graphHeight);
+
+        const startXVal = xAxisMin + 0.2;
+        const endXVal = xAxisMax - 0.2;
+        const startYVal = res.intercept + res.K_raw * startXVal;
+        const endYVal = res.intercept + res.K_raw * endXVal;
+
+        // 判断划线是否超出画布区域并进行裁剪限制
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padding.left, padding.top, graphWidth, graphHeight);
+        ctx.clip();
+
+        ctx.strokeStyle = colors.line;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(getXPixel(startXVal), getYPixel(startYVal));
+        ctx.lineTo(getXPixel(endXVal), getYPixel(endYVal));
+        ctx.stroke();
+
+        ctx.restore();
+
+        res.m_vals.forEach((m, idx) => {
+            const px = getXPixel(m);
+            const py = getYPixel(res.d_vals[idx]);
+
+            ctx.fillStyle = colors.point;
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+
+        const drawCrosshair = (point, px, py, label) => {
+            // 不渲染画布外的拖拽点标签
+            if(px < padding.left || px > padding.left + graphWidth || py < padding.top || py > padding.top + graphHeight) return;
+
+            ctx.strokeStyle = colors.picked;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(px - 12, py);
+            ctx.lineTo(px + 12, py);
+            ctx.moveTo(px, py - 12);
+            ctx.lineTo(px, py + 12);
+            ctx.stroke();
+
+            ctx.fillStyle = colors.picked;
+            ctx.font = "bold 14px 'Inter', sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(label, px + 14, py - 14);
+        };
+
+        drawCrosshair(res.pA, graphState.pxA, graphState.pyA, "A");
+        drawCrosshair(res.pB, graphState.pxB, graphState.pyB, "B");
+
+        ctx.fillStyle = colors.text;
+        ctx.font = "bold 13px 'Inter', sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("动镜位置 d_m (mm)", padding.left, padding.top - 18);
+        ctx.textAlign = "right";
+        ctx.fillText("次序 m", padding.left + graphWidth, padding.top + graphHeight + 28);
+    }
+
+    function renderProcess(res) {
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 读取选定点坐标</div>
+            <div class="step-formula">点 A 坐标：$m_A = ${res.pA.m.toFixed(2)}$, $\\quad d_A = ${res.pA.d.toFixed(5)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">点 B 坐标：$m_B = ${res.pB.m.toFixed(2)}$, $\\quad d_B = ${res.pB.d.toFixed(5)}\\ \\mathrm{mm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">2. 计算作图法直线斜率 $K$</div>
+            <div class="step-formula">$$K = \\frac{|d_B - d_A|}{|m_B - m_A|}$$</div>
+            <div class="step-formula">$$K = \\frac{|${res.pB.d.toFixed(5)} - ${res.pA.d.toFixed(5)}|}{|${res.pB.m.toFixed(2)} - ${res.pA.m.toFixed(2)}|} = \\frac{${Math.abs(res.pB.d - res.pA.d).toFixed(5)}}{${Math.abs(res.pB.m - res.pA.m).toFixed(2)}}$$</div>
+            <div class="step-result">$K = ${res.K.toFixed(6)}\\ \\mathrm{mm/次}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">3. 求解钠双线波长差 $\\Delta \\lambda$</div>
+            <div class="step-formula">代入计算公式：</div>
+            <div class="step-formula">$$\\Delta \\lambda = \\frac{\\bar{\\lambda}^2}{2K}$$</div>
+            <div class="step-formula">$$\\Delta \\lambda = \\frac{(${res.lambdaAvg}\\ \\mathrm{mm})^2}{2 \\times ${res.K.toFixed(6)}\\ \\mathrm{mm}} = ${res.deltaLambda_mm.toExponential(6)}\\ \\mathrm{mm}$$</div>
+            <div class="step-result">$\\Delta \\lambda = ${res.deltaLambda_nm.toFixed(3)}\\ \\mathrm{nm}$</div>
+        </div>
+
+        <div class="calculation-step">
+            <div class="step-title">4. 相对误差评估</div>
+            <div class="step-formula">$$\\eta = \\frac{|\\Delta \\lambda - \\Delta \\lambda_0|}{\\Delta \\lambda_0} \\times 100\\% = \\frac{|${res.deltaLambda_nm.toFixed(3)} - ${res.deltaLambda0.toFixed(2)}|}{${res.deltaLambda0.toFixed(2)}} \\times 100\\%$$</div>
+            <div class="step-result">$\\eta = ${res.rel_error.toFixed(2)}\\%$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    function displayResults(res) {
+        document.getElementById('k_val').innerText = res.K.toFixed(5);
+        document.getElementById('delta_lambda_val').innerText = res.deltaLambda_nm.toFixed(3);
+        document.getElementById('rel_err_val').innerText = res.rel_error.toFixed(2) + '%';
+        
+        drawPhysicalChart(res);
+        renderProcess(res);
+        
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('chartSection').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    const canvas = document.getElementById('graphChart');
+
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX = evt.clientX;
+        let clientY = evt.clientY;
+        if (evt.touches && evt.touches.length > 0) {
+            clientX = evt.touches[0].clientX;
+            clientY = evt.touches[0].clientY;
+        }
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function handleDragStart(e) {
+        if (!graphState) return;
+        const pos = getMousePos(e);
+        const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+        const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+        
+        const threshold = 25; 
+        if (distA < threshold) isDragging = 'A';
+        else if (distB < threshold) isDragging = 'B';
+    }
+
+    function handleDragMove(e) {
+        if (!graphState) return;
+        const pos = getMousePos(e);
+        
+        if (!isDragging) {
+            const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+            const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+            canvas.style.cursor = (distA < 25 || distB < 25) ? 'grab' : 'default';
+            return;
+        }
+        
+        canvas.style.cursor = 'grabbing';
+
+        let px = Math.max(graphState.padding.left, Math.min(graphState.padding.left + graphState.graphWidth, pos.x));
+        let py = Math.max(graphState.padding.top, Math.min(graphState.padding.top + graphState.graphHeight, pos.y));
+
+        let m = graphState.xAxisMin + ((px - graphState.padding.left) / graphState.graphWidth) * (graphState.xAxisMax - graphState.xAxisMin);
+        let d = graphState.yAxisMin + ((graphState.padding.top + graphState.graphHeight - py) / graphState.graphHeight) * (graphState.yAxisMax - graphState.yAxisMin);
+
+        document.getElementById(`p${isDragging}_m`).value = m.toFixed(2);
+        document.getElementById(`p${isDragging}_d`).value = d.toFixed(4);
+
+        const data = getInputs();
+        if (isValid(data)) {
+            const res = compute(data);
+            drawPhysicalChart(res);
+            document.getElementById('k_val').innerText = res.K.toFixed(5);
+            document.getElementById('delta_lambda_val').innerText = res.deltaLambda_nm.toFixed(3);
+            document.getElementById('rel_err_val').innerText = res.rel_error.toFixed(2) + '%';
+        }
+    }
+
+    function handleDragEnd() {
+        if (isDragging) {
+            isDragging = null;
+            canvas.style.cursor = 'default';
+            calculate(); 
+        }
+    }
+
+    canvas.addEventListener('mousedown', handleDragStart);
+    canvas.addEventListener('mousemove', handleDragMove);
+    canvas.addEventListener('mouseup', handleDragEnd);
+    canvas.addEventListener('mouseleave', handleDragEnd);
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDragStart(e); }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleDragMove(e); }, {passive: false});
+    canvas.addEventListener('touchend', handleDragEnd);
+
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('计算失败！请确保点A和点B的坐标填写完整，且横轴坐标不能相同。');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算或渲染作图失败，请核对输入数据！');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        window.ExperimentUtils.TableGenerator.generateInputTable('sodium-table-container', {
+            rows: 5,
+            cols: 1,
+            colHeaders: ['位置读数 $d_m$ (mm)'],
+            rowHeaders: ['第1次模糊 (m=1)', '第2次模糊 (m=2)', '第3次模糊 (m=3)', '第4次模糊 (m=4)', '第5次模糊 (m=5)'],
+            prefix: 'sodium_',
+            defaultValues: [48.123, 48.412, 48.701, 48.990, 49.280]
+        });
+
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.KeyboardNav.init('#sodium-table-container', 1);
+        window.ExperimentUtils.ThemeManager.init();
+
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+        
+        const manualInputs = ['pA_m', 'pA_d', 'pB_m', 'pB_d'];
+        manualInputs.forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if (document.getElementById('chartSection').style.display === 'block') calculate();
+            });
+        });
+
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            setTimeout(() => {
+                const data = getInputs();
+                if (isValid(data)) drawPhysicalChart(compute(data));
+            }, 50);
+        });
+    });
+})();
+</script>
+</body>
+</html>
