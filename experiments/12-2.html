@@ -47,7 +47,7 @@
             <div class="top-input-group" style="margin-bottom: 1rem;">
                 <div class="top-input">
                     <label>点A 横轴 $m_A$:</label>
-                    <input type="number" id="pA_m" class="save-input cell-input" step="0.01" value="1.0">
+                    <input type="number" id="pA_m" class="save-input cell-input" step="0.01" value="1.00">
                 </div>
                 <div class="top-input">
                     <label>纵轴 $d_A$ (mm):</label>
@@ -57,7 +57,7 @@
             <div class="top-input-group">
                 <div class="top-input">
                     <label>点B 横轴 $m_B$:</label>
-                    <input type="number" id="pB_m" class="save-input cell-input" step="0.01" value="5.0">
+                    <input type="number" id="pB_m" class="save-input cell-input" step="0.01" value="5.00">
                 </div>
                 <div class="top-input">
                     <label>纵轴 $d_B$ (mm):</label>
@@ -105,6 +105,8 @@
 
     let graphState = null;
     let isDragging = null; 
+
+    const DEFAULT_D_VALS = [48.123, 48.412, 48.701, 48.990, 49.280];
 
     function getInputs() {
         const d_vals = [];
@@ -182,10 +184,8 @@
         const graphWidth = canvas.width - padding.left - padding.right;
         const graphHeight = canvas.height - padding.top - padding.bottom;
 
-        // 核心修改：将坐标轴比例严格锁定为仅受实验原始数据 d_vals 影响
         const minY = Math.min(...res.d_vals);
         const maxY = Math.max(...res.d_vals);
-        // 增加 40% 的上下留白，以确保拖拽区域足够宽裕
         const yMargin = (maxY - minY) * 0.4 || 0.1; 
         const yAxisMin = minY - yMargin;
         const yAxisMax = maxY + yMargin;
@@ -242,7 +242,6 @@
         const startYVal = res.intercept + res.K_raw * startXVal;
         const endYVal = res.intercept + res.K_raw * endXVal;
 
-        // 判断划线是否超出画布区域并进行裁剪限制
         ctx.save();
         ctx.beginPath();
         ctx.rect(padding.left, padding.top, graphWidth, graphHeight);
@@ -268,9 +267,6 @@
         });
 
         const drawCrosshair = (point, px, py, label) => {
-            // 不渲染画布外的拖拽点标签
-            if(px < padding.left || px > padding.left + graphWidth || py < padding.top || py > padding.top + graphHeight) return;
-
             ctx.strokeStyle = colors.picked;
             ctx.lineWidth = 2;
             
@@ -391,11 +387,14 @@
         
         canvas.style.cursor = 'grabbing';
 
-        let px = Math.max(graphState.padding.left, Math.min(graphState.padding.left + graphState.graphWidth, pos.x));
-        let py = Math.max(graphState.padding.top, Math.min(graphState.padding.top + graphState.graphHeight, pos.y));
+        let px = Math.max(graphState.padding.left + 1, Math.min(graphState.padding.left + graphState.graphWidth - 1, pos.x));
+        let py = Math.max(graphState.padding.top + 1, Math.min(graphState.padding.top + graphState.graphHeight - 1, pos.y));
 
         let m = graphState.xAxisMin + ((px - graphState.padding.left) / graphState.graphWidth) * (graphState.xAxisMax - graphState.xAxisMin);
         let d = graphState.yAxisMin + ((graphState.padding.top + graphState.graphHeight - py) / graphState.graphHeight) * (graphState.yAxisMax - graphState.yAxisMin);
+
+        m = Math.max(graphState.xAxisMin, Math.min(graphState.xAxisMax, m));
+        d = Math.max(graphState.yAxisMin, Math.min(graphState.yAxisMax, d));
 
         document.getElementById(`p${isDragging}_m`).value = m.toFixed(2);
         document.getElementById(`p${isDragging}_d`).value = d.toFixed(4);
@@ -455,10 +454,39 @@
             colHeaders: ['位置读数 $d_m$ (mm)'],
             rowHeaders: ['第1次模糊 (m=1)', '第2次模糊 (m=2)', '第3次模糊 (m=3)', '第4次模糊 (m=4)', '第5次模糊 (m=5)'],
             prefix: 'sodium_',
-            defaultValues: [48.123, 48.412, 48.701, 48.990, 49.280]
+            defaultValues: DEFAULT_D_VALS
         });
 
         window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        const initAm = parseFloat(document.getElementById('pA_m').value);
+        const initBm = parseFloat(document.getElementById('pB_m').value);
+        if (isNaN(initAm) || isNaN(initBm) || (initAm === 1.0 && document.getElementById('pA_d').value === "48.123")) {
+            document.getElementById('pA_m').value = (1.0).toFixed(2);
+            document.getElementById('pA_d').value = DEFAULT_D_VALS[0].toFixed(4);
+            document.getElementById('pB_m').value = (5.0).toFixed(2);
+            document.getElementById('pB_d').value = DEFAULT_D_VALS[4].toFixed(4);
+        }
+
+        // 核心改动：监听第1点(sodium_1)和第5点(sodium_5)输入框的修改事件
+        // 当你手动在表格里修改数值时，AB点的默认位置纵轴立刻随之实时更新
+        document.getElementById('sodium_1')?.addEventListener('input', function() {
+            const val = parseFloat(this.value);
+            if (!isNaN(val)) {
+                document.getElementById('pA_d').value = val.toFixed(4);
+                // 如果图表已经绘制，实时重绘
+                if (document.getElementById('chartSection').style.display === 'block') calculate();
+            }
+        });
+
+        document.getElementById('sodium_5')?.addEventListener('input', function() {
+            const val = parseFloat(this.value);
+            if (!isNaN(val)) {
+                document.getElementById('pB_d').value = val.toFixed(4);
+                if (document.getElementById('chartSection').style.display === 'block') calculate();
+            }
+        });
+
         window.ExperimentUtils.KeyboardNav.init('#sodium-table-container', 1);
         window.ExperimentUtils.ThemeManager.init();
 
