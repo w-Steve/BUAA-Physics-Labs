@@ -3,300 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>关于项目 - 基物实验助手</title>
+    <title>关于 - 基物实验助手</title>
+    <link rel="stylesheet" href="experiments/style.css">
+    <script src="experiments/common.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .about-header {
+            padding-right: 160px;
+            padding-bottom: 0.9rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, hsl(219, 60%, 80%) 0%, #b2d2e0 100%);
-            min-height: 100vh;
-            padding: 20px;
-            line-height: 1.6;
+
+        .dark-mode .about-header {
+            border-bottom-color: #4a5568;
         }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            padding: 40px 20px;
-        }
-        
-        .title {
-            font-size: 2.5em;
-            font-weight: 600;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            display: block;
-        }
-        
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
-        }
-        
-        .back-button:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.5);
-        }
-        
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-3px);
-        }
-        
-        .card-title {
-            font-size: 1.4em;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-            display: block;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f8f9fa;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            color: #666;
+
+        .about-header h1 {
+            color: #0f172a;
+            font-size: 2rem;
             font-weight: 500;
+            line-height: 1.3;
+            margin-bottom: 0.4rem;
         }
-        
-        .info-value {
-            color: #333;
+
+        .dark-mode .about-header h1 {
+            color: #f1f5f9;
+        }
+
+        .about-header p,
+        .about-section p,
+        .about-section li {
+            color: #475569;
+            line-height: 1.75;
+        }
+
+        .dark-mode .about-header p,
+        .dark-mode .about-section p,
+        .dark-mode .about-section li {
+            color: #cbd5e1;
+        }
+
+        .about-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.5rem;
+            padding: 0.55rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.65rem;
+            color: #1e293b;
+            text-decoration: none;
+            background: #ffffff;
+        }
+
+        .about-actions a:hover {
+            color: #000000;
+            background: #f4f4f0;
+            border-color: #000000;
+        }
+
+        .dark-mode .about-actions a {
+            color: #f1f5f9;
+            background: #4a5568;
+            border-color: #718096;
+        }
+
+        .about-section {
+            margin-bottom: 1.25rem;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #ffffff;
+        }
+
+        .dark-mode .about-section {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+
+        .about-section h2 {
+            color: #0f172a;
+            font-size: 1.15rem;
             font-weight: 600;
+            margin-bottom: 0.75rem;
         }
-        
-        .sponsor-section {
-            text-align: center;
+
+        .dark-mode .about-section h2 {
+            color: #f1f5f9;
         }
-        
-        .sponsor-text {
-            color: #666;
-            margin-bottom: 25px;
-            display: block;
-            font-size: 1.1em;
+
+        .about-section ul {
+            padding-left: 1.2rem;
         }
-        
-        .qr-code-placeholder {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border: 2px dashed #dee2e6;
-            border-radius: 15px;
-            padding: 40px 20px;
-            margin: 0 auto;
-            max-width: 300px;
-            transition: all 0.3s ease;
-        }
-        
-        .qr-code-placeholder:hover {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #e9ecef, #dee2e6);
-        }
-        
-        .qr-text {
-            font-size: 1.2em;
-            color: #495057;
-            font-weight: 600;
-            display: block;
-            margin-bottom: 10px;
-        }
-        
-        .qr-hint {
-            font-size: 0.9em;
-            color: #6c757d;
-            display: block;
-        }
-        
-        .content-text {
-            color: #555;
-        }
-        
-        .content-text text {
-            display: block;
-            margin-bottom: 12px;
-            padding-left: 15px;
-            position: relative;
-        }
-        
-        .content-text text:before {
-            content: "•";
-            color: #667eea;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 40px 20px;
-            color: white;
-        }
-        
-        .footer-text {
-            font-size: 1.2em;
-            opacity: 0.9;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        /* 响应式设计 */
+
         @media (max-width: 768px) {
-            .container {
-                padding: 0 10px;
+            .about-header {
+                padding-right: 0;
+                padding-top: 2.75rem;
             }
-            
-            .title {
-                font-size: 2em;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-            
-            .info-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
-            }
-            
-            .back-button {
-                position: relative;
-                top: 0;
-                left: 0;
-                margin-bottom: 20px;
-                display: inline-block;
+
+            .about-header h1 {
+                font-size: 1.35rem;
             }
         }
-        
-        /* 动画效果 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .card {
-            animation: fadeInUp 0.6s ease;
-        }
-        
-        .card:nth-child(2) { animation-delay: 0.1s; }
-        .card:nth-child(3) { animation-delay: 0.2s; }
-        .card:nth-child(4) { animation-delay: 0.3s; }
-        .card:nth-child(5) { animation-delay: 0.4s; }
-        .card:nth-child(6) { animation-delay: 0.5s; }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="index.html" class="back-button">← 返回首页</a>
-        
-        <div class="header">
-            <span class="title">ℹ️ 关于项目</span>
-        </div>
+        <header class="about-header site-header">
+            <h1>关于基物实验助手</h1>
+            <p>一个面向 BUAA 基础物理实验课程的计算与记录辅助工具。</p>
+        </header>
 
-        <div class="card">
-            <span class="card-title">📱 项目信息</span>
-            <div class="info-item">
-                <span class="info-label">版本</span>
-                <span class="info-value">v0.0.1</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">更新时间</span>
-                <span class="info-value" id="updateTime">2025.11.7</span>
-            </div>
-        </div>
+        <nav class="about-actions">
+            <a href="index.html">返回首页</a>
+            <a href="https://github.com/w-Steve/BUAA-Physics-Labs">GitHub 项目</a>
+        </nav>
 
-        <div class="card">
-            <span class="card-title">👨‍💻 作者信息</span>
-            <div class="info-item">
-                <span class="info-label">开发者</span>
-                <span class="info-value">🐲</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">联系方式</span>
-                <span class="info-value">wzl_remy2006@qq.com</span>
-            </div>
-        </div>
- <!-- 
-        <div class="card">
-            <span class="card-title">💝 赞助作者</span>
-            <div class="sponsor-section">
-                <span class="sponsor-text">如果这个项目对你有帮助，请考虑赞助作者</span>
-                <div class="qr-code-placeholder">
-                    <span class="qr-text">📱 收款码位置</span>
-                    <span class="qr-hint">（在此处放置您的收款二维码）</span>
-                </div>
-            </div>
-        </div>
-    -->
-        <div class="card">
-            <span class="card-title">🎯 项目初衷</span>
-            <div class="content-text">
-                <span>本项目旨在帮助学生更高效地处理基础物理实验数据，提供智能化的计算和提醒功能，让同学们能够专注于实验本身而非繁琐的数据处理。</span>
-                <span>通过Web技术实现跨平台访问，无需安装即可使用，为同学们提供便捷的实验计算服务。</span>
-            </div>
-        </div>
+        <section class="about-section">
+            <h2>这个网站做什么</h2>
+            <p>这里整理了基础物理实验中常用的数据录入、计算、结果展示和过程推导页面，方便实验后快速核对计算流程。</p>
+        </section>
 
-        <div class="card">
-            <span class="card-title">📄 免责声明</span>
-            <div class="content-text">
-                <p>本软件仅作为学习辅助工具，不保证计算结果的绝对准确性</p>
-                <p>用户应自行核对重要数据的计算结果</p>
-                <p>开发者不对因使用本软件造成的任何损失负责</p>
-                <p>实验报告最终提交前请仔细检查所有数据</p>
-                <p>建议将计算结果与手动计算进行交叉验证</p>
-            </div>
-        </div>
+        <section class="about-section">
+            <h2>使用提醒</h2>
+            <ul>
+                <li>页面计算结果仅作辅助参考，正式报告请自行核对公式、单位和有效数字。</li>
+                <li>浏览器本地保存的数据只保存在当前设备，不会自动同步。</li>
+                <li>社区评分和评论用于交流体验，请不要提交个人敏感信息。</li>
+            </ul>
+        </section>
 
-        <div class="footer">
-            <span class="footer-text">感谢使用基物实验助手 🧪</span>
-        </div>
+        <section class="about-section">
+            <h2>联系与反馈</h2>
+            <p>作者：🐉</p>
+            <p>邮箱：<a href="mailto:1490144502@qq.com">1490144502@qq.com</a></p>
+            <p>欢迎反馈问题。</p>
+        </section>
+
+        <section class="about-section">
+            <h2>开源说明</h2>
+            <p>项目用于课程学习交流，禁止商用。欢迎反馈问题、补充实验页面或改进计算细节。</p>
+        </section>
     </div>
 
     <script>
-        // 自动更新时间为当前年份
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const updateTime = document.getElementById('updateTime');
-            updateTime.textContent = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
+        window.addEventListener('DOMContentLoaded', function () {
+            window.ExperimentUtils.ThemeManager.init();
         });
     </script>
 </body>
