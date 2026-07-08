@@ -1244,7 +1244,7 @@
 
                 const comments = commentsRaw.slice(0, pageSize);
                 const hasNext = commentsRaw.length > pageSize;
-                if (summary) summary.textContent = this.formatSummary(stats[0]);
+                if (summary) summary.innerHTML = this.formatSummary(stats[0]);
                 if (!comments.length) {
                     list.innerHTML = page
                         ? '<div class="community-empty">这一页暂时没有评论。</div>'
