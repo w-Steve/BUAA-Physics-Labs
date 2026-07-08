@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 一维光栅成像与滤波</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <style>
+        .data-table-grid {
+            border-collapse: collapse;
+            min-width: 760px;
+            width: 100%;
+        }
+        .data-table-grid th,
+        .data-table-grid td {
+            border: 1px solid #e2e8f0;
+            padding: 0.65rem;
+            text-align: center;
+        }
+        .data-table-grid th { background: #f8fafc; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">一维光栅成像与滤波</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • 空间频率用 $\xi_i=|x_i-x_0|$ 和 $f_i=\xi_i/(\lambda f)$ 计算。<br>
+        • 光栅基频取 $f_0=\frac{1}{3}(f_1+\frac{f_2}{2}+\frac{f_3}{3})$。<br>
+        • $\lambda$ 以 nm 输入，焦距 $f$ 以 mm 输入，计算结果自动换算到 $\mathrm{m^{-1}}$。
+    </div>
+
+    <div class="section">
+        <div class="section-title">空间频率测量</div>
+        <div class="top-input-group">
+            <div class="top-input"><label>$\lambda$ (nm):</label><input type="number" id="lambda" class="save-input cell-input" step="0.1" value="632.8"></div>
+            <div class="top-input"><label>$f$ (mm):</label><input type="number" id="focal" class="save-input cell-input" step="0.1" value="260"></div>
+        </div>
+        <div class="data-table" style="margin-bottom: 1.5rem;">
+            <table class="data-table-grid">
+                <thead>
+                    <tr><th>衍射级 $i$</th><th>0</th><th>1</th><th>2</th><th>3</th><th>-1</th><th>-2</th><th>-3</th></tr>
+                </thead>
+                <tbody>
+                    <tr id="orderRow"><th>位置 $x_i$ (mm)</th></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">一级频率 $f_1$ ($\mathrm{m^{-1}}$)</div><div class="result-value" id="f1Val">—</div></div>
+            <div class="result-card"><div class="result-label">二级折算 $f_2/2$ ($\mathrm{m^{-1}}$)</div><div class="result-value" id="f2Val">—</div></div>
+            <div class="result-card"><div class="result-label">三级折算 $f_3/3$ ($\mathrm{m^{-1}}$)</div><div class="result-value" id="f3Val">—</div></div>
+            <div class="result-card"><div class="result-label">光栅空间频率 $f_0$ ($\mathrm{m^{-1}}$)</div><div class="result-value" id="avgVal">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function () {
+    const APP_KEY = '13-1';
+    const orders = [0, 1, 2, 3, -1, -2, -3];
+    const defaultPositions = [0.0, 1.8, 3.5, 5.3, -1.8, -3.6, -5.4];
+
+    function input(id) {
+        return document.getElementById(id);
+    }
+
+    function initTables() {
+        const row = document.getElementById('orderRow');
+        orders.forEach((order, idx) => {
+            const td = document.createElement('td');
+            td.innerHTML = `<input type="number" id="x_${order}" class="save-input cell-input" step="0.001" value="${defaultPositions[idx]}">`;
+            row.appendChild(td);
+        });
+    }
+
+    function getInputs() {
+        return {
+            lambdaNm: parseFloat(input('lambda').value),
+            focalMm: parseFloat(input('focal').value),
+            positions: Object.fromEntries(orders.map(order => [order, parseFloat(input(`x_${order}`).value)]))
+        };
+    }
+
+    function compute(data) {
+        const lambdaM = data.lambdaNm * 1e-9;
+        const focalM = data.focalMm * 1e-3;
+        const x0 = data.positions[0];
+        const rows = [1, 2, 3].map(order => {
+            const positive = Math.abs(data.positions[order] - x0);
+            const negative = Math.abs(data.positions[-order] - x0);
+            const xi = (positive + negative) / 2;
+            const f = xi * 1e-3 / (lambdaM * focalM);
+            return { order, positive, negative, xi, f, reduced: f / order };
+        });
+        const f0 = rows.reduce((sum, row) => sum + row.reduced, 0) / rows.length;
+        return { ...data, rows, f0 };
+    }
+
+    function renderProcess(res) {
+        const rowHtml = res.rows.map(row => `
+            <tr>
+                <td>${row.order}</td>
+                <td>${row.positive.toFixed(3)}</td>
+                <td>${row.negative.toFixed(3)}</td>
+                <td>${row.xi.toFixed(3)}</td>
+                <td>${row.f.toExponential(4)}</td>
+                <td>${row.reduced.toExponential(4)}</td>
+            </tr>
+        `).join('');
+        const html = `
+            <div class="calculation-step">
+                <div class="step-title">1. 各级空间频率</div>
+                <div class="step-formula">$$\\xi_i=\\frac{|x_{+i}-x_0|+|x_{-i}-x_0|}{2},\\quad f_i=\\frac{\\xi_i}{\\lambda f}$$</div>
+                <div class="output-table-wrapper">
+                    <table class="output-table">
+                        <thead><tr><th>级数</th><th>$\\xi_{+i}$ (mm)</th><th>$\\xi_{-i}$ (mm)</th><th>$\\bar{\\xi}_i$ (mm)</th><th>$f_i$ ($m^{-1}$)</th><th>$f_i/i$ ($m^{-1}$)</th></tr></thead>
+                        <tbody>${rowHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="calculation-step">
+                <div class="step-title">2. 光栅基频</div>
+                <div class="step-formula">$$f_0=\\frac{1}{3}\\left(f_1+\\frac{f_2}{2}+\\frac{f_3}{3}\\right)$$</div>
+                <div class="step-formula">$$=\\frac{${res.rows.map(row => row.reduced.toExponential(4)).join('+')}}{3}=${res.f0.toExponential(4)}\\ \\mathrm{m^{-1}}$$</div>
+                <div class="step-result">$f_0=${res.f0.toExponential(4)}\\ \\mathrm{m^{-1}}$</div>
+            </div>
+        `;
+        input('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(input('calculationProcess'));
+    }
+
+    function calculate() {
+        const data = getInputs();
+        if (!isFinite(data.lambdaNm) || !isFinite(data.focalMm) || data.lambdaNm <= 0 || data.focalMm <= 0 || Object.values(data.positions).some(v => !isFinite(v))) {
+            alert('请填写完整且有效的空间频率测量数据');
+            return;
+        }
+        const res = compute(data);
+        input('f1Val').innerText = res.rows[0].f.toExponential(3);
+        input('f2Val').innerText = res.rows[1].reduced.toExponential(3);
+        input('f3Val').innerText = res.rows[2].reduced.toExponential(3);
+        input('avgVal').innerText = res.f0.toExponential(3);
+        renderProcess(res);
+        input('resultMain').style.display = 'block';
+        input('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTables();
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.ThemeManager.init();
+        window.ExperimentUtils.KeyboardNav.init('.data-table-grid', orders.length);
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+            alert('数据已保存');
+        });
+    });
+})();
+</script>
+</body>
+</html>

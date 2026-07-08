@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 劳埃镜干涉测激光波长</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <style>
+        .lloyd-table {
+            border-collapse: collapse;
+            min-width: 820px;
+            width: 100%;
+        }
+        .lloyd-table th,
+        .lloyd-table td {
+            border: 1px solid #e2e8f0;
+            padding: 0.65rem;
+            text-align: center;
+        }
+        .lloyd-table th { background: #f8fafc; font-weight: 600; }
+        .mini-note {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin: -0.55rem 0 1rem;
+        }
+        .dark-mode .mini-note { color: #cbd5e1; }
+        .chart-wrap {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            overflow: hidden;
+            padding: 1rem;
+        }
+        .dark-mode .chart-wrap {
+            background: #1f2937;
+            border-color: #4a5568;
+        }
+        #chart {
+            display: block;
+            height: 340px;
+            width: 100%;
+        }
+        .subtle-button {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+        }
+        .dark-mode .subtle-button {
+            background: #4a5568;
+            border-color: #718096;
+            color: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">劳埃镜干涉测激光波长</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        · 劳埃镜可等效为实光源 $S$ 与镜中虚光源 $S'$ 的双光源干涉，若光源到镜面的垂直距离为 $h$，则双光源间距 $d=2h$。<br>
+        · 相邻同类条纹间距满足 $\Delta x=\lambda L/d$，故 $\lambda=d\Delta x/L=2h\Delta x/L$。<br>
+        · 反射光存在半波损失，会改变明暗条纹对应级次，但不改变相邻条纹间距 $\Delta x$。
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据列表</div>
+        <div class="mini-note">录入图上各级条纹的位置 $x_i$。若只用作图法，可至少填入作图直线上选取的两点。</div>
+        <div class="data-table">
+            <table class="lloyd-table">
+                <thead>
+                    <tr id="orderHeader"><th>条纹级数 $i$</th></tr>
+                </thead>
+                <tbody>
+                    <tr id="positionRow"><th>位置 $x_i$ (mm)</th></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">作图法取点</div>
+        <div class="mini-note">报告主结果按图线上的两点计算斜率：$\Delta x=|x_2-x_1|/|i_2-i_1|$。</div>
+        <div class="top-input-group">
+            <div class="top-input"><label>$i_1$:</label><input type="number" id="i1" class="save-input cell-input" step="0.01" value="1"></div>
+            <div class="top-input"><label>$x_1$ (mm):</label><input type="number" id="x1" class="save-input cell-input" step="0.001" value="1.266"></div>
+            <div class="top-input"><label>$i_2$:</label><input type="number" id="i2" class="save-input cell-input" step="0.01" value="10"></div>
+            <div class="top-input"><label>$x_2$ (mm):</label><input type="number" id="x2" class="save-input cell-input" step="0.001" value="12.656"></div>
+        </div>
+        <div class="action-buttons" style="justify-content: flex-start; margin-bottom: 0;">
+            <button class="subtle-button" id="fillPointsBtn">用原始表首尾填充取点</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">几何参数</div>
+        <div class="top-input-group">
+            <div class="top-input"><label>$h$ (mm):</label><input type="number" id="h" class="save-input cell-input" step="0.001" value="0.250"></div>
+            <div class="top-input"><label>$L$ (mm):</label><input type="number" id="L" class="save-input cell-input" step="0.1" value="1000.0"></div>
+            <div class="top-input"><label>$\lambda_0$ (nm):</label><input type="number" id="lambdaTheory" class="save-input cell-input" step="0.1" value="632.8"></div>
+        </div>
+        <div class="mini-note">$h$ 为光源到劳埃镜镜面的垂直距离，$L$ 为光源到观察屏的距离。若讲义给的是实、虚光源间距 $d$，则填 $h=d/2$。</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">作图参考</div>
+        <div class="chart-wrap">
+            <canvas id="chart" width="1000" height="360"></canvas>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">条纹间距 $\Delta x$ (mm)</div><div class="result-value" id="dxVal">—</div></div>
+            <div class="result-card"><div class="result-label">双光源间距 $d=2h$ (mm)</div><div class="result-value" id="dVal">—</div></div>
+            <div class="result-card"><div class="result-label">激光波长 $\lambda$ (nm)</div><div class="result-value" id="lambdaVal">—</div></div>
+            <div class="result-card"><div class="result-label">相对偏差</div><div class="result-value" id="errorVal">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; color: #94a3b8; font-size: 0.9rem; margin-top: 2rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function () {
+    const APP_KEY = '11-2-lloyd-v2';
+    const orders = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let graphState = null;
+    let isDragging = null;
+
+    function input(id) {
+        return document.getElementById(id);
+    }
+
+    function initTable() {
+        const header = input('orderHeader');
+        const row = input('positionRow');
+        orders.forEach(order => {
+            const th = document.createElement('th');
+            th.textContent = order;
+            header.appendChild(th);
+
+            const td = document.createElement('td');
+            td.innerHTML = `<input type="number" id="x_${order}" class="save-input cell-input" step="0.001" value="${(order * 1.2656).toFixed(3)}">`;
+            row.appendChild(td);
+        });
+    }
+
+    function fillEmptyDefaults() {
+        const defaults = {
+            i1: '1',
+            x1: '1.266',
+            i2: '10',
+            x2: '12.656',
+            h: '0.250',
+            L: '1000.0',
+            lambdaTheory: '632.8'
+        };
+
+        Object.entries(defaults).forEach(([id, value]) => {
+            const el = input(id);
+            if (el && el.value.trim() === '') el.value = value;
+        });
+
+        orders.forEach(order => {
+            const el = input(`x_${order}`);
+            if (el && el.value.trim() === '') el.value = (order * 1.2656).toFixed(3);
+        });
+    }
+
+    function getRawPoints() {
+        return orders.map(order => ({
+            i: order,
+            x: parseFloat(input(`x_${order}`).value)
+        })).filter(point => isFinite(point.x));
+    }
+
+    function getData() {
+        return {
+            i1: parseFloat(input('i1').value),
+            x1: parseFloat(input('x1').value),
+            i2: parseFloat(input('i2').value),
+            x2: parseFloat(input('x2').value),
+            h: parseFloat(input('h').value),
+            L: parseFloat(input('L').value),
+            lambdaTheory: parseFloat(input('lambdaTheory').value),
+            points: getRawPoints()
+        };
+    }
+
+    function validate(data) {
+        const required = [data.i1, data.x1, data.i2, data.x2, data.h, data.L, data.lambdaTheory];
+        if (required.some(v => !isFinite(v))) return '请填写作图取点、h、L 和理论波长。';
+        if (data.i1 === data.i2) return '两点的条纹级数不能相同。';
+        if (data.h <= 0 || data.L <= 0 || data.lambdaTheory <= 0) return 'h、L 和理论波长必须为正数。';
+        return '';
+    }
+
+    function compute(data) {
+        const dx = Math.abs(data.x2 - data.x1) / Math.abs(data.i2 - data.i1);
+        const d = 2 * data.h;
+        const lambdaNm = d * dx / data.L * 1e6;
+        const relError = Math.abs(lambdaNm - data.lambdaTheory) / data.lambdaTheory;
+
+        return { ...data, dx, d, lambdaNm, relError };
+    }
+
+    function renderProcess(res) {
+        const html = `
+            <div class="calculation-step">
+                <div class="step-title">1. 作图法求条纹间距</div>
+                <div class="step-formula">在作图直线上取两点 $P_1(${res.i1}, ${res.x1.toFixed(3)})$ 和 $P_2(${res.i2}, ${res.x2.toFixed(3)})$。</div>
+                <div class="step-formula">$$\\Delta x=\\left|\\frac{x_2-x_1}{i_2-i_1}\\right|=\\left|\\frac{${res.x2.toFixed(3)}-${res.x1.toFixed(3)}}{${res.i2}-${res.i1}}\\right|=${res.dx.toFixed(6)}\\ \\mathrm{mm}$$</div>
+            </div>
+            <div class="calculation-step">
+                <div class="step-title">2. 劳埃镜等效双光源间距</div>
+                <div class="step-formula">实光源与镜中虚光源关于镜面对称，若光源到镜面的垂直距离为 $h$，则</div>
+                <div class="step-formula">$$d=2h=2\\times${res.h.toFixed(3)}=${res.d.toFixed(3)}\\ \\mathrm{mm}$$</div>
+            </div>
+            <div class="calculation-step">
+                <div class="step-title">3. 波长计算</div>
+                <div class="step-formula">劳埃镜相邻同类条纹间距满足 $\\Delta x=\\lambda L/d$，因此</div>
+                <div class="step-formula">$$\\lambda=\\frac{d\\Delta x}{L}=\\frac{${res.d.toFixed(3)}\\times${res.dx.toFixed(6)}}{${res.L.toFixed(1)}}\\ \\mathrm{mm}=${res.lambdaNm.toFixed(2)}\\ \\mathrm{nm}$$</div>
+                <div class="step-result">$\\lambda=${res.lambdaNm.toFixed(2)}\\ \\mathrm{nm}$</div>
+                <div class="step-formula">$$E_r=\\frac{|\\lambda-\\lambda_0|}{\\lambda_0}\\times100\\%=\\frac{|${res.lambdaNm.toFixed(2)}-${res.lambdaTheory.toFixed(1)}|}{${res.lambdaTheory.toFixed(1)}}\\times100\\%=${(res.relError * 100).toFixed(2)}\\%$$</div>
+            </div>
+        `;
+
+        input('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(input('calculationProcess'));
+    }
+
+    function drawChart(res) {
+        const canvas = input('chart');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        const current = res || getData();
+        const points = current.points;
+        const chosen = [{ i: current.i1, x: current.x1 }, { i: current.i2, x: current.x2 }];
+        const all = points.concat(chosen).filter(p => isFinite(p.i) && isFinite(p.x));
+
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const colors = {
+            bg: isDarkMode ? '#1c1c1c' : '#ffffff',
+            text: isDarkMode ? '#f4f4f0' : '#050505',
+            grid: isDarkMode ? '#555555' : '#d7d7cf',
+            line: isDarkMode ? '#f4f4f0' : '#050505',
+            point: isDarkMode ? '#c9c9c0' : '#525252',
+            picked: isDarkMode ? '#ffffff' : '#000000'
+        };
+
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, width, height);
+
+        const pad = { left: 72, right: 28, top: 26, bottom: 56 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        ctx.strokeStyle = colors.text;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(pad.left, pad.top, plotW, plotH);
+
+        if (all.length < 2) {
+            graphState = null;
+            ctx.fillStyle = '#64748b';
+            ctx.font = '16px sans-serif';
+            ctx.fillText('录入数据后显示作图参考', pad.left + 20, pad.top + 42);
+            return;
+        }
+
+        const axisBounds = values => {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            if (min === max) {
+                const delta = Math.max(Math.abs(min) * 0.05, 1);
+                return [min - delta, max + delta];
+            }
+            const lower = min * 0.9;
+            const upper = max * 1.05;
+            return [Math.min(lower, upper), Math.max(lower, upper)];
+        };
+        const axisPoints = points.length >= 2 ? points : all;
+        const [iMin, iMax] = axisBounds(axisPoints.map(p => p.i));
+        const [xMin, xMax] = axisBounds(axisPoints.map(p => p.x));
+
+        const sx = i => pad.left + (i - iMin) / (iMax - iMin) * plotW;
+        const sy = x => pad.top + plotH - (x - xMin) / (xMax - xMin) * plotH;
+        const clampX = px => Math.max(pad.left, Math.min(pad.left + plotW, px));
+        const clampY = py => Math.max(pad.top, Math.min(pad.top + plotH, py));
+
+        graphState = {
+            iMin, iMax, xMin, xMax, pad, plotW, plotH,
+            pxA: clampX(sx(current.i1)), pyA: clampY(sy(current.x1)),
+            pxB: clampX(sx(current.i2)), pyB: clampY(sy(current.x2))
+        };
+
+        ctx.fillStyle = colors.text;
+        ctx.font = '14px "JetBrains Mono", monospace';
+        ctx.fillText('i', pad.left + plotW / 2, height - 16);
+        ctx.save();
+        ctx.translate(20, pad.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('x / mm', 0, 0);
+        ctx.restore();
+
+        ctx.strokeStyle = colors.grid;
+        ctx.lineWidth = 1;
+        for (let k = 0; k <= 5; k++) {
+            const gx = pad.left + plotW * k / 5;
+            const gy = pad.top + plotH * k / 5;
+            ctx.beginPath();
+            ctx.moveTo(gx, pad.top);
+            ctx.lineTo(gx, pad.top + plotH);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pad.left, gy);
+            ctx.lineTo(pad.left + plotW, gy);
+            ctx.stroke();
+        }
+
+        const b = (current.x2 - current.x1) / (current.i2 - current.i1);
+        const a = current.x1 - b * current.i1;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(pad.left, pad.top, plotW, plotH);
+        ctx.clip();
+        ctx.strokeStyle = colors.line;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(sx(iMin), sy(a + b * iMin));
+        ctx.lineTo(sx(iMax), sy(a + b * iMax));
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = colors.point;
+        points.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(sx(point.i), sy(point.x), 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = colors.picked;
+        chosen.forEach((point, idx) => {
+            const px = idx === 0 ? graphState.pxA : graphState.pxB;
+            const py = idx === 0 ? graphState.pyA : graphState.pyB;
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = 'bold 14px "JetBrains Mono", monospace';
+            ctx.fillText(idx === 0 ? 'A' : 'B', px + 10, py - 10);
+        });
+    }
+
+    function getCanvasPoint(evt) {
+        const canvas = input('chart');
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX = evt.clientX;
+        let clientY = evt.clientY;
+        if (evt.touches && evt.touches.length > 0) {
+            clientX = evt.touches[0].clientX;
+            clientY = evt.touches[0].clientY;
+        }
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function updateDisplayedResults(res) {
+        input('dxVal').innerText = res.dx.toFixed(6);
+        input('dVal').innerText = res.d.toFixed(3);
+        input('lambdaVal').innerText = res.lambdaNm.toFixed(2);
+        input('errorVal').innerText = `${(res.relError * 100).toFixed(2)}%`;
+    }
+
+    function redrawQuietly() {
+        const data = getData();
+        const error = validate(data);
+        if (error) {
+            drawChart();
+            return;
+        }
+        const res = compute(data);
+        drawChart(res);
+        if (input('resultMain').style.display === 'block') updateDisplayedResults(res);
+    }
+
+    function handleDragStart(evt) {
+        if (!graphState) return;
+        const pos = getCanvasPoint(evt);
+        const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+        const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+        if (distA < 26) isDragging = 'A';
+        else if (distB < 26) isDragging = 'B';
+    }
+
+    function handleDragMove(evt) {
+        if (!graphState) return;
+        const canvas = input('chart');
+        const pos = getCanvasPoint(evt);
+        const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+        const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+
+        if (!isDragging) {
+            canvas.style.cursor = (distA < 26 || distB < 26) ? 'grab' : 'default';
+            return;
+        }
+
+        canvas.style.cursor = 'grabbing';
+        const px = Math.max(graphState.pad.left, Math.min(graphState.pad.left + graphState.plotW, pos.x));
+        const py = Math.max(graphState.pad.top, Math.min(graphState.pad.top + graphState.plotH, pos.y));
+        const i = graphState.iMin + ((px - graphState.pad.left) / graphState.plotW) * (graphState.iMax - graphState.iMin);
+        const x = graphState.xMin + ((graphState.pad.top + graphState.plotH - py) / graphState.plotH) * (graphState.xMax - graphState.xMin);
+
+        input(`i${isDragging === 'A' ? '1' : '2'}`).value = i.toFixed(2);
+        input(`x${isDragging === 'A' ? '1' : '2'}`).value = x.toFixed(3);
+        redrawQuietly();
+    }
+
+    function handleDragEnd() {
+        if (!isDragging) return;
+        isDragging = null;
+        input('chart').style.cursor = 'default';
+        const data = getData();
+        if (!validate(data)) {
+            const res = compute(data);
+            renderProcess(res);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        }
+    }
+
+    function fillPointsFromTable() {
+        const points = getRawPoints();
+        if (points.length < 2) {
+            alert('请先在原始数据表中至少填写两个位置。');
+            return;
+        }
+        const first = points[0];
+        const last = points[points.length - 1];
+        input('i1').value = first.i;
+        input('x1').value = first.x;
+        input('i2').value = last.i;
+        input('x2').value = last.x;
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        drawChart();
+    }
+
+    function calculate() {
+        const data = getData();
+        const error = validate(data);
+        if (error) {
+            alert(error);
+            return;
+        }
+
+        const res = compute(data);
+        updateDisplayedResults(res);
+        renderProcess(res);
+        drawChart(res);
+        input('resultMain').style.display = 'block';
+        input('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+        drawChart();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTable();
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        fillEmptyDefaults();
+        window.ExperimentUtils.ThemeManager.init();
+        window.ExperimentUtils.KeyboardNav.init('.lloyd-table', orders.length);
+        input('fillPointsBtn').addEventListener('click', fillPointsFromTable);
+        input('calculateBtn').addEventListener('click', calculate);
+        input('saveBtn').addEventListener('click', saveOnly);
+        const canvas = input('chart');
+        canvas.addEventListener('mousedown', handleDragStart);
+        canvas.addEventListener('mousemove', handleDragMove);
+        canvas.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('mouseleave', handleDragEnd);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDragStart(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleDragMove(e); }, { passive: false });
+        canvas.addEventListener('touchend', handleDragEnd);
+
+        document.querySelectorAll('.save-input').forEach(el => el.addEventListener('input', redrawQuietly));
+        redrawQuietly();
+    });
+})();
+</script>
+</body>
+</html>

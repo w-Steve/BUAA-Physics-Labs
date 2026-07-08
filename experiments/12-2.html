@@ -43,7 +43,7 @@
         </div>
 
         <div style="border-top: 1px dashed #cbd5e1; padding-top: 1.5rem; margin-top: 1.5rem;">
-            <div style="font-weight: 600; margin-bottom: 1rem; color: #2563eb;">直线上选取的两点 (支持在图中直接拖拽)</div>
+            <div style="font-weight: 600; margin-bottom: 1rem;">直线上选取的两点 (支持在图中直接拖拽)</div>
             <div class="top-input-group" style="margin-bottom: 1rem;">
                 <div class="top-input">
                     <label>点A 横轴 $m_A$:</label>
@@ -67,6 +67,16 @@
         </div>
     </div>
 
+    <div class="section" id="chartSection">
+        <div class="section-title">实验数据描点与作图直线 (可拖拽 A/B 点)</div>
+        <div style="width: 100%; overflow-x: auto; text-align: center; padding: 1rem 0;">
+            <canvas id="graphChart" width="640" height="400" style="max-width: 100%; background: transparent; touch-action: none;"></canvas>
+        </div>
+        <div style="text-align: center; font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">
+            注：圆形散点为实验原始数据，直线为通过点A与点B的连线。支持直接拖拽红色的十字准星调整位置。
+        </div>
+    </div>
+
     <div class="action-buttons">
         <button class="primary" id="calculateBtn">计算并绘制图表</button>
         <button id="saveBtn">仅保存数据</button>
@@ -78,16 +88,6 @@
             <div class="result-card"><div class="result-label">作图法斜率 $K$ (mm)</div><div class="result-value" id="k_val">—</div></div>
             <div class="result-card"><div class="result-label">波长差 $\Delta \lambda$ (nm)</div><div class="result-value" id="delta_lambda_val">—</div></div>
             <div class="result-card"><div class="result-label">相对误差 $\eta$</div><div class="result-value" id="rel_err_val">—</div></div>
-        </div>
-    </div>
-
-    <div class="section" id="chartSection" style="display: none;">
-        <div class="section-title">实验数据描点与作图直线 (可拖拽 A/B 点)</div>
-        <div style="width: 100%; overflow-x: auto; text-align: center; padding: 1rem 0;">
-            <canvas id="graphChart" width="640" height="400" style="max-width: 100%; background: transparent; touch-action: none;"></canvas>
-        </div>
-        <div style="text-align: center; font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">
-            注：圆形散点为实验原始数据，直线为通过点A与点B的连线。支持直接拖拽红色的十字准星调整位置。
         </div>
     </div>
 
@@ -169,12 +169,12 @@
         
         const isDarkMode = document.body.classList.contains('dark-mode');
         const colors = {
-            bg: isDarkMode ? '#2d3748' : '#ffffff',
-            text: isDarkMode ? '#cbd5e1' : '#1e293b',
-            grid: isDarkMode ? '#4a5568' : '#e2e8f0',
-            line: isDarkMode ? '#5a67d8' : '#2563eb',
-            point: isDarkMode ? '#94a3b8' : '#64748b',
-            picked: isDarkMode ? '#ef4444' : '#dc2626'
+            bg: isDarkMode ? '#1c1c1c' : '#ffffff',
+            text: isDarkMode ? '#f4f4f0' : '#050505',
+            grid: isDarkMode ? '#555555' : '#d7d7cf',
+            line: isDarkMode ? '#f4f4f0' : '#050505',
+            point: isDarkMode ? '#c9c9c0' : '#525252',
+            picked: isDarkMode ? '#ffffff' : '#000000'
         };
 
         ctx.fillStyle = colors.bg;
@@ -184,22 +184,32 @@
         const graphWidth = canvas.width - padding.left - padding.right;
         const graphHeight = canvas.height - padding.top - padding.bottom;
 
-        const minY = Math.min(...res.d_vals);
-        const maxY = Math.max(...res.d_vals);
-        const yMargin = (maxY - minY) * 0.4 || 0.1; 
-        const yAxisMin = minY - yMargin;
-        const yAxisMax = maxY + yMargin;
-        const xAxisMin = 0;
-        const xAxisMax = 6; 
+        const axisBounds = values => {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            if (min === max) {
+                const delta = Math.max(Math.abs(min) * 0.05, 1);
+                return [min - delta, max + delta];
+            }
+            const lower = min * 0.9;
+            const upper = max * 1.05;
+            return [Math.min(lower, upper), Math.max(lower, upper)];
+        };
+        const rawMValues = res.m_vals.length ? res.m_vals : [1, 2, 3, 4, 5];
+        const rawDValues = res.d_vals.length ? res.d_vals : [res.pA.d, res.pB.d];
+        const [yAxisMin, yAxisMax] = axisBounds(rawDValues);
+        const [xAxisMin, xAxisMax] = axisBounds(rawMValues);
 
         const getXPixel = (m) => padding.left + ((m - xAxisMin) / (xAxisMax - xAxisMin)) * graphWidth;
         const getYPixel = (d) => padding.top + graphHeight - ((d - yAxisMin) / (yAxisMax - yAxisMin)) * graphHeight;
+        const clampX = px => Math.max(padding.left, Math.min(padding.left + graphWidth, px));
+        const clampY = py => Math.max(padding.top, Math.min(padding.top + graphHeight, py));
 
         graphState = {
             xAxisMin, xAxisMax, yAxisMin, yAxisMax,
             padding, graphWidth, graphHeight,
-            pxA: getXPixel(res.pA.m), pyA: getYPixel(res.pA.d),
-            pxB: getXPixel(res.pB.m), pyB: getYPixel(res.pB.d)
+            pxA: clampX(getXPixel(res.pA.m)), pyA: clampY(getYPixel(res.pA.d)),
+            pxB: clampX(getXPixel(res.pB.m)), pyB: clampY(getYPixel(res.pB.d))
         };
 
         ctx.lineWidth = 1;
@@ -207,7 +217,8 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 
-        for (let m = xAxisMin; m <= xAxisMax; m++) {
+        for (let i = 0; i <= 6; i++) {
+            const m = xAxisMin + (i * (xAxisMax - xAxisMin)) / 6;
             const x = getXPixel(m);
             ctx.strokeStyle = colors.grid;
             ctx.beginPath();
@@ -215,7 +226,7 @@
             ctx.lineTo(x, padding.top + graphHeight);
             ctx.stroke();
             ctx.fillStyle = colors.text;
-            ctx.fillText(m, x, padding.top + graphHeight + 8);
+            ctx.fillText(m.toFixed(1), x, padding.top + graphHeight + 8);
         }
 
         ctx.textAlign = "right";
@@ -237,8 +248,8 @@
         ctx.lineWidth = 1.5;
         ctx.strokeRect(padding.left, padding.top, graphWidth, graphHeight);
 
-        const startXVal = xAxisMin + 0.2;
-        const endXVal = xAxisMax - 0.2;
+        const startXVal = xAxisMin;
+        const endXVal = xAxisMax;
         const startYVal = res.intercept + res.K_raw * startXVal;
         const endYVal = res.intercept + res.K_raw * endXVal;
 
@@ -282,7 +293,7 @@
             ctx.stroke();
 
             ctx.fillStyle = colors.picked;
-            ctx.font = "bold 14px 'Inter', sans-serif";
+            ctx.font = "bold 14px 'JetBrains Mono', monospace";
             ctx.textAlign = "left";
             ctx.fillText(label, px + 14, py - 14);
         };
@@ -291,7 +302,7 @@
         drawCrosshair(res.pB, graphState.pxB, graphState.pyB, "B");
 
         ctx.fillStyle = colors.text;
-        ctx.font = "bold 13px 'Inter', sans-serif";
+        ctx.font = "bold 13px 'JetBrains Mono', monospace";
         ctx.textAlign = "left";
         ctx.fillText("动镜位置 d_m (mm)", padding.left, padding.top - 18);
         ctx.textAlign = "right";
@@ -403,9 +414,11 @@
         if (isValid(data)) {
             const res = compute(data);
             drawPhysicalChart(res);
-            document.getElementById('k_val').innerText = res.K.toFixed(5);
-            document.getElementById('delta_lambda_val').innerText = res.deltaLambda_nm.toFixed(3);
-            document.getElementById('rel_err_val').innerText = res.rel_error.toFixed(2) + '%';
+            if (document.getElementById('resultMain').style.display === 'block') {
+                document.getElementById('k_val').innerText = res.K.toFixed(5);
+                document.getElementById('delta_lambda_val').innerText = res.deltaLambda_nm.toFixed(3);
+                document.getElementById('rel_err_val').innerText = res.rel_error.toFixed(2) + '%';
+            }
         }
     }
 
@@ -413,7 +426,11 @@
         if (isDragging) {
             isDragging = null;
             canvas.style.cursor = 'default';
-            calculate(); 
+            if (document.getElementById('resultMain').style.display === 'block') calculate();
+            else {
+                redrawChartOnly();
+                window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+            }
         }
     }
 
@@ -447,6 +464,18 @@
         alert('数据已保存');
     }
 
+    function redrawChartOnly() {
+        const data = getInputs();
+        if (isValid(data)) {
+            drawPhysicalChart(compute(data));
+        }
+    }
+
+    function refreshAfterInputChange() {
+        if (document.getElementById('resultMain').style.display === 'block') calculate();
+        else redrawChartOnly();
+    }
+
     window.addEventListener('DOMContentLoaded', function() {
         window.ExperimentUtils.TableGenerator.generateInputTable('sodium-table-container', {
             rows: 5,
@@ -475,7 +504,7 @@
             if (!isNaN(val)) {
                 document.getElementById('pA_d').value = val.toFixed(4);
                 // 如果图表已经绘制，实时重绘
-                if (document.getElementById('chartSection').style.display === 'block') calculate();
+                refreshAfterInputChange();
             }
         });
 
@@ -483,7 +512,7 @@
             const val = parseFloat(this.value);
             if (!isNaN(val)) {
                 document.getElementById('pB_d').value = val.toFixed(4);
-                if (document.getElementById('chartSection').style.display === 'block') calculate();
+                refreshAfterInputChange();
             }
         });
 
@@ -496,7 +525,7 @@
         const manualInputs = ['pA_m', 'pA_d', 'pB_m', 'pB_d'];
         manualInputs.forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
-                if (document.getElementById('chartSection').style.display === 'block') calculate();
+                refreshAfterInputChange();
             });
         });
 
@@ -506,6 +535,14 @@
                 if (isValid(data)) drawPhysicalChart(compute(data));
             }, 50);
         });
+
+        document.querySelectorAll('#sodium-table-container .save-input').forEach(el => {
+            if (el.id !== 'sodium_1' && el.id !== 'sodium_5') el.addEventListener('input', refreshAfterInputChange);
+        });
+        ['lambdaAvg', 'deltaLambda0'].forEach(id => {
+            document.getElementById(id).addEventListener('change', refreshAfterInputChange);
+        });
+        redrawChartOnly();
     });
 })();
 </script>

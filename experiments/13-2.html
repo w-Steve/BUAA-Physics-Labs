@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - θ 调制计算</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+    <style>
+        .data-table-grid {
+            border-collapse: collapse;
+            min-width: 780px;
+            width: 100%;
+        }
+        .data-table-grid th,
+        .data-table-grid td {
+            border: 1px solid #e2e8f0;
+            padding: 0.65rem;
+            text-align: center;
+        }
+        .data-table-grid th { background: #f8fafc; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">θ 调制计算</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • $\theta$ 调制用 $\theta=\arctan(d/L)$，再由 $D=\lambda/\sin\theta$ 求对应栅距。<br>
+        • $L=|L_{\text{屏幕}}-L_7|$，$\lambda$ 以 nm 输入，计算结果以 μm 输出。
+    </div>
+
+    <div class="section">
+        <div class="section-title">θ 调制计算</div>
+        <div class="top-input-group">
+            <div class="top-input"><label>$\lambda$ (nm):</label><input type="number" id="lambda" class="save-input cell-input" step="0.1" value="632.8"></div>
+            <div class="top-input"><label>$L_{\text{屏幕}}$ (mm):</label><input type="number" id="screenPos" class="save-input cell-input" step="0.1" value="761.0"></div>
+            <div class="top-input"><label>$L_7$ (mm):</label><input type="number" id="refPos" class="save-input cell-input" step="0.1" value="591.2"></div>
+        </div>
+        <div class="data-table">
+            <table class="data-table-grid">
+                <thead><tr><th>颜色</th><th>$d_i$ (mm)</th></tr></thead>
+                <tbody id="thetaBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并保存</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">距离 $L$ (mm)</div><div class="result-value" id="lVal">—</div></div>
+            <div class="result-card"><div class="result-label">θ 调制平均栅距 $D$ (μm)</div><div class="result-value" id="dThetaVal">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function () {
+    const APP_KEY = '13-2';
+    const thetaDefaults = [
+        ['蓝', 16.0],
+        ['红', 27.0],
+        ['绿', 21.0]
+    ];
+
+    function input(id) {
+        return document.getElementById(id);
+    }
+
+    function initTheta() {
+        const body = input('thetaBody');
+        thetaDefaults.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td><input type="number" id="theta_d_${idx}" class="save-input cell-input" step="0.1" value="${row[1]}"></td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    function getInputs() {
+        return {
+            lambdaNm: parseFloat(input('lambda').value),
+            screenPos: parseFloat(input('screenPos').value),
+            refPos: parseFloat(input('refPos').value),
+            thetaD: thetaDefaults.map((_, idx) => parseFloat(input(`theta_d_${idx}`).value))
+        };
+    }
+
+    function compute(data) {
+        const L = Math.abs(data.screenPos - data.refPos);
+        const lambdaUm = data.lambdaNm / 1000;
+        const thetaRows = data.thetaD.map((d, idx) => {
+            const theta = Math.atan(d / L);
+            const D = lambdaUm / Math.sin(theta);
+            return { idx, d, theta, D };
+        });
+        const avgD = thetaRows.reduce((sum, row) => sum + row.D, 0) / thetaRows.length;
+        return { ...data, L, thetaRows, avgD };
+    }
+
+    function renderProcess(res) {
+        const thetaHtml = res.thetaRows.map(row => `
+            <tr>
+                <td>${thetaDefaults[row.idx][0]}</td>
+                <td>${row.d.toFixed(1)}</td>
+                <td>${row.theta.toFixed(5)}</td>
+                <td>${row.D.toFixed(3)}</td>
+            </tr>
+        `).join('');
+        const detailedRows = res.thetaRows.map(row => {
+            const color = thetaDefaults[row.idx][0] || `第${row.idx + 1}组`;
+            const ratio = row.d / res.L;
+            const sinTheta = Math.sin(row.theta);
+            return `
+                <div class="calculation-step">
+                    <div class="step-title">${row.idx + 2}. ${color}光计算</div>
+                    <div class="step-formula">$$\\theta_{${row.idx + 1}}=\\arctan\\frac{d_{${row.idx + 1}}}{L}=\\arctan\\frac{${row.d.toFixed(1)}}{${res.L.toFixed(1)}}=\\arctan(${ratio.toFixed(5)})=${row.theta.toFixed(5)}\\ \\mathrm{rad}$$</div>
+                    <div class="step-formula">$$D_{${row.idx + 1}}=\\frac{\\lambda}{\\sin\\theta_{${row.idx + 1}}}=\\frac{${(res.lambdaNm / 1000).toFixed(4)}}{\\sin(${row.theta.toFixed(5)})}=\\frac{${(res.lambdaNm / 1000).toFixed(4)}}{${sinTheta.toFixed(5)}}=${row.D.toFixed(3)}\\ \\mu\\mathrm{m}$$</div>
+                </div>
+            `;
+        }).join('');
+        const avgFormula = res.thetaRows
+            .map(row => row.D.toFixed(3))
+            .join('+');
+        const html = `
+            <div class="calculation-step">
+                <div class="step-title">1. 公共量与公式</div>
+                <div class="step-formula">$$L=|L_{\\text{屏幕}}-L_7|=|${res.screenPos.toFixed(1)}-${res.refPos.toFixed(1)}|=${res.L.toFixed(1)}\\ \\mathrm{mm}$$</div>
+                <div class="step-formula">$$\\lambda=${res.lambdaNm.toFixed(1)}\\ \\mathrm{nm}=${(res.lambdaNm / 1000).toFixed(4)}\\ \\mu\\mathrm{m}$$</div>
+                <div class="step-formula">$$\\theta_i=\\arctan\\frac{d_i}{L},\\qquad D_i=\\frac{\\lambda}{\\sin\\theta_i}$$</div>
+            </div>
+            ${detailedRows}
+            <div class="calculation-step">
+                <div class="step-title">${res.thetaRows.length + 2}. 汇总与平均</div>
+                <div class="output-table-wrapper">
+                    <table class="output-table">
+                        <thead><tr><th>颜色</th><th>$d_i$ (mm)</th><th>$\\theta_i$ (rad)</th><th>$D_i$ (μm)</th></tr></thead>
+                        <tbody>${thetaHtml}</tbody>
+                    </table>
+                </div>
+                <div class="step-formula">$$\\bar D=\\frac{D_1+D_2+D_3}{3}=\\frac{${avgFormula}}{3}=${res.avgD.toFixed(3)}\\ \\mu\\mathrm{m}$$</div>
+                <div class="step-result">$\\bar D=${res.avgD.toFixed(3)}\\ \\mu\\mathrm{m}$</div>
+            </div>
+        `;
+        input('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(input('calculationProcess'));
+    }
+
+    function calculate() {
+        const data = getInputs();
+        if ([data.lambdaNm, data.screenPos, data.refPos, ...data.thetaD].some(v => !isFinite(v)) || data.lambdaNm <= 0 || data.thetaD.some(v => v <= 0)) {
+            alert('请填写完整且有效的数据');
+            return;
+        }
+        const res = compute(data);
+        if (res.L <= 0) {
+            alert('屏幕位置和 L7 不能相同，请检查距离数据');
+            return;
+        }
+        input('lVal').innerText = res.L.toFixed(1);
+        input('dThetaVal').innerText = res.avgD.toFixed(3);
+        renderProcess(res);
+        input('resultMain').style.display = 'block';
+        input('processSection').style.display = 'block';
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTheta();
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+        window.ExperimentUtils.ThemeManager.init();
+        window.ExperimentUtils.KeyboardNav.init('.data-table-grid', 1);
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+            alert('数据已保存');
+        });
+    });
+})();
+</script>
+</body>
+</html>

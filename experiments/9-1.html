@@ -40,7 +40,7 @@
     <div class="page-title">电磁铁电流与磁感应强度拟合</div>
 
     <div class="tip-box">
-        <strong>计算说明</strong><br>
+        <strong>Tips</strong><br>
         采用自适应最小二乘法进行线性拟合。系统会优先匹配最高相关系数（最高测试至 $R > 0.999$），并在条件允许的情况下尽力保证包含至少 15 个数据点；若无法满足，则自动向下放宽阈值。
     </div>
 
@@ -189,14 +189,24 @@
         const excludedData = result.allPoints.filter(p => p.x > maxI).map(p => ({x: p.x, y: p.y}));
 
         const minX = Math.min(...linearData.map(p => p.x));
+        const allX = result.allPoints.map(p => p.x);
+        const allY = result.allPoints.map(p => p.y);
+        const axisBounds = values => {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            if (min === max) return [min - 1, max + 1];
+            return [min * 0.9, max * 1.1];
+        };
         const lineData = [
             { x: minX, y: r.slope * minX + r.intercept },
             { x: maxI, y: r.slope * maxI + r.intercept }
         ];
+        const [xAxisMin, xAxisMax] = axisBounds(allX);
+        const [yAxisMin, yAxisMax] = axisBounds(allY.concat(lineData.map(p => p.y)));
 
         const isDarkMode = document.body.classList.contains('dark-mode');
-        const textColor = isDarkMode ? '#e2e8f0' : '#334155';
-        const gridColor = isDarkMode ? '#4a5568' : '#e2e8f0';
+        const textColor = isDarkMode ? '#f4f4f0' : '#050505';
+        const gridColor = isDarkMode ? '#555555' : '#d7d7cf';
 
         chartInstance = new Chart(ctx, {
             type: 'scatter',
@@ -206,7 +216,7 @@
                         label: '最小二乘法拟合线',
                         data: lineData,
                         type: 'line',
-                        borderColor: '#ef4444',
+                        borderColor: textColor,
                         borderWidth: 2,
                         fill: false,
                         pointRadius: 0,
@@ -215,14 +225,14 @@
                     {
                         label: '有效线性数据点',
                         data: linearData,
-                        backgroundColor: '#3b82f6',
+                        backgroundColor: isDarkMode ? '#f4f4f0' : '#050505',
                         pointRadius: 5,
                         pointHoverRadius: 7
                     },
                     {
                         label: '非线性点',
                         data: excludedData,
-                        backgroundColor: '#94a3b8',
+                        backgroundColor: isDarkMode ? '#9ca3af' : '#737373',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     }
@@ -232,12 +242,12 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { labels: { color: textColor, font: { family: 'Inter, sans-serif' } } },
+                    legend: { labels: { color: textColor, font: { family: 'JetBrains Mono, monospace' } } },
                     tooltip: { callbacks: { label: function(ctx) { return `I: ${ctx.parsed.x} A, B: ${ctx.parsed.y} mT`; } } }
                 },
                 scales: {
-                    x: { title: { display: true, text: '电流 I (A)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } },
-                    y: { title: { display: true, text: '磁感应强度 B (mT)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } }
+                    x: { min: xAxisMin, max: xAxisMax, title: { display: true, text: '电流 I (A)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } },
+                    y: { min: yAxisMin, max: yAxisMax, title: { display: true, text: '磁感应强度 B (mT)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } }
                 }
             }
         });
@@ -346,7 +356,7 @@
         }
         window.ExperimentUtils.TableGenerator.generateInputTable('data-table-container', {
             rows: 15, cols: 4,
-            colHeaders: ['$x (I/A)$', '$y (B/mT)$', '$x (I/A)$', '$y (B/mT)$'],
+            colHeaders: ['','$x (I/A)$', '$y (B/mT)$', '$x (I/A)$', '$y (B/mT)$'],
             rowHeaders: Array.from({length:15}, (_,i)=>(i+1).toString()),
             prefix: 'data_', defaultValues: defaultVals
         });

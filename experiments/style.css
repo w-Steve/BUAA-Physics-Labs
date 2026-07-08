@@ -6,6 +6,17 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
+:root {
+    --title-size: 2rem;
+    --title-mobile-size: 1.65rem;
+    --section-title-size: 1.3rem;
+    --body-size: 1rem;
+    --small-size: 0.9rem;
+    --container-radius: 1.25rem;
+    --control-radius: 0.75rem;
+    --widget-space: 160px;
+}
+
 body {
     background: #f0f2f5;
     padding: 2rem 1rem;
@@ -26,7 +37,7 @@ body.dark-mode {
     max-width: 1200px;
     width: 100%;
     background: #ffffff;
-    border-radius: 2rem;
+    border-radius: var(--container-radius);
     box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
     padding: 2rem 2rem 1.5rem;
     transition: background-color 0.3s, box-shadow 0.3s;
@@ -70,7 +81,7 @@ body.dark-mode {
 }
 
 .dark-mode .theme-btn:hover {
-    background: #5a67a0;
+    background: #171717;
 }
 
 .page-title {
@@ -91,7 +102,7 @@ body.dark-mode {
 
 .tip-box {
     background: #f8fafc;
-    border-left: 4px solid #2563eb;
+    border-left: 4px solid #000000;
     padding: 1rem 1.5rem;
     border-radius: 0.75rem;
     font-size: 0.95rem;
@@ -102,7 +113,7 @@ body.dark-mode {
 
 .dark-mode .tip-box {
     background: #2d3748;
-    border-left-color: #5a67d8;
+    border-left-color: #f4f4f0;
     color: #cbd5e1;
 }
 
@@ -173,8 +184,8 @@ body.dark-mode {
 
 .top-input input:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    border-color: #000000;
+    box-shadow: 3px 3px 0 #000000;
 }
 
 /* 表格响应式优化 */
@@ -288,7 +299,8 @@ button.primary {
 }
 
 .dark-mode button.primary {
-    background: #5a67d8;
+    background: #f4f4f0;
+    color: #000000;
 }
 
 button.primary:hover {
@@ -296,7 +308,7 @@ button.primary:hover {
 }
 
 .dark-mode button.primary:hover {
-    background: #434190;
+    background: #ffffff;
 }
 
 button:hover {
@@ -305,7 +317,7 @@ button:hover {
 }
 
 .dark-mode button:hover {
-    background: #5a67a0;
+    background: #171717;
 }
 
 /* 结果卡片对齐优化 */
@@ -370,7 +382,7 @@ mjx-container {
 
 .calculation-step {
     background: transparent;
-    border-left: 4px solid #2563eb;
+    border-left: 4px solid #000000;
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
     border-radius: 0 1rem 1rem 0;
@@ -378,7 +390,7 @@ mjx-container {
 }
 
 .dark-mode .calculation-step {
-    border-left-color: #5a67d8;
+    border-left-color: #f4f4f0;
 }
 
 .step-title {
@@ -533,7 +545,7 @@ mjx-container {
     bottom: -35px;
     right: 0;
     white-space: nowrap;
-    background: #2563eb;
+    background: #000000;
     color: white;
     padding: 4px 10px;
     border-radius: 6px;
@@ -553,4 +565,531 @@ mjx-container {
 /* 让 GitHub 官方按钮的 iframe 对齐 */
 .star-wrapper span {
     vertical-align: middle !important;
+}
+
+/* Community rating and comments */
+.community-section {
+    margin-top: 2rem;
+}
+
+.community-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.community-summary,
+.experiment-meta {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.dark-mode .community-summary,
+.dark-mode .experiment-meta {
+    color: #cbd5e1;
+}
+
+.experiment-rating-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18rem;
+    color: #111111;
+    font-weight: 700;
+}
+
+.experiment-rating-star {
+    width: 0.95em;
+    height: 0.95em;
+    display: inline-block;
+    fill: #facc15;
+    stroke: #111111;
+    stroke-width: 1.8;
+    vertical-align: -0.1em;
+}
+
+.experiment-meta-separator {
+    margin: 0 0.36rem;
+    color: #8a8a82;
+}
+
+.dark-mode .experiment-rating-score {
+    color: #f4f4f0;
+}
+
+.dark-mode .experiment-rating-star {
+    fill: #facc15;
+    stroke: #f4f4f0;
+}
+
+.dark-mode .experiment-meta-separator {
+    color: #a8a89f;
+}
+
+.community-form {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #f8fafc;
+}
+
+.dark-mode .community-form {
+    background: #374151;
+    border-color: #4a5568;
+}
+
+.community-rating {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.community-star {
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    border-radius: 50%;
+    color: #f59e0b;
+    font-size: 1.35rem;
+    line-height: 1;
+    background: transparent;
+}
+
+.community-star:hover,
+.community-star.active {
+    background: #fef3c7;
+}
+
+.dark-mode .community-star:hover,
+.dark-mode .community-star.active {
+    background: rgba(245, 158, 11, 0.16);
+}
+
+.community-fields {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.community-count {
+    justify-self: end;
+    margin-top: -0.35rem;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.community-count.is-near-limit {
+    color: #b45309;
+    font-weight: 700;
+}
+
+.dark-mode .community-count {
+    color: #cbd5e1;
+}
+
+.dark-mode .community-count.is-near-limit {
+    color: #facc15;
+}
+
+.community-fields input,
+.community-fields textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    font: inherit;
+    color: #1e293b;
+    background: #ffffff;
+    resize: vertical;
+}
+
+.dark-mode .community-fields input,
+.dark-mode .community-fields textarea {
+    color: #f1f5f9;
+    background: #2d3748;
+    border-color: #718096;
+}
+
+.community-fields input:focus,
+.community-fields textarea:focus {
+    outline: none;
+    border-color: #000000;
+    box-shadow: 3px 3px 0 #000000;
+}
+
+.community-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.community-actions button {
+    padding: 0.65rem 1.4rem;
+}
+
+.community-status,
+.community-muted,
+.community-empty {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.dark-mode .community-status,
+.dark-mode .community-muted,
+.dark-mode .community-empty {
+    color: #cbd5e1;
+}
+
+.community-list {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.community-review {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    padding: 0.9rem 1rem;
+    background: #ffffff;
+}
+
+.dark-mode .community-review {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.community-review-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.45rem;
+}
+
+.community-review-top span {
+    color: #f59e0b;
+    letter-spacing: 0;
+}
+
+.community-review-top time {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-left: auto;
+}
+
+.community-like {
+    margin-left: 0;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.community-like-icon {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
+.community-like.is-liked {
+    background: #fff7d6;
+    color: #b45309;
+    font-weight: 700;
+}
+
+.dark-mode .community-like.is-liked {
+    background: #332600;
+    color: #facc15;
+}
+
+.community-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.community-pager span {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.dark-mode .community-pager span {
+    color: #cbd5e1;
+}
+
+.community-review p {
+    color: #334155;
+    line-height: 1.65;
+}
+
+.dark-mode .community-review p {
+    color: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+    .community-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .community-actions button {
+        width: 100%;
+    }
+
+    .community-review-top time {
+        margin-left: 0;
+    }
+}
+
+/* Unified page rhythm and responsive behavior */
+.container {
+    border-radius: var(--container-radius);
+}
+
+.page-title,
+.site-header {
+    margin-bottom: 1.5rem;
+    padding-right: var(--widget-space);
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-title {
+    font-size: var(--title-size);
+    line-height: 1.3;
+    letter-spacing: 0;
+}
+
+.site-header h1 {
+    font-size: var(--title-size);
+    font-weight: 500;
+    line-height: 1.3;
+    color: #0f172a;
+    margin-bottom: 0.4rem;
+}
+
+.site-header p {
+    color: #64748b;
+    font-size: var(--body-size);
+    line-height: 1.6;
+}
+
+.dark-mode .site-header {
+    border-bottom-color: #4a5568;
+}
+
+.dark-mode .site-header h1 {
+    color: #f1f5f9;
+}
+
+.dark-mode .site-header p {
+    color: #cbd5e1;
+}
+
+.section-title {
+    font-size: var(--section-title-size);
+    line-height: 1.35;
+}
+
+.tip-box,
+.result-label,
+.community-summary,
+.community-status,
+.community-muted,
+.community-empty,
+.community-review-top time {
+    font-size: var(--small-size);
+}
+
+button,
+.theme-btn,
+.top-input input,
+.cell-input,
+.community-fields input,
+.community-fields textarea {
+    font-size: var(--body-size);
+}
+
+@media (max-width: 768px) {
+    :root {
+        --title-mobile-size: 1.35rem;
+        --section-title-size: 1.08rem;
+        --body-size: 0.92rem;
+        --small-size: 0.82rem;
+    }
+
+    body {
+        padding: 0.75rem;
+        font-size: var(--body-size);
+    }
+
+    .container {
+        border-radius: 1rem;
+        padding: 0.85rem;
+    }
+
+    .theme-switch {
+        top: 0.85rem;
+        right: 0.85rem;
+        gap: 0.5rem;
+    }
+
+    .theme-btn {
+        padding: 0.35rem 0.75rem;
+        font-size: var(--small-size);
+    }
+
+    .star-wrapper {
+        display: none;
+    }
+
+    .page-title,
+    .site-header {
+        padding-right: 0;
+        padding-top: 2.75rem;
+        padding-bottom: 0.65rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .page-title,
+    .site-header h1 {
+        font-size: var(--title-mobile-size);
+    }
+
+    .section {
+        padding: 0.85rem;
+        border-radius: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        margin-bottom: 0.75rem;
+    }
+
+    .tip-box {
+        padding: 0.75rem 0.85rem;
+        margin-bottom: 1rem;
+        line-height: 1.55;
+    }
+
+    .top-input-group {
+        gap: 0.7rem;
+        margin-bottom: 1rem;
+    }
+
+    .top-input {
+        align-items: stretch;
+        flex: 1 1 100%;
+        flex-direction: column;
+    }
+
+    .top-input label {
+        min-width: 0;
+    }
+
+    .top-input input {
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+    }
+
+    .action-buttons {
+        gap: 0.65rem;
+        margin: 1rem 0;
+    }
+
+    .action-buttons button,
+    .community-actions button {
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+    }
+
+    .result-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+
+    .result-card {
+        min-height: 96px;
+        padding: 0.85rem;
+    }
+
+    .result-value {
+        font-size: 1.25rem;
+    }
+
+    .calculation-step {
+        padding: 0.75rem 0.85rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .step-title {
+        font-size: 1rem;
+    }
+
+    .output-table th,
+    .output-table td {
+        padding: 0.55rem 0.65rem;
+    }
+
+    .data-table,
+    .output-table-wrapper,
+    .process-container,
+    .step-formula,
+    mjx-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-header,
+    .table-row {
+        min-width: max-content;
+    }
+
+    .header-cell,
+    .cell-input {
+        min-width: 72px;
+        padding: 0.55rem 0.45rem;
+    }
+
+    .chart-wrapper,
+    .chart-wrap {
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.75rem !important;
+        height: auto !important;
+        min-height: 300px;
+    }
+
+    .chart-wrapper canvas,
+    .chart-wrap canvas,
+    canvas[width][height] {
+        display: block;
+        max-width: none !important;
+        width: auto !important;
+        height: auto !important;
+    }
+
+    #fitChart {
+        min-width: 640px;
+        min-height: 300px;
+    }
+
+    .mini-note,
+    .angle-hint,
+    .disclaimer {
+        font-size: var(--small-size) !important;
+        line-height: 1.5 !important;
+    }
 }

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基物实验助手 - 相位法测声速</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="common.js"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<div class="container">
+    <div class="page-title">相位法测声速</div>
+
+    <div class="tip-box">
+        <strong>Tips</strong><br>
+        • $f_1$ ，$f_2$ ，$t$来自上一步骤。<br>
+        • 在图中拖动红色 A/B 点可调整作图直线；声速按 $\lambda=2b$、$v=\lambda f$ 计算。
+    </div>
+
+    <div class="section">
+        <div class="section-title">原始数据与作图取点</div>
+        <div class="top-input-group">
+            <div class="top-input"><label>f₁ (kHz)</label><input type="number" id="f1" class="save-input cell-input" step="0.001" value="35.361"></div>
+            <div class="top-input"><label>f₂ (kHz)</label><input type="number" id="f2" class="save-input cell-input" step="0.001" value="35.365"></div>
+            <div class="top-input"><label>t (℃)</label><input type="number" id="t" class="save-input cell-input" step="0.1" value="23"></div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <div style="font-weight: 500; margin-bottom: 0.5rem;">探头位置读数 $L_n$ (mm)</div>
+            <div id="phase-table-container"></div>
+        </div>
+
+        <div style="border-top: 1px dashed #cbd5e1; padding-top: 1.5rem; margin-top: 1.5rem;">
+            <div style="font-weight: 600; margin-bottom: 1rem;">作图直线上选取的两点 (支持在图中直接拖拽)</div>
+            <div class="top-input-group" style="margin-bottom: 1rem;">
+                <div class="top-input">
+                    <label>点A 横轴 $n_A$</label>
+                    <input type="number" id="pA_n" class="save-input cell-input" step="0.01" value="1.00">
+                </div>
+                <div class="top-input">
+                    <label>纵轴 $L_A$ (mm)</label>
+                    <input type="number" id="pA_L" class="save-input cell-input" step="0.001" value="54.188">
+                </div>
+            </div>
+            <div class="top-input-group">
+                <div class="top-input">
+                    <label>点B 横轴 $n_B$</label>
+                    <input type="number" id="pB_n" class="save-input cell-input" step="0.01" value="10.00">
+                </div>
+                <div class="top-input">
+                    <label>纵轴 $L_B$ (mm)</label>
+                    <input type="number" id="pB_L" class="save-input cell-input" step="0.001" value="98.329">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="chartSection">
+        <div class="section-title">实验数据描点与作图直线 (可拖拽 A/B 点)</div>
+        <div style="width: 100%; overflow-x: auto; text-align: center; padding: 1rem 0;">
+            <canvas id="graphChart" width="720" height="420" style="max-width: 100%; background: transparent; touch-action: none;"></canvas>
+        </div>
+        <div style="text-align: center; font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">
+            注：圆形散点为原始读数，直线为通过点 A 与点 B 的作图线。
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="primary" id="calculateBtn">计算并绘制图表</button>
+        <button id="saveBtn">仅保存数据</button>
+    </div>
+
+    <div class="section" id="resultMain" style="display: none;">
+        <div class="section-title">测量结果</div>
+        <div class="result-grid">
+            <div class="result-card"><div class="result-label">作图斜率 b (mm/次)</div><div class="result-value" id="b_val">—</div></div>
+            <div class="result-card"><div class="result-label">波长 λ (mm)</div><div class="result-value" id="lambda_val">—</div></div>
+            <div class="result-card"><div class="result-label">声速 v (m/s)</div><div class="result-value" id="v_val">—</div></div>
+            <div class="result-card"><div class="result-label">理论值 v<sub>theo</sub> (m/s)</div><div class="result-value" id="v_theo_val">—</div></div>
+            <div class="result-card"><div class="result-label">相对误差 (%)</div><div class="result-value" id="relerr_val">—</div></div>
+        </div>
+    </div>
+
+    <div class="section" id="processSection" style="display: none;">
+        <div class="section-title">详细计算过程</div>
+        <div class="process-container" id="calculationProcess"></div>
+    </div>
+
+    <div class="disclaimer" style="text-align: center; margin-top: 2rem; color: #94a3b8; font-size: 0.85rem;">开源项目禁止商用 ｜ 自行核对计算数据</div>
+</div>
+
+<script>
+(function() {
+    const APP_KEY = '3-2';
+    const N_VALS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const DEFAULT_L_VALS = [54.188, 59.110, 64.096, 68.700, 73.818, 78.714, 83.627, 88.465, 93.485, 98.329];
+
+    let graphState = null;
+    let isDragging = null;
+
+    window.ExperimentUtils.TableGenerator.generateInputTable('phase-table-container', {
+        rows: 1,
+        cols: 10,
+        colHeaders: ['L₁(mm)', 'L₂(mm)', 'L₃(mm)', 'L₄(mm)', 'L₅(mm)', 'L₆(mm)', 'L₇(mm)', 'L₈(mm)', 'L₉(mm)', 'L₁₀(mm)'],
+        prefix: 'L',
+        defaultValues: DEFAULT_L_VALS
+    });
+
+    function getInputs() {
+        return {
+            f1: parseFloat(document.getElementById('f1').value),
+            f2: parseFloat(document.getElementById('f2').value),
+            t: parseFloat(document.getElementById('t').value),
+            L: N_VALS.map((_, i) => parseFloat(document.getElementById(`L${i + 1}`).value)),
+            pA: {
+                n: parseFloat(document.getElementById('pA_n').value),
+                L: parseFloat(document.getElementById('pA_L').value)
+            },
+            pB: {
+                n: parseFloat(document.getElementById('pB_n').value),
+                L: parseFloat(document.getElementById('pB_L').value)
+            }
+        };
+    }
+
+    function isValid(data) {
+        if ([data.f1, data.f2, data.t, data.pA.n, data.pA.L, data.pB.n, data.pB.L].some(v => !isFinite(v))) return false;
+        if (data.f1 <= 0 || data.f2 <= 0) return false;
+        if (data.L.some(v => !isFinite(v))) return false;
+        if (Math.abs(data.pA.n - data.pB.n) < 0.001) return false;
+        return true;
+    }
+
+    function compute(data) {
+        const reg = window.ExperimentUtils.Data.linearRegression(N_VALS, data.L);
+        const bRaw = (data.pB.L - data.pA.L) / (data.pB.n - data.pA.n);
+        const b = Math.abs(bRaw);
+        const intercept = data.pA.L - bRaw * data.pA.n;
+        const lambda = 2 * b;
+        const f = (data.f1 + data.f2) / 2;
+        const v = lambda * f;
+        const vTheo = 331.45 * Math.sqrt(1 + data.t / 273.15);
+        const relErr = Math.abs(v - vTheo) / vTheo * 100;
+
+        return { ...data, reg, bRaw, b, intercept, lambda, f, v, vTheo, relErr };
+    }
+
+    function drawPhysicalChart(res) {
+        const canvas = document.getElementById('graphChart');
+        const ctx = canvas.getContext('2d');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const colors = {
+            bg: isDarkMode ? '#1c1c1c' : '#ffffff',
+            text: isDarkMode ? '#f4f4f0' : '#050505',
+            grid: isDarkMode ? '#555555' : '#d7d7cf',
+            line: isDarkMode ? '#f4f4f0' : '#050505',
+            point: isDarkMode ? '#c9c9c0' : '#525252',
+            picked: isDarkMode ? '#ffffff' : '#000000'
+        };
+
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const padding = { top: 42, right: 44, bottom: 56, left: 76 };
+        const graphWidth = canvas.width - padding.left - padding.right;
+        const graphHeight = canvas.height - padding.top - padding.bottom;
+        const axisBounds = values => {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            if (min === max) {
+                const delta = Math.max(Math.abs(min) * 0.05, 1);
+                return [min - delta, max + delta];
+            }
+            const lower = min * 0.9;
+            const upper = max * 1.05;
+            return [Math.min(lower, upper), Math.max(lower, upper)];
+        };
+        const [yAxisMin, yAxisMax] = axisBounds(res.L);
+        const [xAxisMin, xAxisMax] = axisBounds(N_VALS);
+
+        const getXPixel = (n) => padding.left + ((n - xAxisMin) / (xAxisMax - xAxisMin)) * graphWidth;
+        const getYPixel = (L) => padding.top + graphHeight - ((L - yAxisMin) / (yAxisMax - yAxisMin)) * graphHeight;
+        const clampX = px => Math.max(padding.left, Math.min(padding.left + graphWidth, px));
+        const clampY = py => Math.max(padding.top, Math.min(padding.top + graphHeight, py));
+
+        graphState = {
+            xAxisMin, xAxisMax, yAxisMin, yAxisMax,
+            padding, graphWidth, graphHeight,
+            pxA: clampX(getXPixel(res.pA.n)), pyA: clampY(getYPixel(res.pA.L)),
+            pxB: clampX(getXPixel(res.pB.n)), pyB: clampY(getYPixel(res.pB.L))
+        };
+
+        ctx.lineWidth = 1;
+        ctx.font = "12px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+
+        for (let i = 0; i <= 6; i++) {
+            const n = xAxisMin + (i * (xAxisMax - xAxisMin)) / 6;
+            const x = getXPixel(n);
+            ctx.strokeStyle = colors.grid;
+            ctx.beginPath();
+            ctx.moveTo(x, padding.top);
+            ctx.lineTo(x, padding.top + graphHeight);
+            ctx.stroke();
+            ctx.fillStyle = colors.text;
+            ctx.fillText(n.toFixed(1), x, padding.top + graphHeight + 8);
+        }
+
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for (let i = 0; i <= 6; i++) {
+            const yVal = yAxisMin + (i * (yAxisMax - yAxisMin)) / 6;
+            const y = getYPixel(yVal);
+            ctx.strokeStyle = colors.grid;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + graphWidth, y);
+            ctx.stroke();
+            ctx.fillStyle = colors.text;
+            ctx.fillText(yVal.toFixed(2), padding.left - 10, y);
+        }
+
+        ctx.strokeStyle = colors.text;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(padding.left, padding.top, graphWidth, graphHeight);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padding.left, padding.top, graphWidth, graphHeight);
+        ctx.clip();
+
+        const startXVal = xAxisMin;
+        const endXVal = xAxisMax;
+        const startYVal = res.intercept + res.bRaw * startXVal;
+        const endYVal = res.intercept + res.bRaw * endXVal;
+        ctx.strokeStyle = colors.line;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(getXPixel(startXVal), getYPixel(startYVal));
+        ctx.lineTo(getXPixel(endXVal), getYPixel(endYVal));
+        ctx.stroke();
+        ctx.restore();
+
+        N_VALS.forEach((n, idx) => {
+            ctx.fillStyle = colors.point;
+            ctx.beginPath();
+            ctx.arc(getXPixel(n), getYPixel(res.L[idx]), 4, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+
+        function drawCrosshair(px, py, label) {
+            ctx.strokeStyle = colors.picked;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(px - 12, py);
+            ctx.lineTo(px + 12, py);
+            ctx.moveTo(px, py - 12);
+            ctx.lineTo(px, py + 12);
+            ctx.stroke();
+            ctx.fillStyle = colors.picked;
+            ctx.font = "bold 14px 'JetBrains Mono', monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(label, px + 14, py - 14);
+        }
+
+        drawCrosshair(graphState.pxA, graphState.pyA, "A");
+        drawCrosshair(graphState.pxB, graphState.pyB, "B");
+
+        ctx.fillStyle = colors.text;
+        ctx.font = "bold 13px 'JetBrains Mono', monospace";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("探头位置 L_n (mm)", padding.left, padding.top - 20);
+        ctx.textAlign = "right";
+        ctx.fillText("序号 n", padding.left + graphWidth, padding.top + graphHeight + 34);
+    }
+
+    function renderProcess(res) {
+        const html = `
+        <div class="calculation-step">
+            <div class="step-title">1. 作图直线斜率</div>
+            <div class="step-formula">点 A：$n_A=${res.pA.n.toFixed(2)}$，$L_A=${res.pA.L.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">点 B：$n_B=${res.pB.n.toFixed(2)}$，$L_B=${res.pB.L.toFixed(3)}\\ \\mathrm{mm}$</div>
+            <div class="step-formula">$$b=\\frac{|L_B-L_A|}{|n_B-n_A|}=\\frac{|${res.pB.L.toFixed(3)}-${res.pA.L.toFixed(3)}|}{|${res.pB.n.toFixed(2)}-${res.pA.n.toFixed(2)}|}$$</div>
+            <div class="step-result">$b=${res.b.toFixed(6)}\\ \\mathrm{mm/次}$</div>
+            <div class="step-formula">（线性回归参考斜率：$b_{reg}=${res.reg.slope.toFixed(6)}\\ \\mathrm{mm/次}$，相关系数：$r=${res.reg.r.toFixed(6)}$）</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">2. 波长与频率</div>
+            <div class="step-formula">$$\\lambda=2b=2\\times ${res.b.toFixed(6)}=${res.lambda.toFixed(6)}\\ \\mathrm{mm}$$</div>
+            <div class="step-formula">$$f=\\frac{f_1+f_2}{2}=\\frac{${res.f1}+${res.f2}}{2}=${res.f.toFixed(6)}\\ \\mathrm{kHz}$$</div>
+            <div class="step-result">$v=\\lambda f=${res.lambda.toFixed(6)}\\times ${res.f.toFixed(6)}=${res.v.toFixed(4)}\\ \\mathrm{m/s}$</div>
+        </div>
+        <div class="calculation-step">
+            <div class="step-title">3. 理论值与误差</div>
+            <div class="step-formula">$$v_{\\text{theo}}=331.45\\sqrt{1+\\frac{t}{273.15}}=331.45\\sqrt{1+\\frac{${res.t}}{273.15}}=${res.vTheo.toFixed(4)}\\ \\mathrm{m/s}$$</div>
+            <div class="step-result">相对误差 $=\\frac{|v-v_{\\text{theo}}|}{v_{\\text{theo}}}\\times100\\%=${res.relErr.toFixed(2)}\\%$</div>
+        </div>
+        `;
+
+        document.getElementById('calculationProcess').innerHTML = html;
+        window.ExperimentUtils.renderMath(document.getElementById('calculationProcess'));
+    }
+
+    function displayResults(res) {
+        document.getElementById('b_val').innerText = res.b.toFixed(5);
+        document.getElementById('lambda_val').innerText = res.lambda.toFixed(5);
+        document.getElementById('v_val').innerText = res.v.toFixed(3);
+        document.getElementById('v_theo_val').innerText = res.vTheo.toFixed(3);
+        document.getElementById('relerr_val').innerText = res.relErr.toFixed(2);
+        drawPhysicalChart(res);
+        renderProcess(res);
+        document.getElementById('resultMain').style.display = 'block';
+        document.getElementById('chartSection').style.display = 'block';
+        document.getElementById('processSection').style.display = 'block';
+    }
+
+    function calculate() {
+        const data = getInputs();
+        if (!isValid(data)) {
+            alert('请完整填写数据，并确保 A/B 两点横坐标不同');
+            return;
+        }
+        try {
+            const results = compute(data);
+            displayResults(results);
+            window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        } catch (e) {
+            console.error(e);
+            alert('计算或渲染作图失败，请核对输入数据');
+        }
+    }
+
+    function saveOnly() {
+        window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+        alert('数据已保存');
+    }
+
+    function redrawChartOnly() {
+        const data = getInputs();
+        if (isValid(data)) {
+            drawPhysicalChart(compute(data));
+        }
+    }
+
+    function refreshAfterInputChange() {
+        if (document.getElementById('resultMain').style.display === 'block') calculate();
+        else redrawChartOnly();
+    }
+
+    const canvas = document.getElementById('graphChart');
+
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX = evt.clientX;
+        let clientY = evt.clientY;
+        if (evt.touches && evt.touches.length > 0) {
+            clientX = evt.touches[0].clientX;
+            clientY = evt.touches[0].clientY;
+        }
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    function handleDragStart(e) {
+        if (!graphState) return;
+        const pos = getMousePos(e);
+        const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+        const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+        if (distA < 25) isDragging = 'A';
+        else if (distB < 25) isDragging = 'B';
+    }
+
+    function handleDragMove(e) {
+        if (!graphState) return;
+        const pos = getMousePos(e);
+
+        if (!isDragging) {
+            const distA = Math.hypot(pos.x - graphState.pxA, pos.y - graphState.pyA);
+            const distB = Math.hypot(pos.x - graphState.pxB, pos.y - graphState.pyB);
+            canvas.style.cursor = (distA < 25 || distB < 25) ? 'grab' : 'default';
+            return;
+        }
+
+        canvas.style.cursor = 'grabbing';
+        const px = Math.max(graphState.padding.left + 1, Math.min(graphState.padding.left + graphState.graphWidth - 1, pos.x));
+        const py = Math.max(graphState.padding.top + 1, Math.min(graphState.padding.top + graphState.graphHeight - 1, pos.y));
+        let n = graphState.xAxisMin + ((px - graphState.padding.left) / graphState.graphWidth) * (graphState.xAxisMax - graphState.xAxisMin);
+        let L = graphState.yAxisMin + ((graphState.padding.top + graphState.graphHeight - py) / graphState.graphHeight) * (graphState.yAxisMax - graphState.yAxisMin);
+
+        n = Math.max(graphState.xAxisMin, Math.min(graphState.xAxisMax, n));
+        L = Math.max(graphState.yAxisMin, Math.min(graphState.yAxisMax, L));
+
+        document.getElementById(`p${isDragging}_n`).value = n.toFixed(2);
+        document.getElementById(`p${isDragging}_L`).value = L.toFixed(3);
+
+        const data = getInputs();
+        if (isValid(data)) {
+            const res = compute(data);
+            drawPhysicalChart(res);
+            if (document.getElementById('resultMain').style.display === 'block') {
+                document.getElementById('b_val').innerText = res.b.toFixed(5);
+                document.getElementById('lambda_val').innerText = res.lambda.toFixed(5);
+                document.getElementById('v_val').innerText = res.v.toFixed(3);
+                document.getElementById('v_theo_val').innerText = res.vTheo.toFixed(3);
+                document.getElementById('relerr_val').innerText = res.relErr.toFixed(2);
+            }
+        }
+    }
+
+    function handleDragEnd() {
+        if (isDragging) {
+            isDragging = null;
+            canvas.style.cursor = 'default';
+            if (document.getElementById('resultMain').style.display === 'block') calculate();
+            else {
+                redrawChartOnly();
+                window.ExperimentUtils.Storage.saveFromInputs(APP_KEY);
+            }
+        }
+    }
+
+    canvas.addEventListener('mousedown', handleDragStart);
+    canvas.addEventListener('mousemove', handleDragMove);
+    canvas.addEventListener('mouseup', handleDragEnd);
+    canvas.addEventListener('mouseleave', handleDragEnd);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDragStart(e); }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleDragMove(e); }, { passive: false });
+    canvas.addEventListener('touchend', handleDragEnd);
+
+    window.addEventListener('DOMContentLoaded', function() {
+        window.ExperimentUtils.Storage.loadToInputs(APP_KEY);
+
+        document.getElementById('pA_L').value = document.getElementById('pA_L').value || DEFAULT_L_VALS[0].toFixed(3);
+        document.getElementById('pB_L').value = document.getElementById('pB_L').value || DEFAULT_L_VALS[9].toFixed(3);
+
+        document.getElementById('L1')?.addEventListener('input', function() {
+            const val = parseFloat(this.value);
+            if (isFinite(val)) document.getElementById('pA_L').value = val.toFixed(3);
+            refreshAfterInputChange();
+        });
+
+        document.getElementById('L10')?.addEventListener('input', function() {
+            const val = parseFloat(this.value);
+            if (isFinite(val)) document.getElementById('pB_L').value = val.toFixed(3);
+            refreshAfterInputChange();
+        });
+
+        window.ExperimentUtils.KeyboardNav.init('#phase-table-container .data-table', 10);
+        window.ExperimentUtils.ThemeManager.init();
+
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+        document.getElementById('saveBtn').addEventListener('click', saveOnly);
+
+        ['f1', 'f2', 't', 'pA_n', 'pA_L', 'pB_n', 'pB_L'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                refreshAfterInputChange();
+            });
+        });
+
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            setTimeout(() => {
+                const data = getInputs();
+                if (isValid(data)) drawPhysicalChart(compute(data));
+            }, 50);
+        });
+
+        document.querySelectorAll('#phase-table-container .save-input').forEach(el => {
+            if (el.id !== 'L1' && el.id !== 'L10') el.addEventListener('input', refreshAfterInputChange);
+        });
+        redrawChartOnly();
+    });
+})();
+</script>
+</body>
+</html>
